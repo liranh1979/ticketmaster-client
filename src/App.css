@@ -1,0 +1,103 @@
+/* Layout container */
+.home-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: #f4f7fe;
+  overflow: hidden; /* Prevents unwanted scrollbars */
+}
+
+/* Topbar: 10% height, strictly aligned */
+.topbar {
+  height: 10vh;
+  min-height: 60px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  border-bottom: 1px solid #e0e4ec;
+  box-sizing: border-box;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+}
+
+/* Smaller, cleaner logo */
+.small-logo {
+  height: 32px; 
+  width: auto;
+  object-fit: contain;
+}
+
+/* Aligned greeting, icons, and button */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 24px; /* Balanced space between elements */
+}
+
+.topbar-icons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #718096;
+}
+
+.user-greeting {
+  font-size: 14px;
+  color: #4a5568;
+  white-space: nowrap;
+}
+
+.user-greeting strong {
+  color: #2d3748;
+}
+
+/* Modern, Beautiful Logout Button */
+.btn-logout {
+  padding: 8px 20px;
+  background-color: #ffffff;
+  color: #e53e3e;
+  border: 1.5px solid #fed7d7;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-logout:hover {
+  background-color: #fff5f5;
+  border-color: #feb2b2;
+  transform: translateY(-1px);
+}
+
+/* Main Content Area: 90% Height */
+.main-content {
+  height: 90vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+.welcome-card {
+  text-align: center;
+}
+
+.welcome-card h1 {
+  font-size: 2.5rem;
+  color: #1a202c;
+  margin-bottom: 10px;
+}
+
+.welcome-card p {
+  color: #718096;
+  font-size: 1.1rem;
+}
