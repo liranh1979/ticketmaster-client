@@ -65,3 +65,25 @@ view-container {
     flex-direction: column;
     gap: 15px;
 }
+
+.ai-icon-placeholder {
+  font-size: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* Ensure the grid handles multiple cards nicely */
+.settings-grid {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+
+settings-icon-img {
+  width: 60px; /* Slightly larger to show the detail */
+  height: 60px;
+  object-fit: contain;
+}

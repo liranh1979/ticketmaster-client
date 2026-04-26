@@ -85,3 +85,9 @@
   background-color: #fff5f5;
   border-color: #feb2b2;
 }
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Adds space between the user name, AI icon, and gear */
+}

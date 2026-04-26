@@ -1,0 +1,68 @@
+.ai-status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.ai-status-pill.ok {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.ai-status-pill.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    animation: pulse-red 2s infinite;
+}
+
+.icon-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+
+.ai-status-pill {
+    display: flex;
+    align-items: center;
+    padding: 6px 14px; /* Increased padding */
+    border-radius: 20px;
+    background-color: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.status-text {
+    margin-left: 10px; /* More space between icon and text */
+    font-size: 15px;    /* Slightly larger text */
+    font-weight: 600;
+    color: #334155;
+}
+
+/* Make the spinner look better when large */
+.icon-spin {
+    animation: spin 1s linear infinite;
+    color: #64748b;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

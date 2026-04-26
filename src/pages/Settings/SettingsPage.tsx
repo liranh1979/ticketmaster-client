@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FieldEntityList } from './FieldManager/FieldEntityList';
 import { SystemFieldManager } from './LanguageManager/SystemFieldManager';
+import { AIManager } from './AIManager/AIManager';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -11,15 +12,13 @@ interface SettingsPageProps {
 export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
   const { t } = useTranslation();
   
-  // Track which sub-view we are in: 'menu', 'selection', or 'system-fields'
-  const [currentView, setCurrentView] = useState<'menu' | 'selection' | 'system-fields' | 'custom-fields'>('menu');
+  // Added 'ai-manager' to the allowed view types
+  const [currentView, setCurrentView] = useState<'menu' | 'selection' | 'system-fields' | 'custom-fields' | 'ai-manager'>('menu');
 
-  // Handle when the user clicks a card in the main settings grid
   const handleMainMenuClick = () => {
     setCurrentView('selection');
   };
 
-  // Handle when the user picks between "System" or "User" inside the FieldEntityList
   const handleEntitySelection = (entity: string, category: string) => {
     if (category === 'system') {
       setCurrentView('system-fields');
@@ -36,10 +35,11 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     setCurrentView('selection');
   };
 
-  // 1. Initial State: Show the main settings grid (TicketMaster dashboard style)
+  // 1. Initial State: Main Settings Grid
   if (currentView === 'menu') {
     return (
       <div className="settings-grid">
+        {/* Fields Manager Card */}
         <div className="settings-card" onClick={handleMainMenuClick}>
           <div className="settings-icon-box">
             <img 
@@ -52,11 +52,34 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
             {t('settings_fields_manager')}
           </span>
         </div>
+
+        {/* NEW: AI Agent Manager Card */}
+        <div className="settings-card" onClick={() => setCurrentView('ai-manager')}>
+          <div className="settings-icon-box">
+             <div className="ai-icon-placeholder">🤖</div> 
+             {/* Replace with <img src="/AIAgentManager.png" className="settings-icon-img" /> later */}
+          </div>
+          <span className="settings-text">
+            {t('settings_ai_manager')}
+          </span>
+        </div>
       </div>
     );
   }
 
-  // 2. Middle State: Show the "System Fields" vs "User Custom Fields" cards
+  // 2. AI Manager View
+  if (currentView === 'ai-manager') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToMenu}>
+          ← {t('back_btn')}
+        </button>
+        <AIManager />
+      </div>
+    );
+  }
+
+  // 3. Selection State
   if (currentView === 'selection') {
     return (
       <div className="view-container">
@@ -68,7 +91,7 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     );
   }
 
-  // 3. System View: Show the Translation Sidebar and Grid
+  // 4. System View
   if (currentView === 'system-fields') {
     return (
       <div className="view-container">
@@ -80,7 +103,7 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     );
   }
 
-  // 4. Custom View: Show your standard fields table
+  // 5. Custom View
   return (
     <div className="view-container">
       <button className="back-button" onClick={handleBackToSelection}>
@@ -88,7 +111,6 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
       </button>
       <h3>{t('managing_fields_for')}: User</h3>
       <p>Table with API data will go here.</p>
-      {/* <UserFieldsTable /> */}
     </div>
   );
 };
