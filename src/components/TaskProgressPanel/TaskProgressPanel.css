@@ -1,0 +1,112 @@
+/* ── Panel shell ─────────────────────────────────────────────── */
+.tp-panel {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 95vw);
+  background: #1e293b;
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -4px 30px rgba(0,0,0,.35);
+  z-index: 9999;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+.tp-minimized { border-radius: 14px 14px 0 0; }
+
+/* ── Header ──────────────────────────────────────────────────── */
+.tp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  cursor: pointer;
+  user-select: none;
+  background: #1e293b;
+}
+.tp-header:hover { background: #263548; }
+.tp-header-left { display: flex; align-items: center; gap: 10px; }
+.tp-title { color: #f1f5f9; font-weight: 600; font-size: 0.875rem; }
+.tp-count {
+  background: #6366f1;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.tp-toggle { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 0.75rem; }
+
+/* ── Pulse dot ───────────────────────────────────────────────── */
+.tp-pulse {
+  width: 9px; height: 9px;
+  background: #4ade80;
+  border-radius: 50%;
+  animation: tp-pulse 1.5s ease-in-out infinite;
+}
+@keyframes tp-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74,222,128,.5); }
+  50%       { opacity: .7; box-shadow: 0 0 0 4px rgba(74,222,128,0); }
+}
+
+/* ── Body ────────────────────────────────────────────────────── */
+.tp-body {
+  padding: 0 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ── Task card ───────────────────────────────────────────────── */
+.tp-task {
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 12px 14px;
+  border: 1px solid #334155;
+}
+.tp-task-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.tp-task-name { color: #f1f5f9; font-size: 0.85rem; font-weight: 600; flex: 1; }
+.tp-task-pct  { color: #94a3b8; font-size: 0.8rem; font-weight: 600; min-width: 38px; text-align: right; }
+.tp-task-msg  { color: #64748b; font-size: 0.75rem; margin: 6px 0 0; }
+
+/* ── Status badge ────────────────────────────────────────────── */
+.tp-status-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.tp-status-running   { background: #1e3a8a; color: #93c5fd; }
+.tp-status-completed { background: #14532d; color: #86efac; }
+.tp-status-failed    { background: #450a0a; color: #fca5a5; }
+
+/* ── Progress bar ────────────────────────────────────────────── */
+.tp-bar-track {
+  height: 6px;
+  background: #1e293b;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.tp-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.tp-bar-running   { background: linear-gradient(90deg, #6366f1, #a78bfa); animation: tp-shimmer 1.5s linear infinite; }
+.tp-bar-completed { background: #4ade80; }
+.tp-bar-failed    { background: #f87171; }
+
+@keyframes tp-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}

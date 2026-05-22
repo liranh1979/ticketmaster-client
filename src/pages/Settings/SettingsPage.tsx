@@ -4,6 +4,7 @@ import { FieldEntityList } from './FieldManager/FieldEntityList';
 import { SystemFieldManager } from './LanguageManager/SystemFieldManager';
 import { FieldDefinitionsManager } from './FieldDefinitions/FieldDefinitionsManager';
 import { AIManager } from './AIManager/AIManager';
+import { UsersPage } from './UsersManager/UsersPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -14,7 +15,7 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
   const { t } = useTranslation();
   
   // Added 'ai-manager' to the allowed view types
-  const [currentView, setCurrentView] = useState<'menu' | 'selection' | 'system-fields' | 'custom-fields' | 'ai-manager'>('menu');
+  const [currentView, setCurrentView] = useState<'menu' | 'selection' | 'system-fields' | 'custom-fields' | 'ai-manager' | 'users'>('menu');
 
   const handleMainMenuClick = () => {
     setCurrentView('selection');
@@ -52,6 +53,14 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
           <span className="settings-text">
             {t('settings_fields_manager')}
           </span>
+        </div>
+
+        {/* Users Manager Card */}
+        <div className="settings-card" onClick={() => setCurrentView('users')}>
+          <div className="settings-icon-box">
+            <div className="ai-icon-placeholder">👥</div>
+          </div>
+          <span className="settings-text">{t('settings_users_manager')}</span>
         </div>
 
         {/* NEW: AI Agent Manager Card */}
@@ -104,7 +113,19 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     );
   }
 
-  // 5. Custom Fields View
+  // 5. Users View
+  if (currentView === 'users') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToMenu}>
+          ← {t('back_btn')}
+        </button>
+        <UsersPage />
+      </div>
+    );
+  }
+
+  // 6. Custom Fields View
   return (
     <div className="view-container">
       <button className="back-button" onClick={handleBackToSelection}>

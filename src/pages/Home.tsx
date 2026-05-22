@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Topbar } from '../components/Topbar/Topbar';
 import { SettingsPage } from './Settings/SettingsPage';
-import { FieldEntityList } from './Settings/FieldManager/FieldEntityList'; // Import the new component
+import { FieldEntityList } from './Settings/FieldManager/FieldEntityList';
+import { TaskProgressPanel } from '../components/TaskProgressPanel/TaskProgressPanel';
 
 interface HomeProps {
   user: {
@@ -24,6 +25,7 @@ export const Home = ({ user }: HomeProps) => {
 
   return (
     <div className="home-layout">
+      <TaskProgressPanel />
       <Topbar 
         user={user} 
         onSettingsClick={() => {
