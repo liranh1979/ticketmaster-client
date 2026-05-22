@@ -81,7 +81,7 @@ export const FieldTranslationGrid = ({
     setTranslating(true);
     try {
       const res = await api.post('/ai/translate-bulk', { translations: englishSource, targetLanguage: targetLang });
-      if (res.data.success) markDirty(res.data.translations);
+      if (res.data.success) markDirty({ ...translations, ...res.data.translations });
     } catch (err) {
       console.error('Bulk translate failed', err);
     } finally {

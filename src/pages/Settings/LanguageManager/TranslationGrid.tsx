@@ -56,8 +56,7 @@ export const TranslationGrid = ({ targetLang }: TranslationGridProps) => {
             });
 
             if (res.data.success) {
-                // Update the state with the new translated JSON
-                setTranslations(res.data.translations);
+                setTranslations(prev => ({ ...prev, ...res.data.translations }));
             }
         } catch (err) {
             console.error("Bulk AI Translation failed:", err);
