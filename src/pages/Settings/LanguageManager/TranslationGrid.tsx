@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../../../api'; 
+import { Sparkles, Loader2 } from 'lucide-react'; 
 
 interface TranslationGridProps {
     targetLang: string;
@@ -10,9 +11,20 @@ export const TranslationGrid = ({ targetLang }: TranslationGridProps) => {
     const { t, i18n } = useTranslation();
     const [translations, setTranslations] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
+    const [isBulkTranslating, setIsBulkTranslating] = useState(false);
+    const [hasAI, setHasAI] = useState(false);
 
-    // 1. Load the translations whenever the selected language changes
+    // 1. Check AI Status and Load initial translation data
     useEffect(() => {
+        const checkAI = async () => {
+            try {
+                const res = await api.get('/ai/status');
+                setHasAI(res.data.hasActiveAI);
+            } catch {
+                setHasAI(false);
+            }
+        };
+
         const loadData = async () => {
             try {
                 const res = await api.get(`/locales/${targetLang}`);
@@ -21,8 +33,39 @@ export const TranslationGrid = ({ targetLang }: TranslationGridProps) => {
                 console.error("Failed to load translations:", err);
             }
         };
+
+        checkAI();
         loadData();
     }, [targetLang]);
+
+    // 2. Bulk AI Translation Function
+    const handleBulkTranslate = async () => {
+        if (!window.confirm(`Are you sure you want to auto-translate all fields to ${targetLang.toUpperCase()}?`)) return;
+        
+        setIsBulkTranslating(true);
+        try {
+            // Create a source object of English texts for the AI to translate
+            const sourceTexts: Record<string, string> = {};
+            Object.keys(translations).forEach(key => {
+                sourceTexts[key] = t(key, { lng: 'en' });
+            });
+
+            const res = await api.post('/ai/translate-bulk', {
+                translations: sourceTexts,
+                targetLanguage: targetLang
+            });
+
+            if (res.data.success) {
+                // Update the state with the new translated JSON
+                setTranslations(res.data.translations);
+            }
+        } catch (err) {
+            console.error("Bulk AI Translation failed:", err);
+            alert("Translation failed. Please check your AI settings.");
+        } finally {
+            setIsBulkTranslating(false);
+        }
+    };
 
     const handleSave = async () => {
         setLoading(true);
@@ -31,8 +74,7 @@ export const TranslationGrid = ({ targetLang }: TranslationGridProps) => {
                 lang: targetLang,
                 translations
             });
-            
-            // Sync the i18next local cache immediately so the UI updates
+            // Update local i18next cache
             i18n.addResourceBundle(targetLang, 'translation', translations, true, true);
             alert("Saved successfully!");
         } catch (err) {
@@ -43,11 +85,38 @@ export const TranslationGrid = ({ targetLang }: TranslationGridProps) => {
         }
     };
 
-    // FIX: Added the missing return statement below
+    const showBulkAI = targetLang !== 'en';
+
     return (
         <div className="grid-wrapper">
-            <div className="grid-header">
+            <div className="grid-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3>{t('editing_language')}: {targetLang.toUpperCase()}</h3>
+                
+                {showBulkAI && (
+                    <button 
+                        className="ai-bulk-btn"
+                        onClick={handleBulkTranslate}
+                        disabled={isBulkTranslating}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 16px',
+                            backgroundColor: '#6366f1',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                        }}
+                    >
+                        {isBulkTranslating ? (
+                            <><Loader2 className="icon-spin" size={18} /> {t('translating')}...</>
+                        ) : (
+                            <><Sparkles size={18} /> {t('auto_translate_all')}</>
+                        )}
+                    </button>
+                )}
             </div>
             
             <table className="translation-table">
@@ -71,6 +140,7 @@ export const TranslationGrid = ({ targetLang }: TranslationGridProps) => {
                                         ...translations, 
                                         [key]: e.target.value
                                     })}
+                                    style={{ width: '100%' }}
                                 />
                             </td>
                         </tr>
@@ -82,7 +152,7 @@ export const TranslationGrid = ({ targetLang }: TranslationGridProps) => {
                 <button 
                     className="save-btn" 
                     onClick={handleSave} 
-                    disabled={loading}
+                    disabled={loading || isBulkTranslating}
                 >
                     {loading ? t('saving') : t('save_btn')}
                 </button>

@@ -10,8 +10,6 @@ export const SystemFieldManager = () => {
     const [languages, setLanguages] = useState([]);
     const [selectedLang, setSelectedLang] = useState('en');
     const [loading, setLoading] = useState(true);
-
-    // Fetch the list of supported languages from the database
     const fetchLanguages = async () => {
         try {
             const res = await api.get('/languages');
@@ -33,10 +31,9 @@ export const SystemFieldManager = () => {
 
     return (
         <div className="system-manager-page">
-            {/* Header Area - Cleaned up to avoid double back buttons */}
             <header className="manager-header">
                 <h2>{t('manage_system_translations')}</h2>
-                
+
                 <div className="header-info">
                     <span>{t('editing_language')}: <strong>{selectedLang.toUpperCase()}</strong></span>
                 </div>
