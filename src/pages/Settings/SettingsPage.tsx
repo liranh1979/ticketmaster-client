@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FieldEntityList } from './FieldManager/FieldEntityList';
 import { SystemFieldManager } from './LanguageManager/SystemFieldManager';
+import { FieldDefinitionsManager } from './FieldDefinitions/FieldDefinitionsManager';
 import { AIManager } from './AIManager/AIManager';
 import './SettingsPage.css';
 
@@ -103,14 +104,13 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     );
   }
 
-  // 5. Custom View
+  // 5. Custom Fields View
   return (
     <div className="view-container">
       <button className="back-button" onClick={handleBackToSelection}>
         ← {t('back_btn')}
       </button>
-      <h3>{t('managing_fields_for')}: User</h3>
-      <p>Table with API data will go here.</p>
+      <FieldDefinitionsManager />
     </div>
   );
 };
