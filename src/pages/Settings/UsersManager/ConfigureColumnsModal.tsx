@@ -17,7 +17,7 @@ interface ConfigureColumnsModalProps {
   onClose: () => void;
 }
 
-export const ConfigureColumnsModal = ({ fields, onClose }: ConfigureColumnsModalProps) => {
+export const ConfigureColumnsModal = ({ fields, descriptionKey, onClose }: ConfigureColumnsModalProps) => {
   const { t } = useTranslation();
   const [visibility, setVisibility] = useState<Record<number, boolean>>(
     Object.fromEntries(fields.map(f => [f.id, f.isListVisible]))
