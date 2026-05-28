@@ -6,7 +6,7 @@ import './FieldDefinitionsManager.css';
 import api from '../../../api';
 
 interface Language { code: string; name: string; }
-interface FieldDef { id: number; fieldKey: string; fieldType: string; }
+interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; }
 
 interface FieldDefinitionsManagerProps {
   entityType?: 'user' | 'group';

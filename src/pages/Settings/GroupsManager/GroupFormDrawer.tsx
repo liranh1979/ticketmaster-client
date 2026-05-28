@@ -10,6 +10,7 @@ interface FieldDef {
   fieldKey: string;
   fieldType: string;
   isListVisible: boolean;
+  fieldOptions?: string[];
 }
 
 interface GroupData {
@@ -142,6 +143,17 @@ export const GroupFormDrawer = ({ group, fields, onClose, onSaved }: GroupFormDr
                         />
                         <span>{metaValues[f.fieldKey] === 'true' ? t('yes') : t('no')}</span>
                       </label>
+                    ) : f.fieldType === 'combobox' ? (
+                      <select
+                        className="ufd-input"
+                        value={metaValues[f.fieldKey] ?? ''}
+                        onChange={e => setMetaValues({ ...metaValues, [f.fieldKey]: e.target.value })}
+                      >
+                        <option value="">{t('combobox_select_placeholder')}</option>
+                        {(f.fieldOptions ?? []).map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
                     ) : f.fieldType === 'rich-text' ? (
                       <textarea
                         className="ufd-textarea"

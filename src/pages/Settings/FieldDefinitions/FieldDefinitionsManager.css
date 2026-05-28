@@ -423,3 +423,129 @@
 
 /* ── Reuse icon-spin from parent ───────────────────────────── */
 .icon-spin { animation: fd-spin 1s linear infinite; }
+
+/* ── Combobox Options ───────────────────────────────────────── */
+
+/* Type cell: stack badge + toggle button */
+.fd-type-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+/* "Edit Options" toggle button */
+.fd-options-toggle {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
+  color: #6366f1;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.fd-options-toggle:hover,
+.fd-options-toggle-active { background: #6366f1; color: #fff; border-color: #6366f1; }
+
+/* Expanded options row */
+.fd-options-row td {
+  background: #fafbff;
+  border-top: 1px dashed #c7d2fe;
+  border-bottom: 1px dashed #c7d2fe;
+  padding: 12px 16px;
+}
+.fd-options-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Chip container */
+.fd-options-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+  align-items: center;
+}
+.fd-options-empty {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Individual chip */
+.fd-option-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #e0e7ff;
+  color: #4338ca;
+  border-radius: 999px;
+  padding: 3px 10px 3px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.fd-option-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6366f1;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  opacity: .7;
+  transition: opacity .15s;
+}
+.fd-option-chip-remove:hover { opacity: 1; }
+
+/* Add row: input + + button + save button */
+.fd-options-add-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.fd-options-add-input { flex: 1; }
+.fd-options-add-btn {
+  width: 32px; height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 7px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.fd-options-add-btn:hover:not(:disabled) { background: #4f46e5; }
+.fd-options-add-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+.fd-options-save-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 7px;
+  background: #10b981;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.fd-options-save-btn:hover:not(:disabled) { background: #059669; }
+.fd-options-save-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Sidebar combobox options input row */
+.fd-options-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.fd-options-input-row .fd-input { flex: 1; }

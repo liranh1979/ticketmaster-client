@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { getFieldType } from './fieldTypes';
 import api from '../../../api';
 
-interface FieldDef { id: number; fieldKey: string; fieldType: string; }
+interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; }
 interface FieldTranslationGridProps {
   targetLang: string;
   fieldDefs: FieldDef[];
@@ -26,7 +26,12 @@ export const FieldTranslationGrid = ({
   const [translating, setTranslating] = useState(false);
   const isEnglish = targetLang === 'en';
 
-  // Load translations whenever lang or refreshKey changes
+  // Options editor state
+  const [optionsOpen, setOptionsOpen]   = useState<Record<number, boolean>>({});
+  const [optionDrafts, setOptionDrafts] = useState<Record<number, string[]>>({});
+  const [optionInputs, setOptionInputs] = useState<Record<number, string>>({});
+  const [savingOpts, setSavingOpts]     = useState<Record<number, boolean>>({});
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -46,7 +51,6 @@ export const FieldTranslationGrid = ({
     load();
   }, [targetLang, refreshKey]);
 
-  // Warn on browser close / refresh when there are unsaved changes
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (isDirty) { e.preventDefault(); e.returnValue = ''; }
@@ -90,6 +94,39 @@ export const FieldTranslationGrid = ({
     }
   };
 
+  const toggleOptions = (field: FieldDef) => {
+    const next = !optionsOpen[field.id];
+    setOptionsOpen(prev => ({ ...prev, [field.id]: next }));
+    if (next && optionDrafts[field.id] === undefined) {
+      setOptionDrafts(prev => ({ ...prev, [field.id]: field.fieldOptions ?? [] }));
+    }
+  };
+
+  const addOptionToDraft = (fieldId: number) => {
+    const val = (optionInputs[fieldId] ?? '').trim();
+    if (!val || (optionDrafts[fieldId] ?? []).includes(val)) return;
+    setOptionDrafts(prev => ({ ...prev, [fieldId]: [...(prev[fieldId] ?? []), val] }));
+    setOptionInputs(prev => ({ ...prev, [fieldId]: '' }));
+  };
+
+  const removeOptionFromDraft = (fieldId: number, i: number) => {
+    setOptionDrafts(prev => ({ ...prev, [fieldId]: prev[fieldId].filter((_, j) => j !== i) }));
+  };
+
+  const saveOptions = async (fieldId: number) => {
+    setSavingOpts(prev => ({ ...prev, [fieldId]: true }));
+    try {
+      await api.patch(`/field-definitions/${fieldId}/options`, optionDrafts[fieldId] ?? []);
+      setOptionsOpen(prev => ({ ...prev, [fieldId]: false }));
+    } catch (err) {
+      console.error('Failed to save options', err);
+    } finally {
+      setSavingOpts(prev => ({ ...prev, [fieldId]: false }));
+    }
+  };
+
+  const colSpan = isEnglish ? 3 : 4;
+
   if (fieldDefs.length === 0) {
     return (
       <div className="fd-empty">
@@ -102,7 +139,6 @@ export const FieldTranslationGrid = ({
   return (
     <div className="fd-grid-wrapper">
 
-      {/* Header */}
       <div className="fd-grid-header">
         <div>
           <h3 className="fd-grid-title">
@@ -120,12 +156,11 @@ export const FieldTranslationGrid = ({
         )}
       </div>
 
-      {/* Table */}
       <div className="fd-table-container">
         <table className="fd-table">
           <thead>
             <tr>
-              <th style={{ width: '140px' }}>{t('field_type_select')}</th>
+              <th style={{ width: '160px' }}>{t('field_type_select')}</th>
               <th style={{ width: '180px' }}>{t('field_key_label')}</th>
               {!isEnglish && <th>{t('english_source')}</th>}
               <th>{isEnglish ? t('field_label_label') : t('translation')}</th>
@@ -134,32 +169,87 @@ export const FieldTranslationGrid = ({
           <tbody>
             {fieldDefs.map(field => {
               const ft = getFieldType(field.fieldType);
+              const isCombobox = field.fieldType === 'combobox';
+              const isOpen = !!optionsOpen[field.id];
+              const drafts = optionDrafts[field.id] ?? field.fieldOptions ?? [];
               return (
-                <tr key={field.id} className="fd-row">
-                  <td>
-                    <span className="fd-type-badge" style={{ background: ft.color, color: ft.text }}>
-                      <span className="fd-type-symbol">{ft.symbol}</span>
-                      {ft.label}
-                    </span>
-                  </td>
-                  <td><code className="fd-key-code">{field.fieldKey}</code></td>
-                  {!isEnglish && <td className="fd-source-text">{englishSource[field.fieldKey] || ''}</td>}
-                  <td>
-                    <input
-                      className="fd-trans-input"
-                      value={translations[field.fieldKey] ?? ''}
-                      onChange={e => markDirty({ ...translations, [field.fieldKey]: e.target.value })}
-                      placeholder={isEnglish ? t('field_label_hint') : ''}
-                    />
-                  </td>
-                </tr>
+                <React.Fragment key={field.id}>
+                  <tr className="fd-row">
+                    <td>
+                      <div className="fd-type-cell">
+                        <span className="fd-type-badge" style={{ background: ft.color, color: ft.text }}>
+                          <span className="fd-type-symbol">{ft.symbol}</span>
+                          {ft.label}
+                        </span>
+                        {isCombobox && (
+                          <button
+                            className={`fd-options-toggle ${isOpen ? 'fd-options-toggle-active' : ''}`}
+                            onClick={() => toggleOptions(field)}
+                          >
+                            {t('edit_options_btn')}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td><code className="fd-key-code">{field.fieldKey}</code></td>
+                    {!isEnglish && <td className="fd-source-text">{englishSource[field.fieldKey] || ''}</td>}
+                    <td>
+                      <input
+                        className="fd-trans-input"
+                        value={translations[field.fieldKey] ?? ''}
+                        onChange={e => markDirty({ ...translations, [field.fieldKey]: e.target.value })}
+                        placeholder={isEnglish ? t('field_label_hint') : ''}
+                      />
+                    </td>
+                  </tr>
+
+                  {isCombobox && isOpen && (
+                    <tr className="fd-options-row">
+                      <td colSpan={colSpan}>
+                        <div className="fd-options-editor">
+                          <div className="fd-options-chips">
+                            {drafts.length === 0 && (
+                              <span className="fd-options-empty">{t('no_options_yet')}</span>
+                            )}
+                            {drafts.map((opt, i) => (
+                              <span key={i} className="fd-option-chip">
+                                {opt}
+                                <button className="fd-option-chip-remove" onClick={() => removeOptionFromDraft(field.id, i)}>×</button>
+                              </span>
+                            ))}
+                          </div>
+                          <div className="fd-options-add-row">
+                            <input
+                              className="fd-input fd-options-add-input"
+                              placeholder={t('add_option_placeholder')}
+                              value={optionInputs[field.id] ?? ''}
+                              onChange={e => setOptionInputs(prev => ({ ...prev, [field.id]: e.target.value }))}
+                              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addOptionToDraft(field.id); } }}
+                            />
+                            <button
+                              className="fd-options-add-btn"
+                              onClick={() => addOptionToDraft(field.id)}
+                              disabled={!(optionInputs[field.id] ?? '').trim()}
+                            >+</button>
+                            <button
+                              className="fd-options-save-btn"
+                              onClick={() => saveOptions(field.id)}
+                              disabled={savingOpts[field.id]}
+                            >
+                              {savingOpts[field.id] ? '...' : t('save_btn')}
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               );
             })}
           </tbody>
         </table>
       </div>
 
-      {/* Footer */}
       <div className="fd-grid-actions">
         {saveStatus === 'success' && (
           <span className="fd-status fd-status-success">

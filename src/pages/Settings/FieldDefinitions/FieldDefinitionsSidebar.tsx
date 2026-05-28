@@ -17,11 +17,26 @@ export const FieldDefinitionsSidebar = ({
 }: FieldDefinitionsSidebarProps) => {
   const { t } = useTranslation();
   const [form, setForm] = useState({ fieldKey: '', label: '', fieldType: 'text' });
+  const [options, setOptions] = useState<string[]>([]);
+  const [optionInput, setOptionInput] = useState('');
   const [adding, setAdding] = useState(false);
   const isEnglish = selectedLang === 'en';
 
+  const addOption = () => {
+    const val = optionInput.trim();
+    if (val && !options.includes(val)) {
+      setOptions([...options, val]);
+    }
+    setOptionInput('');
+  };
+
+  const removeOption = (i: number) => {
+    setOptions(options.filter((_, j) => j !== i));
+  };
+
   const handleAdd = async () => {
     if (!form.fieldKey.trim() || !form.label.trim()) return;
+    if (form.fieldType === 'combobox' && options.length === 0) return;
     setAdding(true);
     try {
       await api.post('/field-definitions', {
@@ -29,8 +44,11 @@ export const FieldDefinitionsSidebar = ({
         fieldKey: form.fieldKey.trim().toLowerCase().replace(/\s+/g, '_'),
         fieldType: form.fieldType,
         label: form.label.trim(),
+        fieldOptions: form.fieldType === 'combobox' ? options : null,
       });
       setForm({ fieldKey: '', label: '', fieldType: 'text' });
+      setOptions([]);
+      setOptionInput('');
       onFieldAdded();
     } catch (err) {
       console.error('Failed to add field', err);
@@ -38,6 +56,9 @@ export const FieldDefinitionsSidebar = ({
       setAdding(false);
     }
   };
+
+  const isCombobox = form.fieldType === 'combobox';
+  const canAdd = !adding && form.fieldKey.trim() && form.label.trim() && (!isCombobox || options.length > 0);
 
   return (
     <div className="fd-sidebar">
@@ -86,7 +107,11 @@ export const FieldDefinitionsSidebar = ({
             <select
               className="fd-select"
               value={form.fieldType}
-              onChange={e => setForm({ ...form, fieldType: e.target.value })}
+              onChange={e => {
+                setForm({ ...form, fieldType: e.target.value });
+                setOptions([]);
+                setOptionInput('');
+              }}
             >
               {FIELD_TYPES.map(ft => (
                 <option key={ft.value} value={ft.value}>
@@ -96,10 +121,36 @@ export const FieldDefinitionsSidebar = ({
             </select>
           </div>
 
+          {isCombobox && (
+            <div className="fd-form-group">
+              <label className="fd-form-label">{t('combobox_options_label')}</label>
+              <div className="fd-options-input-row">
+                <input
+                  className="fd-input"
+                  placeholder={t('add_option_placeholder')}
+                  value={optionInput}
+                  onChange={e => setOptionInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addOption(); } }}
+                />
+                <button className="fd-options-add-btn" onClick={addOption} disabled={!optionInput.trim()}>+</button>
+              </div>
+              {options.length > 0 && (
+                <div className="fd-option-chips">
+                  {options.map((opt, i) => (
+                    <span key={i} className="fd-option-chip">
+                      {opt}
+                      <button className="fd-option-chip-remove" onClick={() => removeOption(i)}>×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             className="fd-add-btn"
             onClick={handleAdd}
-            disabled={adding || !form.fieldKey.trim() || !form.label.trim()}
+            disabled={!canAdd}
           >
             {adding ? '...' : `+ ${t('add_new_field')}`}
           </button>
