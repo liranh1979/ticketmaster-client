@@ -5,16 +5,29 @@ import { SystemFieldManager } from './LanguageManager/SystemFieldManager';
 import { FieldDefinitionsManager } from './FieldDefinitions/FieldDefinitionsManager';
 import { AIManager } from './AIManager/AIManager';
 import { UsersPage } from './UsersManager/UsersPage';
+import { UsersGroupsHub } from './UsersGroupsHub';
+import { GroupsPage } from './GroupsManager/GroupsPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
   onNavigate: (view: string) => void;
 }
 
+type ViewState =
+  | 'menu'
+  | 'selection'
+  | 'system-fields'
+  | 'custom-fields'
+  | 'group-custom-fields'
+  | 'ai-manager'
+  | 'users-groups-hub'
+  | 'users'
+  | 'groups';
+
 export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
   const { t } = useTranslation();
-  
-  const [currentView, setCurrentView] = useState<'menu' | 'selection' | 'system-fields' | 'custom-fields' | 'group-custom-fields' | 'ai-manager' | 'users'>('menu');
+
+  const [currentView, setCurrentView] = useState<ViewState>('menu');
 
   const handleMainMenuClick = () => {
     setCurrentView('selection');
@@ -38,6 +51,10 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     setCurrentView('selection');
   };
 
+  const handleBackToHub = () => {
+    setCurrentView('users-groups-hub');
+  };
+
   // 1. Initial State: Main Settings Grid
   if (currentView === 'menu') {
     return (
@@ -45,10 +62,10 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
         {/* Fields Manager Card */}
         <div className="settings-card" onClick={handleMainMenuClick}>
           <div className="settings-icon-box">
-            <img 
-              src="/CustomFieldsManager.png" 
-              alt="Custom Fields" 
-              className="settings-icon-img" 
+            <img
+              src="/CustomFieldsManager.png"
+              alt="Custom Fields"
+              className="settings-icon-img"
             />
           </div>
           <span className="settings-text">
@@ -56,19 +73,18 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
           </span>
         </div>
 
-        {/* Users Manager Card */}
-        <div className="settings-card" onClick={() => setCurrentView('users')}>
+        {/* Users & Groups Manager Card */}
+        <div className="settings-card" onClick={() => setCurrentView('users-groups-hub')}>
           <div className="settings-icon-box">
             <div className="ai-icon-placeholder">👥</div>
           </div>
-          <span className="settings-text">{t('settings_users_manager')}</span>
+          <span className="settings-text">{t('settings_users_groups_manager')}</span>
         </div>
 
-        {/* NEW: AI Agent Manager Card */}
+        {/* AI Agent Manager Card */}
         <div className="settings-card" onClick={() => setCurrentView('ai-manager')}>
           <div className="settings-icon-box">
-             <div className="ai-icon-placeholder">🤖</div> 
-             {/* Replace with <img src="/AIAgentManager.png" className="settings-icon-img" /> later */}
+             <div className="ai-icon-placeholder">🤖</div>
           </div>
           <span className="settings-text">
             {t('settings_ai_manager')}
@@ -90,7 +106,7 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     );
   }
 
-  // 3. Selection State
+  // 3. Selection State (Field Definitions entity picker)
   if (currentView === 'selection') {
     return (
       <div className="view-container">
@@ -102,7 +118,7 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     );
   }
 
-  // 4. System View
+  // 4. System Fields View
   if (currentView === 'system-fields') {
     return (
       <div className="view-container">
@@ -114,11 +130,23 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     );
   }
 
-  // 5. Users View
-  if (currentView === 'users') {
+  // 5. Users & Groups Hub
+  if (currentView === 'users-groups-hub') {
     return (
       <div className="view-container">
         <button className="back-button" onClick={handleBackToMenu}>
+          ← {t('back_btn')}
+        </button>
+        <UsersGroupsHub onSelect={(entity) => setCurrentView(entity)} />
+      </div>
+    );
+  }
+
+  // 6. Users View
+  if (currentView === 'users') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToHub}>
           ← {t('back_btn')}
         </button>
         <UsersPage />
@@ -126,7 +154,19 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     );
   }
 
-  // 6. Group Custom Fields View
+  // 7. Groups View
+  if (currentView === 'groups') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToHub}>
+          ← {t('back_btn')}
+        </button>
+        <GroupsPage />
+      </div>
+    );
+  }
+
+  // 8. Group Custom Fields View
   if (currentView === 'group-custom-fields') {
     return (
       <div className="view-container">
@@ -138,7 +178,7 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     );
   }
 
-  // 7. User Custom Fields View
+  // 9. User Custom Fields View
   return (
     <div className="view-container">
       <button className="back-button" onClick={handleBackToSelection}>

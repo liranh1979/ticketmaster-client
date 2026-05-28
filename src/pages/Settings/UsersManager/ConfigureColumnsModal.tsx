@@ -13,6 +13,7 @@ interface FieldDef {
 
 interface ConfigureColumnsModalProps {
   fields: FieldDef[];
+  descriptionKey?: string;
   onClose: () => void;
 }
 
@@ -46,7 +47,7 @@ export const ConfigureColumnsModal = ({ fields, onClose }: ConfigureColumnsModal
           <h3 className="ccm-title">{t('configure_columns')}</h3>
           <button className="ccm-close" onClick={onClose}><X size={18} /></button>
         </div>
-        <p className="ccm-subtitle">{t('configure_columns_desc')}</p>
+        <p className="ccm-subtitle">{t(descriptionKey ?? 'configure_columns_desc')}</p>
 
         <div className="ccm-field-list">
           {fields.map(f => {
