@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings2, RefreshCw, Users, UserPlus, Pencil, Trash2 } from 'lucide-react';
+import { Settings2, RefreshCw, Users, UserPlus, UserMinus, Pencil, Trash2, X } from 'lucide-react';
 import { ConfigureColumnsModal } from './ConfigureColumnsModal';
 import { UserFormDrawer } from './UserFormDrawer';
+import { BulkGroupAssignmentModal } from './BulkGroupAssignmentModal';
 import './UsersPage.css';
 import api from '../../../api';
 
@@ -29,8 +30,12 @@ export const UsersPage = () => {
   const [loading, setLoading]         = useState(true);
   const [syncing, setSyncing]         = useState(false);
   const [showColumns, setShowColumns] = useState(false);
-  const [drawerUser, setDrawerUser]   = useState<User | null | undefined>(undefined); // undefined=closed, null=create, User=edit
+  const [drawerUser, setDrawerUser]   = useState<User | null | undefined>(undefined);
   const [deleting, setDeleting]       = useState<number | null>(null);
+
+  const [selectedUsers, setSelectedUsers]   = useState<Set<number>>(new Set());
+  const [bulkGroupMode, setBulkGroupMode]   = useState<'add' | 'remove' | null>(null);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   const visibleFields = fields.filter(f => f.isListVisible);
 
@@ -51,6 +56,13 @@ export const UsersPage = () => {
 
   useEffect(() => { fetchAll(); }, []);
 
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate =
+        selectedUsers.size > 0 && selectedUsers.size < users.length;
+    }
+  }, [selectedUsers, users]);
+
   const handleSyncMetadata = async () => {
     setSyncing(true);
     try { await api.post('/users/sync-metadata'); }
@@ -65,11 +77,33 @@ export const UsersPage = () => {
     try {
       await api.delete(`/users/${user.id}`);
       setUsers(prev => prev.filter(u => u.id !== user.id));
+      setSelectedUsers(prev => { const next = new Set(prev); next.delete(user.id); return next; });
     } catch (err) {
       console.error('Delete failed', err);
     } finally {
       setDeleting(null);
     }
+  };
+
+  const toggleUser = (userId: number) => {
+    setSelectedUsers(prev => {
+      const next = new Set(prev);
+      next.has(userId) ? next.delete(userId) : next.add(userId);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    setSelectedUsers(
+      selectedUsers.size === users.length ? new Set() : new Set(users.map(u => u.id))
+    );
+  };
+
+  const handleBulkGroupConfirm = async (groupIds: number[]) => {
+    const endpoint = bulkGroupMode === 'add' ? '/groups/bulk-add' : '/groups/bulk-remove';
+    await api.post(endpoint, { userIds: Array.from(selectedUsers), groupIds });
+    setBulkGroupMode(null);
+    setSelectedUsers(new Set());
   };
 
   const getMetaValue = (user: User, fieldKey: string): string => {
@@ -115,10 +149,30 @@ export const UsersPage = () => {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedUsers.size > 0 && (
+        <div className="up-bulk-bar">
+          <span className="up-bulk-bar-info">
+            {t('users_selected_count', { count: selectedUsers.size })}
+          </span>
+          <button className="up-bulk-btn up-bulk-btn-clear" onClick={() => setSelectedUsers(new Set())}>
+            <X size={13} /> {t('clear_selection_btn')}
+          </button>
+          <div className="up-bulk-divider" />
+          <button className="up-bulk-btn up-bulk-btn-add" onClick={() => setBulkGroupMode('add')}>
+            <UserPlus size={13} /> {t('bulk_add_to_groups_btn')}
+          </button>
+          <button className="up-bulk-btn up-bulk-btn-remove" onClick={() => setBulkGroupMode('remove')}>
+            <UserMinus size={13} /> {t('bulk_remove_from_groups_btn')}
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="up-table-wrap">
         <table className="up-table">
           <colgroup>
+            <col className="col-select" />
             <col className="col-num" />
             <col className="col-username" />
             <col className="col-display-name" />
@@ -128,6 +182,15 @@ export const UsersPage = () => {
           </colgroup>
           <thead>
             <tr>
+              <th className="col-select">
+                <input
+                  ref={selectAllRef}
+                  type="checkbox"
+                  style={{ width: 16, height: 16, accentColor: '#6366f1', cursor: 'pointer' }}
+                  checked={users.length > 0 && selectedUsers.size === users.length}
+                  onChange={toggleAll}
+                />
+              </th>
               <th className="col-num">{t('col_number')}</th>
               <th className="col-username">{t('col_username')}</th>
               <th className="col-display-name">{t('col_display_name')}</th>
@@ -140,7 +203,18 @@ export const UsersPage = () => {
           </thead>
           <tbody>
             {users.map((user, idx) => (
-              <tr key={user.id} className="up-row">
+              <tr
+                key={user.id}
+                className={`up-row${selectedUsers.has(user.id) ? ' up-row-selected' : ''}`}
+              >
+                <td className="col-select" style={{ textAlign: 'center' }}>
+                  <input
+                    type="checkbox"
+                    style={{ width: 16, height: 16, accentColor: '#6366f1', cursor: 'pointer' }}
+                    checked={selectedUsers.has(user.id)}
+                    onChange={() => toggleUser(user.id)}
+                  />
+                </td>
                 <td className="col-num">{idx + 1}</td>
                 <td className="col-username">
                   <div className="up-user-cell">
@@ -200,6 +274,15 @@ export const UsersPage = () => {
           fields={fields}
           onClose={() => setDrawerUser(undefined)}
           onSaved={() => { setDrawerUser(undefined); fetchAll(); }}
+        />
+      )}
+
+      {bulkGroupMode !== null && (
+        <BulkGroupAssignmentModal
+          mode={bulkGroupMode}
+          userCount={selectedUsers.size}
+          onClose={() => setBulkGroupMode(null)}
+          onConfirm={handleBulkGroupConfirm}
         />
       )}
     </div>

@@ -201,6 +201,54 @@
 @keyframes up-spin { to { transform: rotate(360deg); } }
 .icon-spin { animation: up-spin 1s linear infinite; }
 
+/* ── Checkbox select column ──────────────────────────────────── */
+.up-table .col-select { width: 44px; text-align: center; }
+
+/* ── Selected row ────────────────────────────────────────────── */
+.up-row-selected td { background: #f5f3ff !important; }
+
+/* ── Bulk action bar ─────────────────────────────────────────── */
+.up-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: #eef2ff;
+  border-bottom: 1px solid #c7d2fe;
+  flex-wrap: wrap;
+}
+.up-bulk-bar-info {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4338ca;
+  flex-shrink: 0;
+}
+.up-bulk-divider {
+  width: 1px;
+  height: 20px;
+  background: #c7d2fe;
+  flex-shrink: 0;
+}
+.up-bulk-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  transition: background .12s;
+  white-space: nowrap;
+}
+.up-bulk-btn-clear        { background: #fff;    border-color: #c7d2fe; color: #6366f1; }
+.up-bulk-btn-clear:hover  { background: #e0e7ff; }
+.up-bulk-btn-add          { background: #f0fdf4; border-color: #86efac; color: #16a34a; }
+.up-bulk-btn-add:hover    { background: #dcfce7; }
+.up-bulk-btn-remove       { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+.up-bulk-btn-remove:hover { background: #fee2e2; }
+
 /* ── Configure Columns Modal ─────────────────────────────────── */
 .ccm-overlay {
   position: fixed; inset: 0;

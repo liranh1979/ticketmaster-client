@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Eye, EyeOff, User, Lock, Tag } from 'lucide-react';
+import { X, Eye, EyeOff, User, Lock, Tag, Users } from 'lucide-react';
 import { FIELD_TYPES } from '../FieldDefinitions/fieldTypes';
 import api from '../../../api';
 import './UserFormDrawer.css';
@@ -56,9 +56,21 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
     password:    '',
   });
   const [metaValues, setMetaValues] = useState<Record<string, string>>({});
-  const [showPass, setShowPass]     = useState(false);
-  const [saving, setSaving]         = useState(false);
-  const [error, setError]           = useState('');
+  const [showPass, setShowPass]         = useState(false);
+  const [saving, setSaving]             = useState(false);
+  const [error, setError]               = useState('');
+  const [userGroups, setUserGroups]     = useState<{ id: number; display_name: string }[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      setGroupsLoading(true);
+      api.get(`/groups/by-user/${user.id}`)
+        .then(res => setUserGroups(res.data))
+        .catch(err => console.error('Failed to load user groups', err))
+        .finally(() => setGroupsLoading(false));
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (user) {
@@ -233,6 +245,36 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Groups membership (edit mode, read-only) */}
+          {isEdit && (
+            <div className="ufd-section">
+              <p className="ufd-section-label"><Users size={13} /> {t('user_groups_section')}</p>
+              {groupsLoading ? (
+                <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>...</div>
+              ) : userGroups.length === 0 ? (
+                <div style={{ color: '#94a3b8', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                  {t('no_groups_assigned')}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {userGroups.map(g => (
+                    <span key={g.id} style={{
+                      display: 'inline-block',
+                      padding: '3px 10px',
+                      background: '#ede9fe',
+                      color: '#5b21b6',
+                      borderRadius: 999,
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                    }}>
+                      {g.display_name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

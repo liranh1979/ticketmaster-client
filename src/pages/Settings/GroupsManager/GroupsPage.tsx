@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Settings2, RefreshCw, Users, UserPlus, Pencil, Trash2 } from 'lucide-react';
 import { ConfigureColumnsModal } from '../UsersManager/ConfigureColumnsModal';
 import { GroupFormDrawer } from './GroupFormDrawer';
+import { GroupMembersDrawer } from './GroupMembersDrawer';
 import '../UsersManager/UsersPage.css';
 import api from '../../../api';
 
@@ -17,18 +18,20 @@ interface FieldDef {
 interface Group {
   id: number;
   display_name: string;
+  member_count: number;
   metadata: Record<string, any> | null;
 }
 
 export const GroupsPage = () => {
   const { t } = useTranslation();
-  const [groups, setGroups]           = useState<Group[]>([]);
-  const [fields, setFields]           = useState<FieldDef[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [syncing, setSyncing]         = useState(false);
-  const [showColumns, setShowColumns] = useState(false);
-  const [drawerGroup, setDrawerGroup] = useState<Group | null | undefined>(undefined);
-  const [deleting, setDeleting]       = useState<number | null>(null);
+  const [groups, setGroups]             = useState<Group[]>([]);
+  const [fields, setFields]             = useState<FieldDef[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [syncing, setSyncing]           = useState(false);
+  const [showColumns, setShowColumns]   = useState(false);
+  const [drawerGroup, setDrawerGroup]   = useState<Group | null | undefined>(undefined);
+  const [membersGroup, setMembersGroup] = useState<Group | null | undefined>(undefined);
+  const [deleting, setDeleting]         = useState<number | null>(null);
 
   const visibleFields = fields.filter(f => f.isListVisible);
 
@@ -116,13 +119,17 @@ export const GroupsPage = () => {
           <colgroup>
             <col className="col-num" />
             <col className="col-display-name" />
+            <col style={{ width: '110px' }} />
             {visibleFields.map(f => <col key={f.id} className="col-field" />)}
-            <col className="col-actions" />
+            <col className="col-actions" style={{ width: '110px' }} />
           </colgroup>
           <thead>
             <tr>
               <th className="col-num">{t('col_number')}</th>
               <th className="col-display-name">{t('col_group_name')}</th>
+              <th style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.07em' }}>
+                {t('members_btn')}
+              </th>
               {visibleFields.map(f => (
                 <th key={f.id} className="col-field up-th-field">{f.fieldKey}</th>
               ))}
@@ -139,11 +146,24 @@ export const GroupsPage = () => {
                     <span className="up-display-name">{group.display_name}</span>
                   </div>
                 </td>
+                <td>
+                  <span className="up-badge up-badge-user" style={{ cursor: 'pointer' }} onClick={() => setMembersGroup(group)}>
+                    {t('members_count', { count: group.member_count ?? 0 })}
+                  </span>
+                </td>
                 {visibleFields.map(f => (
                   <td key={f.id} className="col-field">{getMetaValue(group, f.fieldKey)}</td>
                 ))}
                 <td className="col-actions">
                   <div className="up-row-actions">
+                    <button
+                      className="up-action-btn"
+                      style={{ background: '#f0fdf4', color: '#16a34a' }}
+                      title={t('members_btn')}
+                      onClick={() => setMembersGroup(group)}
+                    >
+                      <Users size={14} />
+                    </button>
                     <button
                       className="up-action-btn up-action-edit"
                       title={t('edit_group')}
@@ -185,6 +205,14 @@ export const GroupsPage = () => {
           fields={fields}
           onClose={() => setDrawerGroup(undefined)}
           onSaved={() => { setDrawerGroup(undefined); fetchAll(); }}
+        />
+      )}
+
+      {membersGroup !== undefined && (
+        <GroupMembersDrawer
+          group={membersGroup ?? null}
+          onClose={() => setMembersGroup(undefined)}
+          onChanged={fetchAll}
         />
       )}
     </div>
