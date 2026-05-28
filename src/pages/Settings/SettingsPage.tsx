@@ -7,10 +7,12 @@ import { AIManager } from './AIManager/AIManager';
 import { UsersPage } from './UsersManager/UsersPage';
 import { UsersGroupsHub } from './UsersGroupsHub';
 import { GroupsPage } from './GroupsManager/GroupsPage';
+import { hasPermission, hasAnyPermission, PERMISSIONS } from '../../utils/permissions';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
   onNavigate: (view: string) => void;
+  user?: any;
 }
 
 type ViewState =
@@ -24,7 +26,7 @@ type ViewState =
   | 'users'
   | 'groups';
 
-export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
+export const SettingsPage = ({ onNavigate, user }: SettingsPageProps) => {
   const { t } = useTranslation();
 
   const [currentView, setCurrentView] = useState<ViewState>('menu');
@@ -57,39 +59,53 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
 
   // 1. Initial State: Main Settings Grid
   if (currentView === 'menu') {
+    const canFields    = hasAnyPermission(user, PERMISSIONS.MANAGE_FIELDS, PERMISSIONS.MANAGE_LANGUAGES);
+    const canUsersGroups = hasAnyPermission(user, PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_GROUPS);
+    const canAi        = hasPermission(user, PERMISSIONS.MANAGE_AI);
+    const hasAnyAccess = canFields || canUsersGroups || canAi;
+
     return (
       <div className="settings-grid">
-        {/* Fields Manager Card */}
-        <div className="settings-card" onClick={handleMainMenuClick}>
-          <div className="settings-icon-box">
-            <img
-              src="/CustomFieldsManager.png"
-              alt="Custom Fields"
-              className="settings-icon-img"
-            />
+        {!hasAnyAccess && (
+          <div style={{ gridColumn: '1 / -1', color: '#94a3b8', textAlign: 'center', padding: '2rem', fontStyle: 'italic' }}>
+            {t('no_settings_access')}
           </div>
-          <span className="settings-text">
-            {t('settings_fields_manager')}
-          </span>
-        </div>
+        )}
 
-        {/* Users & Groups Manager Card */}
-        <div className="settings-card" onClick={() => setCurrentView('users-groups-hub')}>
-          <div className="settings-icon-box">
-            <div className="ai-icon-placeholder">👥</div>
+        {canFields && (
+          <div className="settings-card" onClick={handleMainMenuClick}>
+            <div className="settings-icon-box">
+              <img
+                src="/CustomFieldsManager.png"
+                alt="Custom Fields"
+                className="settings-icon-img"
+              />
+            </div>
+            <span className="settings-text">
+              {t('settings_fields_manager')}
+            </span>
           </div>
-          <span className="settings-text">{t('settings_users_groups_manager')}</span>
-        </div>
+        )}
 
-        {/* AI Agent Manager Card */}
-        <div className="settings-card" onClick={() => setCurrentView('ai-manager')}>
-          <div className="settings-icon-box">
-             <div className="ai-icon-placeholder">🤖</div>
+        {canUsersGroups && (
+          <div className="settings-card" onClick={() => setCurrentView('users-groups-hub')}>
+            <div className="settings-icon-box">
+              <div className="ai-icon-placeholder">👥</div>
+            </div>
+            <span className="settings-text">{t('settings_users_groups_manager')}</span>
           </div>
-          <span className="settings-text">
-            {t('settings_ai_manager')}
-          </span>
-        </div>
+        )}
+
+        {canAi && (
+          <div className="settings-card" onClick={() => setCurrentView('ai-manager')}>
+            <div className="settings-icon-box">
+               <div className="ai-icon-placeholder">🤖</div>
+            </div>
+            <span className="settings-text">
+              {t('settings_ai_manager')}
+            </span>
+          </div>
+        )}
       </div>
     );
   }
@@ -137,7 +153,7 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
         <button className="back-button" onClick={handleBackToMenu}>
           ← {t('back_btn')}
         </button>
-        <UsersGroupsHub onSelect={(entity) => setCurrentView(entity)} />
+        <UsersGroupsHub user={user} onSelect={(entity) => setCurrentView(entity)} />
       </div>
     );
   }
@@ -149,7 +165,7 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
         <button className="back-button" onClick={handleBackToHub}>
           ← {t('back_btn')}
         </button>
-        <UsersPage />
+        <UsersPage currentUser={user} />
       </div>
     );
   }
@@ -161,7 +177,7 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
         <button className="back-button" onClick={handleBackToHub}>
           ← {t('back_btn')}
         </button>
-        <GroupsPage />
+        <GroupsPage currentUser={user} />
       </div>
     );
   }

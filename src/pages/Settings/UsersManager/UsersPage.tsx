@@ -23,7 +23,11 @@ interface User {
   metadata: Record<string, any> | null;
 }
 
-export const UsersPage = () => {
+interface UsersPageProps {
+  currentUser?: any;
+}
+
+export const UsersPage = ({ currentUser }: UsersPageProps) => {
   const { t } = useTranslation();
   const [users, setUsers]             = useState<User[]>([]);
   const [fields, setFields]           = useState<FieldDef[]>([]);
@@ -272,6 +276,7 @@ export const UsersPage = () => {
         <UserFormDrawer
           user={drawerUser}
           fields={fields}
+          currentUser={currentUser}
           onClose={() => setDrawerUser(undefined)}
           onSaved={() => { setDrawerUser(undefined); fetchAll(); }}
         />

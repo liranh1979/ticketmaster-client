@@ -1,27 +1,33 @@
 import { useTranslation } from 'react-i18next';
+import { hasPermission, PERMISSIONS } from '../../utils/permissions';
 import '../Settings/FieldManager/FieldManager.css';
 
 interface UsersGroupsHubProps {
   onSelect: (entity: 'users' | 'groups') => void;
+  user?: any;
 }
 
-export const UsersGroupsHub = ({ onSelect }: UsersGroupsHubProps) => {
+export const UsersGroupsHub = ({ onSelect, user }: UsersGroupsHubProps) => {
   const { t } = useTranslation();
 
-  const cards = [
+  const allCards = [
     {
       entity: 'users' as const,
       label: t('users_entity'),
       icon: '👤',
       description: t('users_entity_desc'),
+      permission: PERMISSIONS.MANAGE_USERS,
     },
     {
       entity: 'groups' as const,
       label: t('groups_entity'),
       icon: '👥',
       description: t('groups_entity_desc'),
+      permission: PERMISSIONS.MANAGE_GROUPS,
     },
   ];
+
+  const cards = allCards.filter(c => hasPermission(user, c.permission));
 
   return (
     <div className="entity-selection-container">

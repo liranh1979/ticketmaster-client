@@ -22,7 +22,11 @@ interface Group {
   metadata: Record<string, any> | null;
 }
 
-export const GroupsPage = () => {
+interface GroupsPageProps {
+  currentUser?: any;
+}
+
+export const GroupsPage = ({ currentUser }: GroupsPageProps) => {
   const { t } = useTranslation();
   const [groups, setGroups]             = useState<Group[]>([]);
   const [fields, setFields]             = useState<FieldDef[]>([]);
@@ -203,6 +207,7 @@ export const GroupsPage = () => {
         <GroupFormDrawer
           group={drawerGroup}
           fields={fields}
+          currentUser={currentUser}
           onClose={() => setDrawerGroup(undefined)}
           onSaved={() => { setDrawerGroup(undefined); fetchAll(); }}
         />

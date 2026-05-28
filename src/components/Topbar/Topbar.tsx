@@ -2,25 +2,22 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import { AIStatusIndicator } from './AIStatusIndicator/AIStatusIndicator';
+import { isSuperAdmin } from '../../utils/permissions';
 import './Topbar.css';
 
 interface TopbarProps {
   user: any;
-  onSettingsClick: () => void; 
+  onSettingsClick: () => void;
 }
 
 export const Topbar = ({ user, onSettingsClick }: TopbarProps) => {
   const { t } = useTranslation();
 
-  // Logic: Check if the user is a super admin based on your DB column (TINYINT 1/0)
-  const isSuperAdmin = !!user?.is_super_admin;
-
-  // Debugging: This will run every time the 'user' prop changes
   useEffect(() => {
     if (user) {
-      console.log("Topbar detected user:", user.display_name, "| Admin Status:", isSuperAdmin);
+      console.log("Topbar detected user:", user.display_name, "| Super Admin:", isSuperAdmin(user));
     }
-  }, [user, isSuperAdmin]);
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -39,8 +36,7 @@ export const Topbar = ({ user, onSettingsClick }: TopbarProps) => {
       </div>
 
       <div className="topbar-right">
-        {/* The AI Status Indicator will only render if user exists AND is_super_admin is 1 */}
-        {isSuperAdmin && <AIStatusIndicator />}
+        {isSuperAdmin(user) && <AIStatusIndicator />}
 
         <span className="user-greeting">
           {t('welcome_hello')}, <strong>{user?.display_name || 'Guest'}</strong>

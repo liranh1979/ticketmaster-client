@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Tag } from 'lucide-react';
+import { X, Tag, ShieldCheck } from 'lucide-react';
 import { FIELD_TYPES } from '../FieldDefinitions/fieldTypes';
+import { isSuperAdmin } from '../../../utils/permissions';
 import api from '../../../api';
 import '../UsersManager/UserFormDrawer.css';
 
@@ -17,11 +18,19 @@ interface GroupData {
   id?: number;
   display_name?: string;
   metadata?: Record<string, any> | null;
+  permissions?: string[];
+}
+
+interface PermissionDef {
+  id: number;
+  permission_key: string;
+  display_order: number;
 }
 
 interface GroupFormDrawerProps {
   group: GroupData | null;
   fields: FieldDef[];
+  currentUser?: any;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -44,14 +53,17 @@ const inputTypeFor = (fieldType: string): string => {
   }
 };
 
-export const GroupFormDrawer = ({ group, fields, onClose, onSaved }: GroupFormDrawerProps) => {
+export const GroupFormDrawer = ({ group, fields, currentUser, onClose, onSaved }: GroupFormDrawerProps) => {
   const { t } = useTranslation();
   const isEdit = !!group?.id;
+  const canEditPermissions = isEdit && isSuperAdmin(currentUser);
 
-  const [displayName, setDisplayName] = useState('');
-  const [metaValues, setMetaValues]   = useState<Record<string, string>>({});
-  const [saving, setSaving]           = useState(false);
-  const [error, setError]             = useState('');
+  const [displayName, setDisplayName]       = useState('');
+  const [metaValues, setMetaValues]         = useState<Record<string, string>>({});
+  const [saving, setSaving]                 = useState(false);
+  const [error, setError]                   = useState('');
+  const [allPermissions, setAllPermissions] = useState<PermissionDef[]>([]);
+  const [permDrafts, setPermDrafts]         = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (group) {
@@ -59,8 +71,17 @@ export const GroupFormDrawer = ({ group, fields, onClose, onSaved }: GroupFormDr
       const mv: Record<string, string> = {};
       fields.forEach(f => { mv[f.fieldKey] = getMetaValue(group, f.fieldKey); });
       setMetaValues(mv);
+      setPermDrafts(new Set(group.permissions ?? []));
     }
   }, [group]);
+
+  useEffect(() => {
+    if (canEditPermissions) {
+      api.get('/permissions')
+        .then(res => setAllPermissions(res.data))
+        .catch(err => console.error('Failed to load permissions', err));
+    }
+  }, [canEditPermissions]);
 
   const handleSave = async () => {
     setError('');
@@ -78,7 +99,9 @@ export const GroupFormDrawer = ({ group, fields, onClose, onSaved }: GroupFormDr
             value: metaValues[f.fieldKey] ?? '',
           };
         });
-        await api.patch(`/groups/${group!.id}`, { displayName: displayName.trim(), metadata });
+        const body: any = { displayName: displayName.trim(), metadata };
+        if (canEditPermissions) body.permissions = Array.from(permDrafts);
+        await api.patch(`/groups/${group!.id}`, body);
       } else {
         await api.post('/groups', { displayName: displayName.trim() });
       }
@@ -172,6 +195,32 @@ export const GroupFormDrawer = ({ group, fields, onClose, onSaved }: GroupFormDr
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Permissions section (super admin editing a group) */}
+          {canEditPermissions && allPermissions.length > 0 && (
+            <div className="ufd-section">
+              <p className="ufd-section-label"><ShieldCheck size={13} /> {t('permissions_section')}</p>
+              {allPermissions.map(p => (
+                <label key={p.permission_key} className="ufd-checkbox-wrap" style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="checkbox"
+                    checked={permDrafts.has(p.permission_key)}
+                    onChange={e => {
+                      const next = new Set(permDrafts);
+                      e.target.checked ? next.add(p.permission_key) : next.delete(p.permission_key);
+                      setPermDrafts(next);
+                    }}
+                  />
+                  <span style={{ fontSize: '0.85rem', color: '#334155' }}>
+                    {t(`permission_${p.permission_key.toLowerCase()}_name`, { defaultValue: p.permission_key })}
+                  </span>
+                </label>
+              ))}
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '8px', fontStyle: 'italic' }}>
+                {t('permissions_note')}
+              </p>
             </div>
           )}
 

@@ -9,6 +9,8 @@ interface HomeProps {
     display_name: string;
     red_id: number;
     user_name: string;
+    is_super_admin?: boolean;
+    effective_permissions?: string[];
   } | null;
 }
 
@@ -33,7 +35,7 @@ export const Home = ({ user }: HomeProps) => {
         )}
 
         {currentView === 'settings' && (
-          <SettingsPage onNavigate={(view) => setCurrentView(view as any)} />
+          <SettingsPage user={user} onNavigate={(view) => setCurrentView(view as any)} />
         )}
       </main>
     </div>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Eye, EyeOff, User, Lock, Tag, Users } from 'lucide-react';
+import { X, Eye, EyeOff, User, Lock, Tag, Users, ShieldCheck } from 'lucide-react';
 import { FIELD_TYPES } from '../FieldDefinitions/fieldTypes';
+import { isSuperAdmin } from '../../../utils/permissions';
 import api from '../../../api';
 import './UserFormDrawer.css';
 
@@ -19,11 +20,19 @@ interface UserData {
   display_name?: string;
   is_super_admin?: boolean;
   metadata?: Record<string, any> | null;
+  personal_permissions?: string[];
+}
+
+interface PermissionDef {
+  id: number;
+  permission_key: string;
+  display_order: number;
 }
 
 interface UserFormDrawerProps {
   user: UserData | null;   // null = create mode
   fields: FieldDef[];
+  currentUser?: any;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -46,21 +55,24 @@ const inputTypeFor = (fieldType: string): string => {
   }
 };
 
-export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawerProps) => {
+export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: UserFormDrawerProps) => {
   const { t } = useTranslation();
   const isEdit = !!user?.id;
+  const canEditPermissions = isEdit && isSuperAdmin(currentUser) && !user?.is_super_admin;
 
   const [form, setForm] = useState({
     username:    '',
     displayName: '',
     password:    '',
   });
-  const [metaValues, setMetaValues] = useState<Record<string, string>>({});
-  const [showPass, setShowPass]         = useState(false);
-  const [saving, setSaving]             = useState(false);
-  const [error, setError]               = useState('');
-  const [userGroups, setUserGroups]     = useState<{ id: number; display_name: string }[]>([]);
-  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [metaValues, setMetaValues]         = useState<Record<string, string>>({});
+  const [showPass, setShowPass]             = useState(false);
+  const [saving, setSaving]                 = useState(false);
+  const [error, setError]                   = useState('');
+  const [userGroups, setUserGroups]         = useState<{ id: number; display_name: string }[]>([]);
+  const [groupsLoading, setGroupsLoading]   = useState(false);
+  const [allPermissions, setAllPermissions] = useState<PermissionDef[]>([]);
+  const [permDrafts, setPermDrafts]         = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (user?.id) {
@@ -73,6 +85,14 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
   }, [user?.id]);
 
   useEffect(() => {
+    if (canEditPermissions) {
+      api.get('/permissions')
+        .then(res => setAllPermissions(res.data))
+        .catch(err => console.error('Failed to load permissions', err));
+    }
+  }, [canEditPermissions]);
+
+  useEffect(() => {
     if (user) {
       setForm({
         username:    user.username ?? '',
@@ -82,6 +102,7 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
       const mv: Record<string, string> = {};
       fields.forEach(f => { mv[f.fieldKey] = getMetaValue(user, f.fieldKey); });
       setMetaValues(mv);
+      setPermDrafts(new Set(user.personal_permissions ?? []));
     }
   }, [user]);
 
@@ -107,6 +128,7 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
       if (isEdit) {
         const body: any = { displayName: form.displayName, metadata };
         if (form.password.trim()) body.password = form.password;
+        if (canEditPermissions) body.permissions = Array.from(permDrafts);
         await api.patch(`/users/${user!.id}`, body);
       } else {
         await api.post('/users', {
@@ -275,6 +297,33 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Permissions section (super admin editing a non-super-admin) */}
+          {canEditPermissions && allPermissions.length > 0 && (
+            <div className="ufd-section">
+              <p className="ufd-section-label"><ShieldCheck size={13} /> {t('permissions_section')}</p>
+              <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '8px' }}>{t('personal_permissions_label')}</p>
+              {allPermissions.map(p => (
+                <label key={p.permission_key} className="ufd-checkbox-wrap" style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="checkbox"
+                    checked={permDrafts.has(p.permission_key)}
+                    onChange={e => {
+                      const next = new Set(permDrafts);
+                      e.target.checked ? next.add(p.permission_key) : next.delete(p.permission_key);
+                      setPermDrafts(next);
+                    }}
+                  />
+                  <span style={{ fontSize: '0.85rem', color: '#334155' }}>
+                    {t(`permission_${p.permission_key.toLowerCase()}_name`, { defaultValue: p.permission_key })}
+                  </span>
+                </label>
+              ))}
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '8px', fontStyle: 'italic' }}>
+                {t('permissions_note')}
+              </p>
             </div>
           )}
 
