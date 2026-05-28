@@ -9,13 +9,14 @@ interface FieldTranslationGridProps {
   targetLang: string;
   fieldDefs: FieldDef[];
   refreshKey: number;
+  translationType: string;
   onDirtyChange: (isDirty: boolean) => void;
 }
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
 export const FieldTranslationGrid = ({
-  targetLang, fieldDefs, refreshKey, onDirtyChange,
+  targetLang, fieldDefs, refreshKey, translationType, onDirtyChange,
 }: FieldTranslationGridProps) => {
   const { t, i18n } = useTranslation();
   const [translations, setTranslations]   = useState<Record<string, string>>({});
@@ -30,8 +31,8 @@ export const FieldTranslationGrid = ({
     const load = async () => {
       try {
         const [transRes, enRes] = await Promise.all([
-          api.get(`/field-definitions/translations/${targetLang}`),
-          isEnglish ? Promise.resolve(null) : api.get('/field-definitions/translations/en'),
+          api.get(`/field-definitions/translations/${targetLang}`, { params: { translationType } }),
+          isEnglish ? Promise.resolve(null) : api.get('/field-definitions/translations/en', { params: { translationType } }),
         ]);
         setTranslations(transRes.data);
         setEnglishSource(enRes ? enRes.data : transRes.data);
@@ -64,7 +65,7 @@ export const FieldTranslationGrid = ({
   const handleSave = async () => {
     setSaveStatus('saving');
     try {
-      await api.post('/field-definitions/translations/update', { lang: targetLang, translations });
+      await api.post('/field-definitions/translations/update', { lang: targetLang, translations, type: translationType });
       i18n.addResourceBundle(targetLang, 'translation', translations, true, true);
       setIsDirty(false);
       onDirtyChange(false);
@@ -77,7 +78,7 @@ export const FieldTranslationGrid = ({
   };
 
   const handleBulkTranslate = async () => {
-    if (!window.confirm(`Auto-translate all fields to ${targetLang.toUpperCase()}?`)) return;
+    if (!window.confirm(t('confirm_bulk_translate', { lang: targetLang.toUpperCase() }))) return;
     setTranslating(true);
     try {
       const res = await api.post('/ai/translate-bulk', { translations: englishSource, targetLanguage: targetLang });
@@ -108,7 +109,7 @@ export const FieldTranslationGrid = ({
             {t('editing_language')}: <span className="fd-lang-badge">{targetLang.toUpperCase()}</span>
             {isDirty && <span className="fd-unsaved-dot" title="Unsaved changes" />}
           </h3>
-          <p className="fd-grid-subtitle">{fieldDefs.length} field{fieldDefs.length !== 1 ? 's' : ''}</p>
+          <p className="fd-grid-subtitle">{t('fields_count', { count: fieldDefs.length })}</p>
         </div>
         {!isEnglish && (
           <button className="fd-ai-btn" onClick={handleBulkTranslate} disabled={translating}>
@@ -162,16 +163,16 @@ export const FieldTranslationGrid = ({
       <div className="fd-grid-actions">
         {saveStatus === 'success' && (
           <span className="fd-status fd-status-success">
-            <CheckCircle size={16} /> Saved successfully
+            <CheckCircle size={16} /> {t('saved_successfully')}
           </span>
         )}
         {saveStatus === 'error' && (
           <span className="fd-status fd-status-error">
-            <XCircle size={16} /> Save failed — please try again
+            <XCircle size={16} /> {t('save_failed')}
           </span>
         )}
         {isDirty && saveStatus === 'idle' && (
-          <span className="fd-status fd-status-warning">Unsaved changes</span>
+          <span className="fd-status fd-status-warning">{t('unsaved_changes')}</span>
         )}
         <button
           className={`fd-save-btn ${isDirty ? 'fd-save-btn-active' : ''}`}

@@ -8,7 +8,11 @@ import api from '../../../api';
 interface Language { code: string; name: string; }
 interface FieldDef { id: number; fieldKey: string; fieldType: string; }
 
-export const FieldDefinitionsManager = () => {
+interface FieldDefinitionsManagerProps {
+  entityType?: 'user' | 'group';
+}
+
+export const FieldDefinitionsManager = ({ entityType = 'user' }: FieldDefinitionsManagerProps) => {
   const { t } = useTranslation();
   const [languages, setLanguages] = useState<Language[]>([]);
   const [fieldDefs, setFieldDefs] = useState<FieldDef[]>([]);
@@ -17,11 +21,13 @@ export const FieldDefinitionsManager = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
 
+  const translationType = `${entityType}_fields`;
+
   const fetchAll = async (bumpRefresh = false) => {
     try {
       const [langsRes, fieldsRes] = await Promise.all([
         api.get('/languages'),
-        api.get('/field-definitions'),
+        api.get('/field-definitions', { params: { entityType } }),
       ]);
       setLanguages(langsRes.data);
       setFieldDefs(fieldsRes.data);
@@ -39,7 +45,7 @@ export const FieldDefinitionsManager = () => {
     return (
       <div className="fd-loading">
         <div className="fd-spinner" />
-        <span>Loading Custom Fields...</span>
+        <span>{t('loading_custom_fields')}</span>
       </div>
     );
   }
@@ -49,16 +55,18 @@ export const FieldDefinitionsManager = () => {
       {/* Page Header */}
       <div className="fd-page-header">
         <div className="fd-page-header-content">
-          <h2 className="fd-page-title">{t('manage_custom_fields')}</h2>
+          <h2 className="fd-page-title">
+            {entityType === 'group' ? t('manage_group_custom_fields') : t('manage_custom_fields')}
+          </h2>
           <p className="fd-page-subtitle">
             {t('editing_language')}: <strong>{selectedLang.toUpperCase()}</strong>
             {' · '}
-            {fieldDefs.length} field{fieldDefs.length !== 1 ? 's' : ''} defined
+            {t('fields_count_defined', { count: fieldDefs.length })}
           </p>
         </div>
         <div className="fd-header-badge">
           <span className="fd-header-badge-dot" />
-          Custom Fields
+          {entityType === 'group' ? t('field_group_groups') : t('field_group_custom')}
         </div>
       </div>
 
@@ -68,8 +76,9 @@ export const FieldDefinitionsManager = () => {
           <FieldDefinitionsSidebar
             languages={languages}
             selectedLang={selectedLang}
+            entityType={entityType}
             onSelect={(code) => {
-                if (isDirty && !window.confirm('You have unsaved changes. Switch language and discard them?')) return;
+                if (isDirty && !window.confirm(t('confirm_discard_changes'))) return;
                 setSelectedLang(code);
               }}
             onFieldAdded={() => fetchAll(true)}
@@ -81,6 +90,7 @@ export const FieldDefinitionsManager = () => {
             targetLang={selectedLang}
             fieldDefs={fieldDefs}
             refreshKey={refreshKey}
+            translationType={translationType}
             onDirtyChange={setIsDirty}
           />
         </main>

@@ -7,12 +7,13 @@ interface Language { code: string; name: string; }
 interface FieldDefinitionsSidebarProps {
   languages: Language[];
   selectedLang: string;
+  entityType: string;
   onSelect: (code: string) => void;
   onFieldAdded: () => void;
 }
 
 export const FieldDefinitionsSidebar = ({
-  languages, selectedLang, onSelect, onFieldAdded,
+  languages, selectedLang, entityType, onSelect, onFieldAdded,
 }: FieldDefinitionsSidebarProps) => {
   const { t } = useTranslation();
   const [form, setForm] = useState({ fieldKey: '', label: '', fieldType: 'text' });
@@ -24,7 +25,7 @@ export const FieldDefinitionsSidebar = ({
     setAdding(true);
     try {
       await api.post('/field-definitions', {
-        entityType: 'user',
+        entityType,
         fieldKey: form.fieldKey.trim().toLowerCase().replace(/\s+/g, '_'),
         fieldType: form.fieldType,
         label: form.label.trim(),
@@ -41,7 +42,7 @@ export const FieldDefinitionsSidebar = ({
   return (
     <div className="fd-sidebar">
       <div className="fd-sidebar-section">
-        <p className="fd-sidebar-label">Languages</p>
+        <p className="fd-sidebar-label">{t('languages_label')}</p>
         <ul className="fd-lang-list">
           {languages.map(l => (
             <li

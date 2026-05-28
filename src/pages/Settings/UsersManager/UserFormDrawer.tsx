@@ -74,9 +74,9 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
 
   const handleSave = async () => {
     setError('');
-    if (!isEdit && !form.username.trim()) { setError('Username is required'); return; }
-    if (!isEdit && !form.password.trim()) { setError('Password is required'); return; }
-    if (!form.displayName.trim())         { setError('Display name is required'); return; }
+    if (!isEdit && !form.username.trim()) { setError(t('error_username_required')); return; }
+    if (!isEdit && !form.password.trim()) { setError(t('error_password_required')); return; }
+    if (!form.displayName.trim())         { setError(t('error_display_name_required')); return; }
 
     setSaving(true);
     try {
@@ -104,7 +104,7 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
       }
       onSaved();
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? 'An error occurred');
+      setError(e?.response?.data?.message ?? t('error_occurred'));
     } finally {
       setSaving(false);
     }
@@ -121,7 +121,7 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
               <User size={18} />
             </div>
             <div>
-              <h3 className="ufd-title">{isEdit ? 'Edit User' : 'New User'}</h3>
+              <h3 className="ufd-title">{isEdit ? t('edit_user') : t('new_user')}</h3>
               {isEdit && <p className="ufd-subtitle">@{user?.username}</p>}
             </div>
           </div>
@@ -133,14 +133,14 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
 
           {/* Basic info section */}
           <div className="ufd-section">
-            <p className="ufd-section-label"><User size={13} /> Basic Info</p>
+            <p className="ufd-section-label"><User size={13} /> {t('basic_info')}</p>
 
             {!isEdit && (
               <div className="ufd-field">
-                <label className="ufd-label">Username</label>
+                <label className="ufd-label">{t('col_username')}</label>
                 <input
                   className="ufd-input"
-                  placeholder="e.g. jdoe"
+                  placeholder={t('username_placeholder')}
                   value={form.username}
                   onChange={e => setForm({ ...form, username: e.target.value.toLowerCase() })}
                   autoComplete="off"
@@ -149,10 +149,10 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
             )}
 
             <div className="ufd-field">
-              <label className="ufd-label">Display Name</label>
+              <label className="ufd-label">{t('col_display_name')}</label>
               <input
                 className="ufd-input"
-                placeholder="e.g. John Doe"
+                placeholder={t('display_name_placeholder')}
                 value={form.displayName}
                 onChange={e => setForm({ ...form, displayName: e.target.value })}
               />
@@ -161,14 +161,14 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
             <div className="ufd-field">
               <label className="ufd-label">
                 <Lock size={12} />
-                {isEdit ? 'New Password' : 'Password'}
-                {isEdit && <span className="ufd-optional">leave blank to keep current</span>}
+                {isEdit ? t('new_password') : t('login_password')}
+                {isEdit && <span className="ufd-optional">{t('password_optional_note')}</span>}
               </label>
               <div className="ufd-pass-wrap">
                 <input
                   className="ufd-input"
                   type={showPass ? 'text' : 'password'}
-                  placeholder={isEdit ? '••••••••' : 'Enter password'}
+                  placeholder={isEdit ? '••••••••' : t('password_placeholder')}
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                   autoComplete="new-password"
@@ -183,7 +183,7 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
           {/* Custom fields section */}
           {fields.length > 0 && (
             <div className="ufd-section">
-              <p className="ufd-section-label"><Tag size={13} /> Custom Fields</p>
+              <p className="ufd-section-label"><Tag size={13} /> {t('custom_fields_section')}</p>
               {fields.map(f => {
                 const ft = FIELD_TYPES.find(t => t.value === f.fieldType) ?? FIELD_TYPES[0];
                 return (
@@ -201,7 +201,7 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
                           checked={metaValues[f.fieldKey] === 'true'}
                           onChange={e => setMetaValues({ ...metaValues, [f.fieldKey]: String(e.target.checked) })}
                         />
-                        <span>{metaValues[f.fieldKey] === 'true' ? 'Yes' : 'No'}</span>
+                        <span>{metaValues[f.fieldKey] === 'true' ? t('yes') : t('no')}</span>
                       </label>
                     ) : f.fieldType === 'rich-text' ? (
                       <textarea
@@ -229,9 +229,9 @@ export const UserFormDrawer = ({ user, fields, onClose, onSaved }: UserFormDrawe
 
         {/* Footer */}
         <div className="ufd-footer">
-          <button className="ufd-btn ufd-btn-cancel" onClick={onClose}>Cancel</button>
+          <button className="ufd-btn ufd-btn-cancel" onClick={onClose}>{t('cancel_btn')}</button>
           <button className="ufd-btn ufd-btn-save" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create User'}
+            {saving ? t('saving') : isEdit ? t('save_btn') : t('create_user')}
           </button>
         </div>
 

@@ -26,7 +26,7 @@ export const SystemFieldManager = () => {
     }, []);
 
     if (loading) {
-        return <div className="loading-spinner">Loading System Fields...</div>;
+        return <div className="loading-spinner">{t('loading_system_fields')}</div>;
     }
 
     return (

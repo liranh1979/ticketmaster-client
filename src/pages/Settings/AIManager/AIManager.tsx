@@ -42,19 +42,19 @@ export const AIManager = () => {
   const handleActivate = async (id: number) => {
     try {
       await api.patch(`/ai/settings/${id}/activate`);
-      fetchSettings(); 
+      fetchSettings();
     } catch (err) {
-      alert("Error activating provider");
+      alert(t('error_activating_provider'));
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm(t('confirm_delete') || 'Are you sure?')) return;
+    if (!window.confirm(t('confirm_delete'))) return;
     try {
       await api.delete(`/ai/settings/${id}`);
       fetchSettings();
     } catch (err) {
-      alert("Error deleting provider");
+      alert(t('error_deleting_provider'));
     }
   };
 
@@ -65,21 +65,21 @@ export const AIManager = () => {
       setFormData({ provider_name: '', api_key: '', base_url: '', model_name: '' });
       fetchSettings();
     } catch (err) {
-      alert("Error adding AI provider");
+      alert(t('error_adding_provider'));
     }
   };
 
   const handleTest = async (id: number) => {
-    setTestResults(prev => ({ ...prev, [id]: 'Testing...' }));
+    setTestResults(prev => ({ ...prev, [id]: t('ai_testing') }));
     try {
       const res = await api.post(`/ai/settings/${id}/test`);
       if (res.data.success) {
-        setTestResults(prev => ({ ...prev, [id]: '✅ OK' }));
+        setTestResults(prev => ({ ...prev, [id]: `✅ ${t('ai_test_success')}` }));
       } else {
-        setTestResults(prev => ({ ...prev, [id]: '❌ Error' }));
+        setTestResults(prev => ({ ...prev, [id]: `❌ ${t('ai_test_error')}` }));
       }
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Failed';
+      const errorMsg = err.response?.data?.message || t('ai_test_error');
       setTestResults(prev => ({ ...prev, [id]: `❌ ${errorMsg}` }));
     }
     
@@ -93,7 +93,7 @@ export const AIManager = () => {
     }, 5000);
   };
 
-  if (loading) return <div className="p-4">Loading AI Manager...</div>;
+  if (loading) return <div className="p-4">{t('loading_ai_manager')}</div>;
 
   return (
     <div className="ai-manager-container">
@@ -128,12 +128,12 @@ export const AIManager = () => {
                 </td>
                 <td>
                   <div className="action-cell">
-                    <button 
-                      className="test-btn" 
+                    <button
+                      className="test-btn"
                       onClick={() => handleTest(s.id)}
-                      disabled={testResults[s.id] === 'Testing...'}
+                      disabled={testResults[s.id] === t('ai_testing')}
                     >
-                      {testResults[s.id] || '🧪 Test'}
+                      {testResults[s.id] || `🧪 ${t('ai_test_btn')}`}
                     </button>
                     
                     <button 
@@ -154,28 +154,28 @@ export const AIManager = () => {
         <h3>{t('add_new_provider')}</h3>
         <form onSubmit={handleSubmit} className="ai-form">
           <div className="form-row">
-            <input 
-              placeholder="Provider (e.g. OpenAI)" 
+            <input
+              placeholder={t('provider_placeholder')}
               value={formData.provider_name}
               onChange={e => setFormData({...formData, provider_name: e.target.value})}
               required
             />
-            <input 
-              placeholder="Model (e.g. gpt-4o)" 
+            <input
+              placeholder={t('model_placeholder')}
               value={formData.model_name}
               onChange={e => setFormData({...formData, model_name: e.target.value})}
               required
             />
           </div>
-          <input 
-            placeholder="API Key" 
+          <input
+            placeholder={t('api_key_placeholder')}
             type="password"
             value={formData.api_key}
             onChange={e => setFormData({...formData, api_key: e.target.value})}
             required
           />
-          <input 
-            placeholder="Base URL (Optional)" 
+          <input
+            placeholder={t('base_url_placeholder')}
             value={formData.base_url}
             onChange={e => setFormData({...formData, base_url: e.target.value})}
           />

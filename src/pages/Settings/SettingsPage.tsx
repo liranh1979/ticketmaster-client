@@ -14,8 +14,7 @@ interface SettingsPageProps {
 export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
   const { t } = useTranslation();
   
-  // Added 'ai-manager' to the allowed view types
-  const [currentView, setCurrentView] = useState<'menu' | 'selection' | 'system-fields' | 'custom-fields' | 'ai-manager' | 'users'>('menu');
+  const [currentView, setCurrentView] = useState<'menu' | 'selection' | 'system-fields' | 'custom-fields' | 'group-custom-fields' | 'ai-manager' | 'users'>('menu');
 
   const handleMainMenuClick = () => {
     setCurrentView('selection');
@@ -24,6 +23,8 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
   const handleEntitySelection = (entity: string, category: string) => {
     if (category === 'system') {
       setCurrentView('system-fields');
+    } else if (entity === 'group') {
+      setCurrentView('group-custom-fields');
     } else {
       setCurrentView('custom-fields');
     }
@@ -125,13 +126,25 @@ export const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     );
   }
 
-  // 6. Custom Fields View
+  // 6. Group Custom Fields View
+  if (currentView === 'group-custom-fields') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToSelection}>
+          ← {t('back_btn')}
+        </button>
+        <FieldDefinitionsManager entityType="group" />
+      </div>
+    );
+  }
+
+  // 7. User Custom Fields View
   return (
     <div className="view-container">
       <button className="back-button" onClick={handleBackToSelection}>
         ← {t('back_btn')}
       </button>
-      <FieldDefinitionsManager />
+      <FieldDefinitionsManager entityType="user" />
     </div>
   );
 };

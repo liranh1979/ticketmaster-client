@@ -2,43 +2,50 @@ import { useTranslation } from 'react-i18next';
 import './FieldManager.css';
 
 interface FieldEntityListProps {
-  // We pass 'user' as the entity and either 'system' or 'custom' as the category
   onSelectEntity: (entity: string, category: 'system' | 'custom') => void;
 }
 
 export const FieldEntityList = ({ onSelectEntity }: FieldEntityListProps) => {
   const { t } = useTranslation();
 
-  // These are the two cards shown in your screenshot
-  const categories = [
-    { 
-      key: 'system', 
-      label: t('field_group_system'), 
-      icon: '⚙️', 
-      description: t('core_platform_fields') 
+  const cards = [
+    {
+      entity: 'user',
+      category: 'system' as const,
+      label: t('field_group_system'),
+      icon: '⚙️',
+      description: t('core_platform_fields'),
     },
-    { 
-      key: 'custom', 
-      label: t('field_group_custom'), 
-      icon: '🛠️', 
-      description: t('user_defined_fields') 
-    }
+    {
+      entity: 'user',
+      category: 'custom' as const,
+      label: t('field_group_custom'),
+      icon: '🛠️',
+      description: t('user_defined_fields'),
+    },
+    {
+      entity: 'group',
+      category: 'custom' as const,
+      label: t('field_group_groups'),
+      icon: '👥',
+      description: t('group_defined_fields'),
+    },
   ];
 
   return (
     <div className="entity-selection-container">
       <h3 className="entity-title">{t('select_entity_to_manage')}</h3>
       <div className="entity-grid">
-        {categories.map((cat) => (
-          <div 
-            key={cat.key} 
-            className={`entity-card category-${cat.key}`} 
-            onClick={() => onSelectEntity('user', cat.key as 'system' | 'custom')}
+        {cards.map((card) => (
+          <div
+            key={`${card.entity}-${card.category}`}
+            className={`entity-card category-${card.category}`}
+            onClick={() => onSelectEntity(card.entity, card.category)}
           >
-            <div className="entity-icon-wrapper">{cat.icon}</div>
+            <div className="entity-icon-wrapper">{card.icon}</div>
             <div className="entity-info">
-                <span className="entity-text">{cat.label}</span>
-                <small className="entity-desc">{cat.description}</small>
+              <span className="entity-text">{card.label}</span>
+              <small className="entity-desc">{card.description}</small>
             </div>
           </div>
         ))}
