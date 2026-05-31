@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FIELD_TYPES } from './fieldTypes';
 import api from '../../../api';
+import type { MissingField } from '../LdapManager/LdapWizard';
 
 interface Language { code: string; name: string; }
 interface FieldDefinitionsSidebarProps {
@@ -10,10 +11,11 @@ interface FieldDefinitionsSidebarProps {
   entityType: string;
   onSelect: (code: string) => void;
   onFieldAdded: () => void;
+  suggestedFields?: MissingField[];
 }
 
 export const FieldDefinitionsSidebar = ({
-  languages, selectedLang, entityType, onSelect, onFieldAdded,
+  languages, selectedLang, entityType, onSelect, onFieldAdded, suggestedFields,
 }: FieldDefinitionsSidebarProps) => {
   const { t } = useTranslation();
   const [form, setForm] = useState({ fieldKey: '', label: '', fieldType: 'text' });
@@ -77,6 +79,31 @@ export const FieldDefinitionsSidebar = ({
           ))}
         </ul>
       </div>
+
+      {isEnglish && suggestedFields && suggestedFields.length > 0 && (
+        <div className="fd-sidebar-section fd-ldap-suggestions-section">
+          <p className="fd-sidebar-label">{t('ldap_suggested_by_section')}</p>
+          {suggestedFields.map((sf, i) => (
+            <div key={i} className="fd-ldap-suggestion-item">
+              <div className="fd-ldap-suggestion-info">
+                <span className="fd-ldap-suggestion-label">{sf.suggestedLabel}</span>
+                <span className="fd-ldap-suggestion-type">{sf.suggestedFieldType}</span>
+              </div>
+              <div className="fd-ldap-suggestion-key">{sf.suggestedFieldKey}</div>
+              <button
+                className="fd-ldap-suggestion-fill-btn"
+                onClick={() => setForm({
+                  fieldKey: sf.suggestedFieldKey,
+                  label: sf.suggestedLabel,
+                  fieldType: sf.suggestedFieldType,
+                })}
+              >
+                {t('ldap_use_suggestion_btn')}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {isEnglish && (
         <div className="fd-sidebar-section fd-add-field-section">

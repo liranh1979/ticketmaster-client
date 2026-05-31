@@ -4,15 +4,18 @@ import { FieldDefinitionsSidebar } from './FieldDefinitionsSidebar';
 import { FieldTranslationGrid } from './FieldTranslationGrid';
 import './FieldDefinitionsManager.css';
 import api from '../../../api';
+import type { MissingField } from '../LdapManager/LdapWizard';
 
 interface Language { code: string; name: string; }
 interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; }
 
 interface FieldDefinitionsManagerProps {
   entityType?: 'user' | 'group';
+  returnContext?: { ldapConfigId: number; suggestedFields: MissingField[] };
+  onReturnFromDetour?: () => void;
 }
 
-export const FieldDefinitionsManager = ({ entityType = 'user' }: FieldDefinitionsManagerProps) => {
+export const FieldDefinitionsManager = ({ entityType = 'user', returnContext, onReturnFromDetour }: FieldDefinitionsManagerProps) => {
   const { t } = useTranslation();
   const [languages, setLanguages] = useState<Language[]>([]);
   const [fieldDefs, setFieldDefs] = useState<FieldDef[]>([]);
@@ -52,6 +55,19 @@ export const FieldDefinitionsManager = ({ entityType = 'user' }: FieldDefinition
 
   return (
     <div className="fd-page">
+      {/* LDAP Detour Banner */}
+      {returnContext && (
+        <div className="fd-ldap-detour-banner">
+          <div>
+            <strong>{t('ldap_detour_banner_title')}</strong>
+            <p>{t('ldap_detour_banner_desc')}</p>
+          </div>
+          <button className="fd-ldap-return-btn" onClick={onReturnFromDetour}>
+            {t('ldap_return_to_wizard_btn')}
+          </button>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="fd-page-header">
         <div className="fd-page-header-content">
@@ -77,6 +93,7 @@ export const FieldDefinitionsManager = ({ entityType = 'user' }: FieldDefinition
             languages={languages}
             selectedLang={selectedLang}
             entityType={entityType}
+            suggestedFields={returnContext?.suggestedFields}
             onSelect={(code) => {
                 if (isDirty && !window.confirm(t('confirm_discard_changes'))) return;
                 setSelectedLang(code);

@@ -3,7 +3,7 @@ import { hasPermission, PERMISSIONS } from '../../utils/permissions';
 import '../Settings/FieldManager/FieldManager.css';
 
 interface UsersGroupsHubProps {
-  onSelect: (entity: 'users' | 'groups') => void;
+  onSelect: (entity: 'users' | 'groups' | 'ldap') => void;
   user?: any;
 }
 
@@ -24,6 +24,13 @@ export const UsersGroupsHub = ({ onSelect, user }: UsersGroupsHubProps) => {
       icon: '👥',
       description: t('groups_entity_desc'),
       permission: PERMISSIONS.MANAGE_GROUPS,
+    },
+    {
+      entity: 'ldap' as const,
+      label: t('settings_ldap_manager'),
+      icon: '🗂️',
+      description: t('ldap_configs_title'),
+      permission: PERMISSIONS.MANAGE_LDAP,
     },
   ];
 

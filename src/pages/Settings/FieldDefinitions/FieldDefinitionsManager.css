@@ -549,3 +549,88 @@
   margin-bottom: 8px;
 }
 .fd-options-input-row .fd-input { flex: 1; }
+
+/* ── LDAP Detour Banner ─────────────────────────────────────── */
+.fd-ldap-detour-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  background: #eff6ff;
+  border-bottom: 2px solid #bfdbfe;
+  font-size: 0.875rem;
+  color: #1e40af;
+}
+.fd-ldap-detour-banner strong { font-weight: 700; }
+.fd-ldap-detour-banner p { margin: 2px 0 0; font-size: 0.82rem; opacity: .85; }
+.fd-ldap-return-btn {
+  padding: 8px 18px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.fd-ldap-return-btn:hover { background: #1d4ed8; }
+
+/* ── LDAP Suggested Fields (sidebar) ───────────────────────── */
+.fd-ldap-suggestions-section {
+  border-top: 1px solid var(--fd-border);
+  padding-top: 16px;
+  margin-bottom: 16px;
+}
+.fd-ldap-suggestion-item {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fd-ldap-suggestion-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.fd-ldap-suggestion-label {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #0c4a6e;
+}
+.fd-ldap-suggestion-type {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+.fd-ldap-suggestion-key {
+  font-size: 0.72rem;
+  color: #0369a1;
+  font-family: monospace;
+}
+.fd-ldap-suggestion-fill-btn {
+  margin-top: 4px;
+  width: 100%;
+  padding: 5px 10px;
+  background: #0ea5e9;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.fd-ldap-suggestion-fill-btn:hover { background: #0284c7; }

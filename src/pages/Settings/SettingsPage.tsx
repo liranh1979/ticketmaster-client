@@ -7,6 +7,8 @@ import { AIManager } from './AIManager/AIManager';
 import { UsersPage } from './UsersManager/UsersPage';
 import { UsersGroupsHub } from './UsersGroupsHub';
 import { GroupsPage } from './GroupsManager/GroupsPage';
+import { LdapPage } from './LdapManager/LdapPage';
+import type { MissingField } from './LdapManager/LdapWizard';
 import { hasPermission, hasAnyPermission, PERMISSIONS } from '../../utils/permissions';
 import './SettingsPage.css';
 
@@ -24,12 +26,17 @@ type ViewState =
   | 'ai-manager'
   | 'users-groups-hub'
   | 'users'
-  | 'groups';
+  | 'groups'
+  | 'ldap';
 
 export const SettingsPage = ({ onNavigate, user }: SettingsPageProps) => {
   const { t } = useTranslation();
 
   const [currentView, setCurrentView] = useState<ViewState>('menu');
+  const [returnContext, setReturnContext] = useState<{
+    ldapConfigId: number;
+    suggestedFields: MissingField[];
+  } | null>(null);
 
   const handleMainMenuClick = () => {
     setCurrentView('selection');
@@ -57,12 +64,21 @@ export const SettingsPage = ({ onNavigate, user }: SettingsPageProps) => {
     setCurrentView('users-groups-hub');
   };
 
+  const handleLdapFieldsDetour = (configId: number, suggestions: MissingField[]) => {
+    setReturnContext({ ldapConfigId: configId, suggestedFields: suggestions });
+    setCurrentView('custom-fields');
+  };
+
+  const handleReturnFromDetour = () => {
+    setCurrentView('ldap');
+  };
+
   // 1. Initial State: Main Settings Grid
   if (currentView === 'menu') {
-    const canFields    = hasAnyPermission(user, PERMISSIONS.MANAGE_FIELDS, PERMISSIONS.MANAGE_LANGUAGES);
-    const canUsersGroups = hasAnyPermission(user, PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_GROUPS);
-    const canAi        = hasPermission(user, PERMISSIONS.MANAGE_AI);
-    const hasAnyAccess = canFields || canUsersGroups || canAi;
+    const canFields      = hasAnyPermission(user, PERMISSIONS.MANAGE_FIELDS, PERMISSIONS.MANAGE_LANGUAGES);
+    const canUsersGroups = hasAnyPermission(user, PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_GROUPS, PERMISSIONS.MANAGE_LDAP);
+    const canAi          = hasPermission(user, PERMISSIONS.MANAGE_AI);
+    const hasAnyAccess   = canFields || canUsersGroups || canAi;
 
     return (
       <div className="settings-grid">
@@ -194,13 +210,34 @@ export const SettingsPage = ({ onNavigate, user }: SettingsPageProps) => {
     );
   }
 
-  // 9. User Custom Fields View
+  // 9. LDAP View
+  if (currentView === 'ldap') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToHub}>
+          ← {t('back_btn')}
+        </button>
+        <LdapPage
+          currentUser={user}
+          retriggerConfigId={returnContext?.ldapConfigId}
+          onMissingFields={handleLdapFieldsDetour}
+          onRetriggerConsumed={() => setReturnContext(null)}
+        />
+      </div>
+    );
+  }
+
+  // 10. User Custom Fields View
   return (
     <div className="view-container">
-      <button className="back-button" onClick={handleBackToSelection}>
+      <button className="back-button" onClick={returnContext ? handleReturnFromDetour : handleBackToSelection}>
         ← {t('back_btn')}
       </button>
-      <FieldDefinitionsManager entityType="user" />
+      <FieldDefinitionsManager
+        entityType="user"
+        returnContext={returnContext ?? undefined}
+        onReturnFromDetour={handleReturnFromDetour}
+      />
     </div>
   );
 };

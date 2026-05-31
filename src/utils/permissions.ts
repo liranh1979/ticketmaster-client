@@ -4,6 +4,7 @@ export const PERMISSIONS = {
   MANAGE_FIELDS:    'MANAGE_FIELDS',
   MANAGE_LANGUAGES: 'MANAGE_LANGUAGES',
   MANAGE_AI:        'MANAGE_AI',
+  MANAGE_LDAP:      'MANAGE_LDAP',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
