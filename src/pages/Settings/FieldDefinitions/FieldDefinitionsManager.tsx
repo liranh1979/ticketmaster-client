@@ -5,6 +5,7 @@ import { FieldTranslationGrid } from './FieldTranslationGrid';
 import './FieldDefinitionsManager.css';
 import api from '../../../api';
 import type { MissingField } from '../LdapManager/LdapWizard';
+import type { AzureMissingField } from '../AzureManager/AzureWizard';
 
 interface Language { code: string; name: string; }
 interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; }
@@ -12,10 +13,11 @@ interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptio
 interface FieldDefinitionsManagerProps {
   entityType?: 'user' | 'group';
   returnContext?: { ldapConfigId: number; suggestedFields: MissingField[] };
+  azureReturnContext?: { azureConfigId: number; suggestedFields: AzureMissingField[] };
   onReturnFromDetour?: () => void;
 }
 
-export const FieldDefinitionsManager = ({ entityType = 'user', returnContext, onReturnFromDetour }: FieldDefinitionsManagerProps) => {
+export const FieldDefinitionsManager = ({ entityType = 'user', returnContext, azureReturnContext, onReturnFromDetour }: FieldDefinitionsManagerProps) => {
   const { t } = useTranslation();
   const [languages, setLanguages] = useState<Language[]>([]);
   const [fieldDefs, setFieldDefs] = useState<FieldDef[]>([]);
@@ -67,6 +69,18 @@ export const FieldDefinitionsManager = ({ entityType = 'user', returnContext, on
           </button>
         </div>
       )}
+      {/* Azure Detour Banner */}
+      {azureReturnContext && (
+        <div className="fd-ldap-detour-banner">
+          <div>
+            <strong>{t('azure_detour_banner_title')}</strong>
+            <p>{t('azure_detour_banner_desc')}</p>
+          </div>
+          <button className="fd-ldap-return-btn" onClick={onReturnFromDetour}>
+            {t('azure_return_to_wizard_btn')}
+          </button>
+        </div>
+      )}
 
       {/* Page Header */}
       <div className="fd-page-header">
@@ -93,7 +107,7 @@ export const FieldDefinitionsManager = ({ entityType = 'user', returnContext, on
             languages={languages}
             selectedLang={selectedLang}
             entityType={entityType}
-            suggestedFields={returnContext?.suggestedFields}
+            suggestedFields={returnContext?.suggestedFields ?? azureReturnContext?.suggestedFields}
             onSelect={(code) => {
                 if (isDirty && !window.confirm(t('confirm_discard_changes'))) return;
                 setSelectedLang(code);

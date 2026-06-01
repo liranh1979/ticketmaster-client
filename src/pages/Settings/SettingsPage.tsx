@@ -274,6 +274,7 @@ export const SettingsPage = ({ onNavigate, user }: SettingsPageProps) => {
       <FieldDefinitionsManager
         entityType="user"
         returnContext={returnContext ?? undefined}
+        azureReturnContext={azureReturnContext ?? undefined}
         onReturnFromDetour={returnContext ? handleReturnFromDetour : handleReturnFromAzureDetour}
       />
     </div>

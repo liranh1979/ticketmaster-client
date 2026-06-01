@@ -2,16 +2,19 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FIELD_TYPES } from './fieldTypes';
 import api from '../../../api';
-import type { MissingField } from '../LdapManager/LdapWizard';
-
 interface Language { code: string; name: string; }
+interface SuggestedField {
+  suggestedFieldKey: string;
+  suggestedLabel: string;
+  suggestedFieldType: string;
+}
 interface FieldDefinitionsSidebarProps {
   languages: Language[];
   selectedLang: string;
   entityType: string;
   onSelect: (code: string) => void;
   onFieldAdded: () => void;
-  suggestedFields?: MissingField[];
+  suggestedFields?: SuggestedField[];
 }
 
 export const FieldDefinitionsSidebar = ({

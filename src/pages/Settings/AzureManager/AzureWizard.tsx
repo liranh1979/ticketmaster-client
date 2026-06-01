@@ -416,7 +416,7 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
 
             {/* Filters section */}
             <div className="ldap-form-section">
-              <div className="ldap-form-section-title">{t('azure_step_sample')}</div>
+              <div className="ldap-form-section-title">{t('azure_section_filters')}</div>
               <div className="ldap-form-table">
 
                 <div className="ldap-form-tr">
