@@ -1,0 +1,15 @@
+/* Azure AD page — reuses ldap-* base classes, overrides Azure-specific colours */
+
+.azure-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, #0078d4 0%, #005ba1 100%);
+  color: #fff; gap: 16px; flex-wrap: wrap;
+}
+.azure-header-left  { display: flex; align-items: center; gap: 14px; }
+.azure-header-icon  { width: 44px; height: 44px; background: rgba(255,255,255,.18); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.azure-title        { margin: 0 0 2px; font-size: 1.3rem; font-weight: 700; }
+.azure-subtitle     { margin: 0; font-size: 0.82rem; opacity: .85; }
+.azure-header-actions { display: flex; gap: 10px; }
+
+.azure-confirm-tenant { font-family: monospace; font-size: 0.83rem; color: #475569; }

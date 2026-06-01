@@ -9,6 +9,8 @@ import { UsersGroupsHub } from './UsersGroupsHub';
 import { GroupsPage } from './GroupsManager/GroupsPage';
 import { LdapPage } from './LdapManager/LdapPage';
 import type { MissingField } from './LdapManager/LdapWizard';
+import { AzurePage } from './AzureManager/AzurePage';
+import type { AzureMissingField } from './AzureManager/AzureWizard';
 import { hasPermission, hasAnyPermission, PERMISSIONS } from '../../utils/permissions';
 import './SettingsPage.css';
 
@@ -27,7 +29,8 @@ type ViewState =
   | 'users-groups-hub'
   | 'users'
   | 'groups'
-  | 'ldap';
+  | 'ldap'
+  | 'azure';
 
 export const SettingsPage = ({ onNavigate, user }: SettingsPageProps) => {
   const { t } = useTranslation();
@@ -36,6 +39,11 @@ export const SettingsPage = ({ onNavigate, user }: SettingsPageProps) => {
   const [returnContext, setReturnContext] = useState<{
     ldapConfigId: number;
     suggestedFields: MissingField[];
+  } | null>(null);
+
+  const [azureReturnContext, setAzureReturnContext] = useState<{
+    azureConfigId: number;
+    suggestedFields: AzureMissingField[];
   } | null>(null);
 
   const handleMainMenuClick = () => {
@@ -73,10 +81,19 @@ export const SettingsPage = ({ onNavigate, user }: SettingsPageProps) => {
     setCurrentView('ldap');
   };
 
+  const handleAzureFieldsDetour = (configId: number, suggestions: AzureMissingField[]) => {
+    setAzureReturnContext({ azureConfigId: configId, suggestedFields: suggestions });
+    setCurrentView('custom-fields');
+  };
+
+  const handleReturnFromAzureDetour = () => {
+    setCurrentView('azure');
+  };
+
   // 1. Initial State: Main Settings Grid
   if (currentView === 'menu') {
     const canFields      = hasAnyPermission(user, PERMISSIONS.MANAGE_FIELDS, PERMISSIONS.MANAGE_LANGUAGES);
-    const canUsersGroups = hasAnyPermission(user, PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_GROUPS, PERMISSIONS.MANAGE_LDAP);
+    const canUsersGroups = hasAnyPermission(user, PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_GROUPS, PERMISSIONS.MANAGE_LDAP, PERMISSIONS.MANAGE_AZURE);
     const canAi          = hasPermission(user, PERMISSIONS.MANAGE_AI);
     const hasAnyAccess   = canFields || canUsersGroups || canAi;
 
@@ -227,16 +244,37 @@ export const SettingsPage = ({ onNavigate, user }: SettingsPageProps) => {
     );
   }
 
-  // 10. User Custom Fields View
+  // 10. Azure View
+  if (currentView === 'azure') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToHub}>
+          ← {t('back_btn')}
+        </button>
+        <AzurePage
+          currentUser={user}
+          retriggerConfigId={azureReturnContext?.azureConfigId}
+          onMissingFields={handleAzureFieldsDetour}
+          onRetriggerConsumed={() => setAzureReturnContext(null)}
+        />
+      </div>
+    );
+  }
+
+  // 11. User Custom Fields View
+  const isAzureDetour = !!azureReturnContext && !returnContext;
   return (
     <div className="view-container">
-      <button className="back-button" onClick={returnContext ? handleReturnFromDetour : handleBackToSelection}>
+      <button className="back-button" onClick={
+        isAzureDetour ? handleReturnFromAzureDetour :
+        returnContext ? handleReturnFromDetour : handleBackToSelection
+      }>
         ← {t('back_btn')}
       </button>
       <FieldDefinitionsManager
         entityType="user"
         returnContext={returnContext ?? undefined}
-        onReturnFromDetour={handleReturnFromDetour}
+        onReturnFromDetour={returnContext ? handleReturnFromDetour : handleReturnFromAzureDetour}
       />
     </div>
   );
