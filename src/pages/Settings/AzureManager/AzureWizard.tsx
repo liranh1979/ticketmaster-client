@@ -149,7 +149,11 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await api.post('/azure/configs/test', form);
+      // In edit mode (savedId set), use the saved-config endpoint so the
+      // stored encrypted secret is used — the form never echoes client_secret back.
+      const res = savedId
+        ? await api.post(`/azure/configs/${savedId}/test`)
+        : await api.post('/azure/configs/test', form);
       setTestResult({ ok: res.data.success, message: res.data.message });
     } catch (err: any) {
       setTestResult({ ok: false, message: err.response?.data?.message || t('azure_connection_failed') });
