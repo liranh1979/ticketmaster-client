@@ -32,7 +32,7 @@ type ViewState =
   | 'ldap'
   | 'azure';
 
-export const SettingsPage = ({ onNavigate, user }: SettingsPageProps) => {
+export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProps) => {
   const { t } = useTranslation();
 
   const [currentView, setCurrentView] = useState<ViewState>('menu');

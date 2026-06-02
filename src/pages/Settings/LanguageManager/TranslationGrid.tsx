@@ -12,30 +12,11 @@ export const TranslationGrid = ({ targetLang }: TranslationGridProps) => {
     const [translations, setTranslations] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
     const [isBulkTranslating, setIsBulkTranslating] = useState(false);
-    const [hasAI, setHasAI] = useState(false);
-
-    // 1. Check AI Status and Load initial translation data
+    // 1. Load initial translation data
     useEffect(() => {
-        const checkAI = async () => {
-            try {
-                const res = await api.get('/ai/status');
-                setHasAI(res.data.hasActiveAI);
-            } catch {
-                setHasAI(false);
-            }
-        };
-
-        const loadData = async () => {
-            try {
-                const res = await api.get(`/locales/${targetLang}`);
-                setTranslations(res.data);
-            } catch (err) {
-                console.error("Failed to load translations:", err);
-            }
-        };
-
-        checkAI();
-        loadData();
+        api.get(`/locales/${targetLang}`)
+            .then(res => setTranslations(res.data))
+            .catch(err => console.error("Failed to load translations:", err));
     }, [targetLang]);
 
     // 2. Bulk AI Translation Function

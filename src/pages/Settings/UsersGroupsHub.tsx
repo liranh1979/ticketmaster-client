@@ -34,9 +34,9 @@ export const UsersGroupsHub = ({ onSelect, user }: UsersGroupsHubProps) => {
     },
     {
       entity: 'azure' as const,
-      label: t('settings_azure_manager'),
-      icon: '☁️',
-      description: t('azure_configs_title'),
+      label: t('settings_external_repos'),
+      icon: '🌐',
+      description: t('external_repos_desc'),
       permission: PERMISSIONS.MANAGE_AZURE,
     },
   ];

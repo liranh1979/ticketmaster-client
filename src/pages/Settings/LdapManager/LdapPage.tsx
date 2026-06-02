@@ -22,7 +22,7 @@ interface LdapPageProps {
   onRetriggerConsumed?: () => void;
 }
 
-export const LdapPage = ({ currentUser, retriggerConfigId, onMissingFields, onRetriggerConsumed }: LdapPageProps) => {
+export const LdapPage = ({ currentUser: _currentUser, retriggerConfigId, onMissingFields, onRetriggerConsumed }: LdapPageProps) => {
   const { t } = useTranslation();
   const [configs, setConfigs] = useState<LdapConfig[]>([]);
   const [loading, setLoading] = useState(true);

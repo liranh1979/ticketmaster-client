@@ -1,0 +1,128 @@
+.lsc-selection-card {
+  max-width: 400px;
+  padding-bottom: 32px;
+}
+
+.lsc-title {
+  margin: 0 0 24px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e293b;
+  text-align: center;
+}
+
+.lsc-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.lsc-provider-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 18px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: #1e293b;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+  text-align: left;
+}
+
+.lsc-provider-btn:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.18);
+  transform: translateY(-1px);
+}
+
+.lsc-provider-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.lsc-provider-name {
+  flex: 1;
+}
+
+.lsc-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 18px 0 6px;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.lsc-divider::before,
+.lsc-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.lsc-manual-btn {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
+}
+
+.lsc-manual-btn:hover {
+  color: #4f46e5;
+}
+
+.lsc-back-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.lsc-back-btn {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.15s;
+}
+
+.lsc-back-btn:hover {
+  color: #4f46e5;
+}
+
+.lsc-provider-header {
+  text-align: center;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.lsc-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: lsc-spin 0.7s linear infinite;
+}
+
+@keyframes lsc-spin {
+  to { transform: rotate(360deg); }
+}

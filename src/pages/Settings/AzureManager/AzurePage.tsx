@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { CloudCog, Plus, RefreshCw } from 'lucide-react';
 import { AzureWizard } from './AzureWizard';
 import type { AzureMissingField } from './AzureWizard';
+import { SsoLoginWizard } from './SsoLoginWizard';
 import api from '../../../api';
 import '../LdapManager/LdapPage.css';
 import './AzurePage.css';
@@ -13,6 +14,9 @@ interface AzureConfig {
   tenant_id: string;
   is_active: boolean;
   last_synced_at: string | null;
+  sso_enabled: boolean;
+  sso_display_name: string | null;
+  saml_sp_entity_id: string | null;
 }
 
 interface AzurePageProps {
@@ -22,12 +26,13 @@ interface AzurePageProps {
   onRetriggerConsumed?: () => void;
 }
 
-export const AzurePage = ({ currentUser, retriggerConfigId, onMissingFields, onRetriggerConsumed }: AzurePageProps) => {
+export const AzurePage = ({ currentUser: _currentUser, retriggerConfigId, onMissingFields, onRetriggerConsumed }: AzurePageProps) => {
   const { t } = useTranslation();
   const [configs, setConfigs] = useState<AzureConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [wizardConfigId, setWizardConfigId] = useState<number | undefined | null>(null);
   const [wizardInitialStep, setWizardInitialStep] = useState<number | undefined>(undefined);
+  const [ssoWizardConfig, setSsoWizardConfig] = useState<AzureConfig | null>(null);
   const [syncing, setSyncing] = useState<number | null>(null);
   const [testing, setTesting] = useState<number | null>(null);
   const [testResults, setTestResults] = useState<Record<number, { ok: boolean; msg: string }>>({});
@@ -128,6 +133,7 @@ export const AzurePage = ({ currentUser, retriggerConfigId, onMissingFields, onR
                 <th>{t('azure_col_name')}</th>
                 <th>{t('azure_col_tenant')}</th>
                 <th>{t('azure_col_status')}</th>
+                <th>{t('azure_sso_col')}</th>
                 <th>{t('azure_col_last_synced')}</th>
                 <th>{t('actions')}</th>
               </tr>
@@ -143,6 +149,19 @@ export const AzurePage = ({ currentUser, retriggerConfigId, onMissingFields, onR
                     <span className={`ldap-badge ${cfg.is_active ? 'ldap-badge-active' : 'ldap-badge-inactive'}`}>
                       {cfg.is_active ? t('azure_status_active') : t('azure_status_inactive')}
                     </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className={`ldap-badge ${cfg.sso_enabled ? 'ldap-badge-active' : 'ldap-badge-inactive'}`}>
+                        {cfg.sso_enabled ? t('azure_sso_enabled') : t('azure_sso_disabled')}
+                      </span>
+                      <button
+                        className="ldap-action-btn ldap-action-btn-edit"
+                        onClick={() => setSsoWizardConfig(cfg)}
+                      >
+                        {t('azure_sso_setup_btn')}
+                      </button>
+                    </div>
                   </td>
                   <td style={{ color: '#64748b', fontSize: '0.83rem' }}>
                     {formatDate(cfg.last_synced_at)}
@@ -189,6 +208,13 @@ export const AzurePage = ({ currentUser, retriggerConfigId, onMissingFields, onR
           onMissingFields={onMissingFields}
           onClose={() => { setWizardConfigId(null); setWizardInitialStep(undefined); }}
           onSaved={() => { setWizardConfigId(null); setWizardInitialStep(undefined); fetchConfigs(); }}
+        />
+      )}
+
+      {ssoWizardConfig !== null && (
+        <SsoLoginWizard
+          config={ssoWizardConfig}
+          onClose={() => { setSsoWizardConfig(null); fetchConfigs(); }}
         />
       )}
     </div>

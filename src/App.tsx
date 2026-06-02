@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next'; // 1. Import useTranslation
 import api from './api';
-import { Login } from './components/Login/Login.tsx';
+import { LoginScreen } from './components/Login/LoginScreen';
 import { Home } from './pages/Home';
 
 function App() {
@@ -43,7 +43,7 @@ function App() {
   return (
     <div className="App">
       {!user ? (
-        <Login onLoginSuccess={(userData: any) => setUser(userData)} />
+        <LoginScreen onLoginSuccess={(userData: any) => setUser(userData)} />
       ) : (
         <Home user={user} />
       )}
