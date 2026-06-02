@@ -109,11 +109,6 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
     if (step === 3 && userMappingStatus === 'idle' && savedId) doRunUserMapping();
   }, [step, userMappingStatus]); // eslint-disable-line
 
-  // Auto-trigger group mapping on step 4
-  useEffect(() => {
-    if (step === 4 && groupMappingStatus === 'idle' && savedId && hasGroupSample) doRunGroupMapping();
-  }, [step, groupMappingStatus]); // eslint-disable-line
-
   // Load existing config when editing
   useEffect(() => {
     if (!configId) return;
@@ -336,7 +331,18 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
     updateFn: (idx: number, key: string) => void,
     onRerun: () => void,
     entityLabel: string,
+    onStart?: () => void,
   ) => {
+    if (status === 'idle' && onStart) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '40px 0' }}>
+          <p style={{ color: '#6b7280', margin: 0 }}>{t('azure_step3_intro')}</p>
+          <button className="ldap-wizard-btn ldap-wizard-btn-primary" onClick={onStart}>
+            {t('azure_run_mapping_btn')}
+          </button>
+        </div>
+      );
+    }
     if (status === 'loading') {
       return (
         <div className="ldap-mapping-loading-card">
@@ -667,16 +673,14 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
         {step === 4 && (
           <div className="ldap-wizard-body">
             {hasGroupSample ? (
-              <>
-                <p className="ldap-step-intro">{t('azure_step3_intro')}</p>
-                {renderMappingPanel(
-                  groupMappingStatus, groupMappingError,
-                  groupMappings, groupFieldOptions, missingGroupFields,
-                  updateGroupMapping,
-                  () => { setGroupMappings([]); setMissingGroupFields([]); setGroupMappingStatus('idle'); },
-                  'group',
-                )}
-              </>
+              renderMappingPanel(
+                groupMappingStatus, groupMappingError,
+                groupMappings, groupFieldOptions, missingGroupFields,
+                updateGroupMapping,
+                () => { setGroupMappings([]); setMissingGroupFields([]); setGroupMappingStatus('idle'); },
+                'group',
+                doRunGroupMapping,
+              )
             ) : (
               <div className="ldap-sample-placeholder" style={{ padding: 32 }}>
                 No group sample data — group mapping skipped. Click Next to continue.
@@ -790,7 +794,7 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
             {step === 4 && (
               <button className="ldap-wizard-btn ldap-wizard-btn-primary"
                 onClick={handleSaveGroupMappings}
-                disabled={savingGroupMappings || (hasGroupSample && groupMappingStatus !== 'done')}>
+                disabled={savingGroupMappings || groupMappingStatus === 'loading'}>
                 {savingGroupMappings ? '…' : t('next_btn')}
               </button>
             )}
