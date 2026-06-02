@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Settings2, RefreshCw, Users, UserPlus, Pencil, Trash2 } from 'lucide-react';
 import { ConfigureColumnsModal } from '../UsersManager/ConfigureColumnsModal';
@@ -26,6 +26,8 @@ interface GroupsPageProps {
   currentUser?: any;
 }
 
+const PAGE_SIZE = 50;
+
 export const GroupsPage = ({ currentUser }: GroupsPageProps) => {
   const { t } = useTranslation();
   const [groups, setGroups]             = useState<Group[]>([]);
@@ -37,7 +39,12 @@ export const GroupsPage = ({ currentUser }: GroupsPageProps) => {
   const [membersGroup, setMembersGroup] = useState<Group | null | undefined>(undefined);
   const [deleting, setDeleting]         = useState<number | null>(null);
 
+  // Lazy loading
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
   const visibleFields = fields.filter(f => f.isListVisible);
+  const visibleGroups = groups.slice(0, visibleCount);
 
   const fetchAll = async () => {
     try {
@@ -55,6 +62,25 @@ export const GroupsPage = ({ currentUser }: GroupsPageProps) => {
   };
 
   useEffect(() => { fetchAll(); }, []);
+
+  // Reset visible window when data changes
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [groups]);
+
+  // IntersectionObserver — load more when sentinel scrolls into view
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisibleCount(n => Math.min(n + PAGE_SIZE, groups.length));
+        }
+      },
+      { threshold: 0 },
+    );
+    obs.observe(sentinel);
+    return () => obs.disconnect();
+  }, [groups.length, visibleCount]);
 
   const handleSyncMetadata = async () => {
     setSyncing(true);
@@ -121,14 +147,15 @@ export const GroupsPage = ({ currentUser }: GroupsPageProps) => {
       <div className="up-table-wrap">
         <table className="up-table">
           <colgroup>
+            <col className="col-actions" />
             <col className="col-num" />
             <col className="col-display-name" />
-            <col style={{ width: '110px' }} />
+            <col style={{ width: '120px' }} />
             {visibleFields.map(f => <col key={f.id} className="col-field" />)}
-            <col className="col-actions" style={{ width: '110px' }} />
           </colgroup>
           <thead>
             <tr>
+              <th className="col-actions" />
               <th className="col-num">{t('col_number')}</th>
               <th className="col-display-name">{t('col_group_name')}</th>
               <th style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.07em' }}>
@@ -137,27 +164,11 @@ export const GroupsPage = ({ currentUser }: GroupsPageProps) => {
               {visibleFields.map(f => (
                 <th key={f.id} className="col-field up-th-field">{f.fieldKey}</th>
               ))}
-              <th className="col-actions" />
             </tr>
           </thead>
           <tbody>
-            {groups.map((group, idx) => (
+            {visibleGroups.map((group, idx) => (
               <tr key={group.id} className="up-row">
-                <td className="col-num">{idx + 1}</td>
-                <td className="col-display-name">
-                  <div className="up-user-cell">
-                    <div className="up-avatar">{group.display_name[0].toUpperCase()}</div>
-                    <span className="up-display-name">{group.display_name}</span>
-                  </div>
-                </td>
-                <td>
-                  <span className="up-badge up-badge-user" style={{ cursor: 'pointer' }} onClick={() => setMembersGroup(group)}>
-                    {t('members_count', { count: group.member_count ?? 0 })}
-                  </span>
-                </td>
-                {visibleFields.map(f => (
-                  <td key={f.id} className="col-field">{getMetaValue(group, f.fieldKey)}</td>
-                ))}
                 <td className="col-actions">
                   <div className="up-row-actions">
                     <button
@@ -185,10 +196,32 @@ export const GroupsPage = ({ currentUser }: GroupsPageProps) => {
                     </button>
                   </div>
                 </td>
+                <td className="col-num">{idx + 1}</td>
+                <td className="col-display-name">
+                  <div className="up-user-cell">
+                    <div className="up-avatar">{group.display_name[0].toUpperCase()}</div>
+                    <span className="up-display-name">{group.display_name}</span>
+                  </div>
+                </td>
+                <td>
+                  <span className="up-badge up-badge-user" style={{ cursor: 'pointer' }} onClick={() => setMembersGroup(group)}>
+                    {t('members_count', { count: group.member_count ?? 0 })}
+                  </span>
+                </td>
+                {visibleFields.map(f => (
+                  <td key={f.id} className="col-field">{getMetaValue(group, f.fieldKey)}</td>
+                ))}
               </tr>
             ))}
           </tbody>
         </table>
+
+        {/* Lazy-load sentinel */}
+        {visibleCount < groups.length && (
+          <div ref={sentinelRef} className="up-lazy-sentinel">
+            <div className="up-spinner" />
+          </div>
+        )}
 
         {groups.length === 0 && (
           <div className="up-empty">{t('no_groups_found')}</div>

@@ -16,7 +16,7 @@
   flex-direction: column;
   gap: 0;
   background: var(--up-bg);
-  min-height: 100%;
+  height: 100%;
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
 
@@ -75,6 +75,7 @@
 .up-table-wrap {
   flex: 1;
   overflow-x: auto;
+  overflow-y: auto;
   background: var(--up-surface);
   border: 1px solid var(--up-border);
   border-top: none;
@@ -83,10 +84,11 @@
 }
 .up-table {
   width: 100%;
+  min-width: 800px;
   border-collapse: collapse;
   font-size: 0.875rem;
   color: var(--up-text);
-  table-layout: fixed; /* key: columns keep their declared widths */
+  table-layout: fixed;
 }
 .up-table thead th {
   background: #f8fafc;
@@ -106,14 +108,14 @@
   z-index: 1;
 }
 
-/* Fixed widths for standard columns */
-.up-table .col-num          { width: 52px;  text-align: center; }
-.up-table .col-username     { width: 180px; }
-.up-table .col-display-name { width: 180px; }
-.up-table .col-role         { width: 120px; }
-/* Dynamic field columns share remaining space equally via CSS */
-.up-table .col-field        { min-width: 130px; }
-.up-table .col-actions      { width: 90px; }
+/* Column widths — actions is now the first column */
+.up-table .col-actions      { width: 80px; }
+.up-table .col-select       { width: 44px; text-align: center; }
+.up-table .col-num          { width: 52px; text-align: center; }
+.up-table .col-username     { width: 240px; }
+.up-table .col-display-name { width: 220px; }
+.up-table .col-role         { width: 130px; }
+.up-table .col-field        { min-width: 160px; }
 
 .up-th-field {
   background: #eef2ff;
@@ -166,7 +168,7 @@
 .up-badge-user  { background: #f0fdf4; color: #166534; }
 
 /* ── Row action buttons ──────────────────────────────────────── */
-.up-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.up-row-actions { display: flex; align-items: center; justify-content: flex-start; gap: 6px; }
 .up-action-btn {
   width: 30px; height: 30px;
   display: flex; align-items: center; justify-content: center;
@@ -317,3 +319,21 @@
 .ccm-btn:disabled { opacity: .6; cursor: not-allowed; }
 .ccm-btn-cancel { background: #f1f5f9; color: #475569; }
 .ccm-btn-save   { background: #6366f1; color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,.3); }
+
+/* ── Lazy load sentinel ──────────────────────────────────────── */
+.up-lazy-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  color: var(--up-muted);
+  font-size: 0.85rem;
+}
+.up-lazy-end {
+  text-align: center;
+  padding: 12px;
+  color: var(--up-muted);
+  font-size: 0.78rem;
+  border-top: 1px solid var(--up-border);
+}

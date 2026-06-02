@@ -27,6 +27,8 @@ interface UsersPageProps {
   currentUser?: any;
 }
 
+const PAGE_SIZE = 50;
+
 export const UsersPage = ({ currentUser }: UsersPageProps) => {
   const { t } = useTranslation();
   const [users, setUsers]             = useState<User[]>([]);
@@ -41,7 +43,12 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
   const [bulkGroupMode, setBulkGroupMode]   = useState<'add' | 'remove' | null>(null);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
+  // Lazy loading
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
   const visibleFields = fields.filter(f => f.isListVisible);
+  const visibleUsers  = users.slice(0, visibleCount);
 
   const fetchAll = async () => {
     try {
@@ -59,6 +66,25 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
   };
 
   useEffect(() => { fetchAll(); }, []);
+
+  // Reset visible window when data changes
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [users]);
+
+  // IntersectionObserver — load more when sentinel scrolls into view
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisibleCount(n => Math.min(n + PAGE_SIZE, users.length));
+        }
+      },
+      { threshold: 0 },
+    );
+    obs.observe(sentinel);
+    return () => obs.disconnect();
+  }, [users.length, visibleCount]);
 
   useEffect(() => {
     if (selectAllRef.current) {
@@ -176,16 +202,17 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
       <div className="up-table-wrap">
         <table className="up-table">
           <colgroup>
+            <col className="col-actions" />
             <col className="col-select" />
             <col className="col-num" />
             <col className="col-username" />
             <col className="col-display-name" />
             {visibleFields.map(f => <col key={f.id} className="col-field" />)}
             <col className="col-role" />
-            <col className="col-actions" />
           </colgroup>
           <thead>
             <tr>
+              <th className="col-actions" />
               <th className="col-select">
                 <input
                   ref={selectAllRef}
@@ -202,15 +229,33 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
                 <th key={f.id} className="col-field up-th-field">{f.fieldKey}</th>
               ))}
               <th className="col-role">{t('col_role')}</th>
-              <th className="col-actions" />
             </tr>
           </thead>
           <tbody>
-            {users.map((user, idx) => (
+            {visibleUsers.map((user, idx) => (
               <tr
                 key={user.id}
                 className={`up-row${selectedUsers.has(user.id) ? ' up-row-selected' : ''}`}
               >
+                <td className="col-actions">
+                  <div className="up-row-actions">
+                    <button
+                      className="up-action-btn up-action-edit"
+                      title={t('edit_user')}
+                      onClick={() => setDrawerUser(user)}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      className={`up-action-btn up-action-delete ${user.is_super_admin ? 'up-action-disabled' : ''}`}
+                      title={user.is_super_admin ? t('super_admin_no_delete') : t('confirm_delete')}
+                      disabled={user.is_super_admin || deleting === user.id}
+                      onClick={() => handleDelete(user)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </td>
                 <td className="col-select" style={{ textAlign: 'center' }}>
                   <input
                     type="checkbox"
@@ -235,29 +280,17 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
                     ? <span className="up-badge up-badge-admin">{t('badge_super_admin')}</span>
                     : <span className="up-badge up-badge-user">{t('badge_user')}</span>}
                 </td>
-                <td className="col-actions">
-                  <div className="up-row-actions">
-                    <button
-                      className="up-action-btn up-action-edit"
-                      title={t('edit_user')}
-                      onClick={() => setDrawerUser(user)}
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      className={`up-action-btn up-action-delete ${user.is_super_admin ? 'up-action-disabled' : ''}`}
-                      title={user.is_super_admin ? t('super_admin_no_delete') : t('confirm_delete')}
-                      disabled={user.is_super_admin || deleting === user.id}
-                      onClick={() => handleDelete(user)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {/* Lazy-load sentinel */}
+        {visibleCount < users.length && (
+          <div ref={sentinelRef} className="up-lazy-sentinel">
+            <div className="up-spinner" />
+          </div>
+        )}
 
         {users.length === 0 && (
           <div className="up-empty">{t('no_users_found')}</div>
