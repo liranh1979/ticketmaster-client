@@ -96,13 +96,6 @@ export const LdapWizard = ({ configId, onClose, onSaved, onMissingFields, initia
   const [runInitialSync, setRunInitialSync] = useState(true);
   const [activating, setActivating] = useState(false);
 
-  // Auto-trigger AI mapping when entering Step 3
-  useEffect(() => {
-    if (step === 3 && mappingStatus === 'idle' && savedId) {
-      doRunMapping();
-    }
-  }, [step, mappingStatus]); // eslint-disable-line
-
   // Load existing config data whenever the wizard opens in edit mode
   useEffect(() => {
     if (!configId) return;
@@ -241,52 +234,70 @@ export const LdapWizard = ({ configId, onClose, onSaved, onMissingFields, initia
   };
 
   // ── Step 3 handlers ────────────────────────────────────────────
+  const buildOptions = async (entityType: 'user' | 'group'): Promise<FieldOption[]> => {
+    try {
+      const translationType = entityType === 'user' ? 'user_fields' : 'group_fields';
+      const [fieldsRes, labelsRes] = await Promise.all([
+        api.get('/field-definitions', { params: { entityType } }),
+        api.get('/field-definitions/translations/en', { params: { translationType } }),
+      ]);
+      const labels: Record<string, string> = labelsRes.data;
+      const custom = (fieldsRes.data as any[]).map((f: any) => ({
+        key: f.fieldKey,
+        label: labels[f.fieldKey] || formatKey(f.fieldKey),
+      }));
+      return entityType === 'user'
+        ? [SKIP_OPTION, { key: 'username', label: 'Username' }, { key: 'display_name', label: 'Display Name' }, ...custom]
+        : [SKIP_OPTION, { key: 'display_name', label: 'Group Name' }, ...custom];
+    } catch {
+      return entityType === 'user'
+        ? [SKIP_OPTION, { key: 'username', label: 'Username' }, { key: 'display_name', label: 'Display Name' }]
+        : [SKIP_OPTION, { key: 'display_name', label: 'Group Name' }];
+    }
+  };
+
+  const initMappingStep = async () => {
+    if (!savedId) return;
+    const [uOpts, gOpts] = await Promise.all([buildOptions('user'), buildOptions('group')]);
+    setUserFieldOptions(uOpts);
+    setGroupFieldOptions(gOpts);
+
+    const uRows: MappingRow[] = Object.entries(sampleUser || {}).map(([attr, val]) => ({
+      ldapAttribute: attr, sampleValue: String(val), systemFieldKey: '', confidence: '',
+    }));
+    const gRows: MappingRow[] = Object.entries(sampleGroup || {}).map(([attr, val]) => ({
+      ldapAttribute: attr, sampleValue: String(val), systemFieldKey: '', confidence: '',
+    }));
+
+    try {
+      const [uSaved, gSaved] = await Promise.all([
+        api.get(`/ldap/configs/${savedId}/mappings`, { params: { entityType: 'user' } }),
+        api.get(`/ldap/configs/${savedId}/mappings`, { params: { entityType: 'group' } }),
+      ]);
+      (uSaved.data || []).forEach((m: any) => {
+        const row = uRows.find(r => r.ldapAttribute === (m.ldapAttribute || m.ldap_attribute));
+        if (row) row.systemFieldKey = m.systemFieldKey || m.system_field_key || '';
+      });
+      (gSaved.data || []).forEach((m: any) => {
+        const row = gRows.find(r => r.ldapAttribute === (m.ldapAttribute || m.ldap_attribute));
+        if (row) row.systemFieldKey = m.systemFieldKey || m.system_field_key || '';
+      });
+    } catch { /* start with empty mappings if load fails */ }
+
+    setUserMappings(uRows);
+    setGroupMappings(gRows);
+  };
+
+  useEffect(() => {
+    if (step === 3 && savedId) initMappingStep();
+  }, [step]); // eslint-disable-line
+
   const doRunMapping = async () => {
     if (!savedId) return;
     setMappingStatus('loading');
     setMappingError('');
 
     try {
-      // Fetch field definitions for dropdown options
-      const buildUserOptions = async (): Promise<FieldOption[]> => {
-        try {
-          const [fieldsRes, labelsRes] = await Promise.all([
-            api.get('/field-definitions', { params: { entityType: 'user' } }),
-            api.get('/field-definitions/translations/en', { params: { translationType: 'user_fields' } }),
-          ]);
-          const labels: Record<string, string> = labelsRes.data;
-          const custom = (fieldsRes.data as any[]).map(f => ({
-            key: f.fieldKey,
-            label: labels[f.fieldKey] || formatKey(f.fieldKey),
-          }));
-          return [SKIP_OPTION, { key: 'username', label: 'Username' }, { key: 'display_name', label: 'Display Name' }, ...custom];
-        } catch {
-          return [SKIP_OPTION, { key: 'username', label: 'Username' }, { key: 'display_name', label: 'Display Name' }];
-        }
-      };
-
-      const buildGroupOptions = async (): Promise<FieldOption[]> => {
-        try {
-          const [fieldsRes, labelsRes] = await Promise.all([
-            api.get('/field-definitions', { params: { entityType: 'group' } }),
-            api.get('/field-definitions/translations/en', { params: { translationType: 'group_fields' } }),
-          ]);
-          const labels: Record<string, string> = labelsRes.data;
-          const custom = (fieldsRes.data as any[]).map(f => ({
-            key: f.fieldKey,
-            label: labels[f.fieldKey] || formatKey(f.fieldKey),
-          }));
-          return [SKIP_OPTION, { key: 'display_name', label: 'Group Name' }, ...custom];
-        } catch {
-          return [SKIP_OPTION, { key: 'display_name', label: 'Group Name' }];
-        }
-      };
-
-      const [uOpts, gOpts] = await Promise.all([buildUserOptions(), buildGroupOptions()]);
-      setUserFieldOptions(uOpts);
-      setGroupFieldOptions(gOpts);
-
-      // AI mapping for users
       const userRes = await api.post(`/ldap/configs/${savedId}/suggest-mapping`, null, {
         params: { entityType: 'user' },
       });
@@ -297,26 +308,29 @@ export const LdapWizard = ({ configId, onClose, onSaved, onMissingFields, initia
         return;
       }
 
-      setUserMappings((userRes.data.mappings || []).map((m: any) => ({
-        ldapAttribute: m.ldapAttribute,
-        sampleValue: m.ldapSampleValue || '',
-        systemFieldKey: m.systemFieldKey || '',
-        confidence: m.confidence || '',
-      })));
+      setUserMappings(prev => {
+        const next = prev.map(r => ({ ...r }));
+        (userRes.data.mappings || []).forEach((m: any) => {
+          const row = next.find(r => r.ldapAttribute === m.ldapAttribute);
+          if (row) { row.systemFieldKey = m.systemFieldKey || ''; row.confidence = m.confidence || ''; }
+        });
+        return next;
+      });
       setMissingUserFields(userRes.data.missingFields || []);
 
-      // AI mapping for groups (optional)
       if (hasGroups && sampleGroup && Object.keys(sampleGroup).length > 0) {
         try {
           const groupRes = await api.post(`/ldap/configs/${savedId}/suggest-mapping`, null, {
             params: { entityType: 'group' },
           });
-          setGroupMappings((groupRes.data.mappings || []).map((m: any) => ({
-            ldapAttribute: m.ldapAttribute,
-            sampleValue: m.ldapSampleValue || '',
-            systemFieldKey: m.systemFieldKey || '',
-            confidence: m.confidence || '',
-          })));
+          setGroupMappings(prev => {
+            const next = prev.map(r => ({ ...r }));
+            (groupRes.data.mappings || []).forEach((m: any) => {
+              const row = next.find(r => r.ldapAttribute === m.ldapAttribute);
+              if (row) { row.systemFieldKey = m.systemFieldKey || ''; row.confidence = m.confidence || ''; }
+            });
+            return next;
+          });
           setMissingGroupFields(groupRes.data.missingFields || []);
         } catch { /* group mapping failure is non-fatal */ }
       }
@@ -326,14 +340,6 @@ export const LdapWizard = ({ configId, onClose, onSaved, onMissingFields, initia
       setMappingError(err.response?.data?.message || 'AI mapping failed');
       setMappingStatus('error');
     }
-  };
-
-  const handleRerunMapping = () => {
-    setUserMappings([]);
-    setGroupMappings([]);
-    setMissingUserFields([]);
-    setMissingGroupFields([]);
-    setMappingStatus('idle');
   };
 
   const handleSaveMappings = async () => {
@@ -666,160 +672,148 @@ export const LdapWizard = ({ configId, onClose, onSaved, onMissingFields, initia
           </div>
         )}
 
-        {/* ── Step 3: AI Field Mapping ── */}
+        {/* ── Step 3: Field Mapping ── */}
         {step === 3 && (
           <div className="ldap-wizard-body">
 
-            {mappingStatus === 'loading' && (
-              <div className="ldap-mapping-loading-card">
-                <RefreshCw size={24} className="spin ldap-mapping-loading-spinner" />
-                <div className="ldap-mapping-loading-text">
-                  <strong>{t('ldap_mapping_running')}</strong>
-                  <span>{t('ldap_step3_intro')}</span>
-                </div>
+            {/* Toolbar: always visible */}
+            <div className="ldap-mapping-toolbar">
+              <div className="ldap-mapping-stats">
+                {userMappings.filter(m => m.systemFieldKey).length > 0 && (
+                  <span className="ldap-mapping-stat">
+                    <CheckCircle2 size={13} />
+                    {userMappings.filter(m => m.systemFieldKey).length} {t('ldap_section_users').toLowerCase()}
+                  </span>
+                )}
+                {groupMappings.filter(m => m.systemFieldKey).length > 0 && (
+                  <span className="ldap-mapping-stat">
+                    <CheckCircle2 size={13} />
+                    {groupMappings.filter(m => m.systemFieldKey).length} {t('ldap_section_groups').toLowerCase()}
+                  </span>
+                )}
               </div>
-            )}
+              <button className="ldap-wizard-btn ldap-wizard-btn-ghost"
+                onClick={doRunMapping}
+                disabled={mappingStatus === 'loading'}
+                style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <RefreshCw size={13} className={mappingStatus === 'loading' ? 'spin' : ''} />
+                {mappingStatus === 'loading' ? '…' : t('ldap_run_mapping_btn')}
+              </button>
+            </div>
 
             {mappingStatus === 'error' && (
               <div className="ldap-test-result error">{mappingError}</div>
             )}
 
-            {mappingStatus === 'done' && (
-              <>
-                {/* Toolbar: stats + re-run */}
-                <div className="ldap-mapping-toolbar">
-                  <div className="ldap-mapping-stats">
-                    {userMappings.filter(m => m.systemFieldKey).length > 0 && (
-                      <span className="ldap-mapping-stat">
-                        <CheckCircle2 size={13} />
-                        {userMappings.filter(m => m.systemFieldKey).length} {t('ldap_section_users').toLowerCase()}
-                      </span>
-                    )}
-                    {groupMappings.filter(m => m.systemFieldKey).length > 0 && (
-                      <span className="ldap-mapping-stat">
-                        <CheckCircle2 size={13} />
-                        {groupMappings.filter(m => m.systemFieldKey).length} {t('ldap_section_groups').toLowerCase()}
-                      </span>
-                    )}
-                  </div>
-                  <button className="ldap-wizard-btn ldap-wizard-btn-ghost"
-                    onClick={handleRerunMapping}
-                    style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <RefreshCw size={13} /> {t('ldap_remap_btn')}
-                  </button>
+            {/* Missing fields banner - only shown after AI runs */}
+            {mappingStatus === 'done' && hasMissing && (
+              <div className="ldap-missing-banner">
+                <div>
+                  <strong>{t('ldap_missing_fields_title')}</strong>
+                  <p>{t('ldap_missing_fields_desc')}</p>
                 </div>
-
-                {/* Missing fields banner */}
-                {hasMissing && (
-                  <div className="ldap-missing-banner">
-                    <div>
-                      <strong>{t('ldap_missing_fields_title')}</strong>
-                      <p>{t('ldap_missing_fields_desc')}</p>
-                    </div>
-                    {onMissingFields && savedId && (
-                      <button className="ldap-wizard-btn ldap-wizard-btn-primary"
-                        style={{ fontSize: '0.8rem', padding: '7px 14px', whiteSpace: 'nowrap' }}
-                        onClick={() => onMissingFields(savedId, allMissingFields)}>
-                        {t('ldap_go_create_fields_btn')}
-                      </button>
-                    )}
-                  </div>
+                {onMissingFields && savedId && (
+                  <button className="ldap-wizard-btn ldap-wizard-btn-primary"
+                    style={{ fontSize: '0.8rem', padding: '7px 14px', whiteSpace: 'nowrap' }}
+                    onClick={() => onMissingFields(savedId, allMissingFields)}>
+                    {t('ldap_go_create_fields_btn')}
+                  </button>
                 )}
+              </div>
+            )}
 
-                {/* User mappings */}
-                {userMappings.length > 0 && (
-                  <div className="ldap-form-section">
-                    <div className="ldap-form-section-title">{t('ldap_section_users')}</div>
-                    <div className="ldap-mapping-card">
-                      <table className="ldap-mapping-table">
-                        <thead>
-                          <tr>
-                            <th>{t('ldap_mapping_ldap_attr')}</th>
-                            <th>{t('ldap_sample_col')}</th>
-                            <th></th>
-                            <th>{t('ldap_mapping_system_field')}</th>
-                            <th>{t('ldap_mapping_confidence')}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {userMappings.map((row, i) => (
-                            <tr key={row.ldapAttribute}>
-                              <td><code className="ldap-attr-code">{row.ldapAttribute}</code></td>
-                              <td className="ldap-map-sample">{row.sampleValue.substring(0, 35)}</td>
-                              <td className="ldap-map-arrow">→</td>
-                              <td>
-                                <select className="ldap-mapping-select"
-                                  value={row.systemFieldKey}
-                                  onChange={e => updateUserMapping(i, e.target.value)}>
-                                  {userFieldOptions.map(o => (
-                                    <option key={o.key} value={o.key}>{o.label}</option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td>
-                                {row.confidence && (
-                                  <span className={`ldap-confidence ldap-confidence-${row.confidence}`}>
-                                    {row.confidence}
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
+            {/* User mappings - always visible once rows are loaded */}
+            {userMappings.length > 0 && (
+              <div className="ldap-form-section">
+                <div className="ldap-form-section-title">{t('ldap_section_users')}</div>
+                <div className="ldap-mapping-card">
+                  <table className="ldap-mapping-table">
+                    <thead>
+                      <tr>
+                        <th>{t('ldap_mapping_ldap_attr')}</th>
+                        <th>{t('ldap_sample_col')}</th>
+                        <th></th>
+                        <th>{t('ldap_mapping_system_field')}</th>
+                        <th>{t('ldap_mapping_confidence')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userMappings.map((row, i) => (
+                        <tr key={row.ldapAttribute}>
+                          <td><code className="ldap-attr-code">{row.ldapAttribute}</code></td>
+                          <td className="ldap-map-sample">{row.sampleValue.substring(0, 35)}</td>
+                          <td className="ldap-map-arrow">→</td>
+                          <td>
+                            <select className="ldap-mapping-select"
+                              value={row.systemFieldKey}
+                              onChange={e => updateUserMapping(i, e.target.value)}>
+                              {userFieldOptions.map(o => (
+                                <option key={o.key} value={o.key}>{o.label}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td>
+                            {row.confidence && (
+                              <span className={`ldap-confidence ldap-confidence-${row.confidence}`}>
+                                {row.confidence}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
-                {/* Group mappings */}
-                {groupMappings.length > 0 && (
-                  <div className="ldap-form-section">
-                    <div className="ldap-form-section-title">{t('ldap_section_groups')}</div>
-                    <div className="ldap-mapping-card">
-                      <table className="ldap-mapping-table">
-                        <thead>
-                          <tr>
-                            <th>{t('ldap_mapping_ldap_attr')}</th>
-                            <th>{t('ldap_sample_col')}</th>
-                            <th></th>
-                            <th>{t('ldap_mapping_system_field')}</th>
-                            <th>{t('ldap_mapping_confidence')}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {groupMappings.map((row, i) => (
-                            <tr key={row.ldapAttribute}>
-                              <td><code className="ldap-attr-code">{row.ldapAttribute}</code></td>
-                              <td className="ldap-map-sample">{row.sampleValue.substring(0, 35)}</td>
-                              <td className="ldap-map-arrow">→</td>
-                              <td>
-                                <select className="ldap-mapping-select"
-                                  value={row.systemFieldKey}
-                                  onChange={e => updateGroupMapping(i, e.target.value)}>
-                                  {groupFieldOptions.map(o => (
-                                    <option key={o.key} value={o.key}>{o.label}</option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td>
-                                {row.confidence && (
-                                  <span className={`ldap-confidence ldap-confidence-${row.confidence}`}>
-                                    {row.confidence}
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
+            {/* Group mappings */}
+            {groupMappings.length > 0 && (
+              <div className="ldap-form-section">
+                <div className="ldap-form-section-title">{t('ldap_section_groups')}</div>
+                <div className="ldap-mapping-card">
+                  <table className="ldap-mapping-table">
+                    <thead>
+                      <tr>
+                        <th>{t('ldap_mapping_ldap_attr')}</th>
+                        <th>{t('ldap_sample_col')}</th>
+                        <th></th>
+                        <th>{t('ldap_mapping_system_field')}</th>
+                        <th>{t('ldap_mapping_confidence')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupMappings.map((row, i) => (
+                        <tr key={row.ldapAttribute}>
+                          <td><code className="ldap-attr-code">{row.ldapAttribute}</code></td>
+                          <td className="ldap-map-sample">{row.sampleValue.substring(0, 35)}</td>
+                          <td className="ldap-map-arrow">→</td>
+                          <td>
+                            <select className="ldap-mapping-select"
+                              value={row.systemFieldKey}
+                              onChange={e => updateGroupMapping(i, e.target.value)}>
+                              {groupFieldOptions.map(o => (
+                                <option key={o.key} value={o.key}>{o.label}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td>
+                            {row.confidence && (
+                              <span className={`ldap-confidence ldap-confidence-${row.confidence}`}>
+                                {row.confidence}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
-                {userMappings.length === 0 && groupMappings.length === 0 && (
-                  <div className="ldap-sample-placeholder">{t('ldap_no_mappings')}</div>
-                )}
-              </>
+            {userMappings.length === 0 && groupMappings.length === 0 && (
+              <div className="ldap-sample-placeholder">{t('ldap_step3_intro')}</div>
             )}
           </div>
         )}
@@ -938,7 +932,7 @@ export const LdapWizard = ({ configId, onClose, onSaved, onMissingFields, initia
             {step === 3 && (
               <button className="ldap-wizard-btn ldap-wizard-btn-primary"
                 onClick={handleSaveMappings}
-                disabled={savingMappings || mappingStatus !== 'done'}>
+                disabled={savingMappings || mappingStatus === 'loading'}>
                 {savingMappings ? '…' : t('next_btn')}
               </button>
             )}

@@ -102,13 +102,6 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
   const [runInitialSync, setRunInitialSync] = useState(true);
   const [activating, setActivating] = useState(false);
 
-  const hasGroupSample = !!sampleGroup && Object.keys(sampleGroup).length > 0;
-
-  // Auto-trigger user mapping on step 3
-  useEffect(() => {
-    if (step === 3 && userMappingStatus === 'idle' && savedId) doRunUserMapping();
-  }, [step, userMappingStatus]); // eslint-disable-line
-
   // Load existing config when editing
   useEffect(() => {
     if (!configId) return;
@@ -159,6 +152,49 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
         : [SKIP_OPTION, { key: 'display_name', label: 'Group Name' }];
     }
   };
+
+  // Initialize mapping rows from sample data + saved mappings
+  const initUserMappingStep = async () => {
+    if (!savedId) return;
+    const opts = await buildFieldOptions('user');
+    setUserFieldOptions(opts);
+    const rows: MappingRow[] = Object.entries(sampleUser || {}).map(([attr, val]) => ({
+      azureAttribute: attr, sampleValue: String(val), systemFieldKey: '', confidence: '',
+    }));
+    try {
+      const saved = await api.get(`/azure/configs/${savedId}/mappings`, { params: { entityType: 'user' } });
+      (saved.data || []).forEach((m: any) => {
+        const row = rows.find(r => r.azureAttribute === (m.azureAttribute || m.azure_attribute));
+        if (row) row.systemFieldKey = m.systemFieldKey || m.system_field_key || '';
+      });
+    } catch {}
+    setUserMappings(rows);
+  };
+
+  const initGroupMappingStep = async () => {
+    if (!savedId) return;
+    const opts = await buildFieldOptions('group');
+    setGroupFieldOptions(opts);
+    const rows: MappingRow[] = Object.entries(sampleGroup || {}).map(([attr, val]) => ({
+      azureAttribute: attr, sampleValue: String(val), systemFieldKey: '', confidence: '',
+    }));
+    try {
+      const saved = await api.get(`/azure/configs/${savedId}/mappings`, { params: { entityType: 'group' } });
+      (saved.data || []).forEach((m: any) => {
+        const row = rows.find(r => r.azureAttribute === (m.azureAttribute || m.azure_attribute));
+        if (row) row.systemFieldKey = m.systemFieldKey || m.system_field_key || '';
+      });
+    } catch {}
+    setGroupMappings(rows);
+  };
+
+  useEffect(() => {
+    if (step === 3 && savedId) initUserMappingStep();
+  }, [step]); // eslint-disable-line
+
+  useEffect(() => {
+    if (step === 4 && savedId) initGroupMappingStep();
+  }, [step]); // eslint-disable-line
 
   // ── Step 1 handlers ────────────────────────────────────────────
   const handleStep1Next = async () => {
@@ -228,20 +264,19 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
     setUserMappingStatus('loading');
     setUserMappingError('');
     try {
-      const opts = await buildFieldOptions('user');
-      setUserFieldOptions(opts);
-
       const res = await api.post(`/azure/configs/${savedId}/suggest-mapping`, null, {
         params: { entityType: 'user' },
       });
       if (res.data.error) { setUserMappingError(res.data.error); setUserMappingStatus('error'); return; }
 
-      setUserMappings((res.data.mappings || []).map((m: any) => ({
-        azureAttribute: m.azureAttribute,
-        sampleValue: m.azureSampleValue || '',
-        systemFieldKey: m.systemFieldKey || '',
-        confidence: m.confidence || '',
-      })));
+      setUserMappings(prev => {
+        const next = prev.map(r => ({ ...r }));
+        (res.data.mappings || []).forEach((m: any) => {
+          const row = next.find(r => r.azureAttribute === m.azureAttribute);
+          if (row) { row.systemFieldKey = m.systemFieldKey || ''; row.confidence = m.confidence || ''; }
+        });
+        return next;
+      });
       setMissingUserFields(res.data.missingFields || []);
       setUserMappingStatus('done');
     } catch (err: any) {
@@ -270,20 +305,19 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
     setGroupMappingStatus('loading');
     setGroupMappingError('');
     try {
-      const opts = await buildFieldOptions('group');
-      setGroupFieldOptions(opts);
-
       const res = await api.post(`/azure/configs/${savedId}/suggest-mapping`, null, {
         params: { entityType: 'group' },
       });
       if (res.data.error) { setGroupMappingError(res.data.error); setGroupMappingStatus('error'); return; }
 
-      setGroupMappings((res.data.mappings || []).map((m: any) => ({
-        azureAttribute: m.azureAttribute,
-        sampleValue: m.azureSampleValue || '',
-        systemFieldKey: m.systemFieldKey || '',
-        confidence: m.confidence || '',
-      })));
+      setGroupMappings(prev => {
+        const next = prev.map(r => ({ ...r }));
+        (res.data.mappings || []).forEach((m: any) => {
+          const row = next.find(r => r.azureAttribute === m.azureAttribute);
+          if (row) { row.systemFieldKey = m.systemFieldKey || ''; row.confidence = m.confidence || ''; }
+        });
+        return next;
+      });
       setMissingGroupFields(res.data.missingFields || []);
       setGroupMappingStatus('done');
     } catch (err: any) {
@@ -331,114 +365,93 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
     updateFn: (idx: number, key: string) => void,
     onRerun: () => void,
     entityLabel: string,
-    onStart?: () => void,
-  ) => {
-    if (status === 'idle' && onStart) {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '40px 0' }}>
-          <p style={{ color: '#6b7280', margin: 0 }}>{t('azure_step3_intro')}</p>
-          <button className="ldap-wizard-btn ldap-wizard-btn-primary" onClick={onStart}>
-            {t('azure_run_mapping_btn')}
-          </button>
+  ) => (
+    <>
+      {/* Toolbar: always visible */}
+      <div className="ldap-mapping-toolbar">
+        <div className="ldap-mapping-stats">
+          {mappings.filter(m => m.systemFieldKey).length > 0 && (
+            <span className="ldap-mapping-stat">
+              <CheckCircle2 size={13} />
+              {mappings.filter(m => m.systemFieldKey).length} {entityLabel}
+            </span>
+          )}
         </div>
-      );
-    }
-    if (status === 'loading') {
-      return (
-        <div className="ldap-mapping-loading-card">
-          <RefreshCw size={24} className="spin ldap-mapping-loading-spinner" />
-          <div className="ldap-mapping-loading-text">
-            <strong>{t('azure_mapping_running')}</strong>
-            <span>{t('azure_step3_intro')}</span>
+        <button className="ldap-wizard-btn ldap-wizard-btn-ghost"
+          onClick={onRerun}
+          disabled={status === 'loading'}
+          style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <RefreshCw size={13} className={status === 'loading' ? 'spin' : ''} />
+          {status === 'loading' ? '…' : t('azure_run_mapping_btn')}
+        </button>
+      </div>
+
+      {status === 'error' && (
+        <div className="ldap-test-result error">{error}</div>
+      )}
+
+      {/* Missing fields banner - only shown after AI runs */}
+      {status === 'done' && missingFields.length > 0 && (
+        <div className="ldap-missing-banner">
+          <div>
+            <strong>{t('azure_missing_fields_title')}</strong>
+            <p>{t('azure_missing_fields_desc')}</p>
           </div>
-        </div>
-      );
-    }
-    if (status === 'error') {
-      return <div className="ldap-test-result error">{error}</div>;
-    }
-    if (status === 'done') {
-      return (
-        <>
-          <div className="ldap-mapping-toolbar">
-            <div className="ldap-mapping-stats">
-              {mappings.filter(m => m.systemFieldKey).length > 0 && (
-                <span className="ldap-mapping-stat">
-                  <CheckCircle2 size={13} />
-                  {mappings.filter(m => m.systemFieldKey).length} {entityLabel}
-                </span>
-              )}
-            </div>
-            <button className="ldap-wizard-btn ldap-wizard-btn-ghost"
-              onClick={onRerun}
-              style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <RefreshCw size={13} /> {t('azure_remap_btn')}
+          {onMissingFields && savedId && (
+            <button className="ldap-wizard-btn ldap-wizard-btn-primary"
+              style={{ fontSize: '0.8rem', padding: '7px 14px', whiteSpace: 'nowrap' }}
+              onClick={() => onMissingFields(savedId, missingFields)}>
+              {t('azure_go_create_fields_btn')}
             </button>
-          </div>
-
-          {missingFields.length > 0 && (
-            <div className="ldap-missing-banner">
-              <div>
-                <strong>{t('azure_missing_fields_title')}</strong>
-                <p>{t('azure_missing_fields_desc')}</p>
-              </div>
-              {onMissingFields && savedId && (
-                <button className="ldap-wizard-btn ldap-wizard-btn-primary"
-                  style={{ fontSize: '0.8rem', padding: '7px 14px', whiteSpace: 'nowrap' }}
-                  onClick={() => onMissingFields(savedId, missingFields)}>
-                  {t('azure_go_create_fields_btn')}
-                </button>
-              )}
-            </div>
           )}
+        </div>
+      )}
 
-          {mappings.length > 0 ? (
-            <div className="ldap-mapping-card">
-              <table className="ldap-mapping-table">
-                <thead>
-                  <tr>
-                    <th>{t('azure_mapping_azure_attr')}</th>
-                    <th>{t('ldap_sample_col')}</th>
-                    <th></th>
-                    <th>{t('azure_mapping_system_field')}</th>
-                    <th>{t('azure_mapping_confidence')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mappings.map((row, i) => (
-                    <tr key={row.azureAttribute}>
-                      <td><code className="ldap-attr-code">{row.azureAttribute}</code></td>
-                      <td className="ldap-map-sample">{row.sampleValue.substring(0, 35)}</td>
-                      <td className="ldap-map-arrow">→</td>
-                      <td>
-                        <select className="ldap-mapping-select"
-                          value={row.systemFieldKey}
-                          onChange={e => updateFn(i, e.target.value)}>
-                          {fieldOptions.map(o => (
-                            <option key={o.key} value={o.key}>{o.label}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        {row.confidence && (
-                          <span className={`ldap-confidence ldap-confidence-${row.confidence}`}>
-                            {row.confidence}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="ldap-sample-placeholder">{t('azure_mapping_running')}</div>
-          )}
-        </>
-      );
-    }
-    return null;
-  };
+      {/* Mapping table - always visible once rows are loaded */}
+      {mappings.length > 0 ? (
+        <div className="ldap-mapping-card">
+          <table className="ldap-mapping-table">
+            <thead>
+              <tr>
+                <th>{t('azure_mapping_azure_attr')}</th>
+                <th>{t('ldap_sample_col')}</th>
+                <th></th>
+                <th>{t('azure_mapping_system_field')}</th>
+                <th>{t('azure_mapping_confidence')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mappings.map((row, i) => (
+                <tr key={row.azureAttribute}>
+                  <td><code className="ldap-attr-code">{row.azureAttribute}</code></td>
+                  <td className="ldap-map-sample">{row.sampleValue.substring(0, 35)}</td>
+                  <td className="ldap-map-arrow">→</td>
+                  <td>
+                    <select className="ldap-mapping-select"
+                      value={row.systemFieldKey}
+                      onChange={e => updateFn(i, e.target.value)}>
+                      {fieldOptions.map(o => (
+                        <option key={o.key} value={o.key}>{o.label}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    {row.confidence && (
+                      <span className={`ldap-confidence ldap-confidence-${row.confidence}`}>
+                        {row.confidence}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="ldap-sample-placeholder">{t('azure_step3_intro')}</div>
+      )}
+    </>
+  );
 
   // ── Render ────────────────────────────────────────────────────
   return (
@@ -658,13 +671,10 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
         {/* ── Step 3: User Mapping ── */}
         {step === 3 && (
           <div className="ldap-wizard-body">
-            <p className="ldap-step-intro">{t('azure_step3_intro')}</p>
             {renderMappingPanel(
               userMappingStatus, userMappingError,
               userMappings, userFieldOptions, missingUserFields,
-              updateUserMapping,
-              () => { setUserMappings([]); setMissingUserFields([]); setUserMappingStatus('idle'); },
-              'user',
+              updateUserMapping, doRunUserMapping, 'users',
             )}
           </div>
         )}
@@ -672,19 +682,10 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
         {/* ── Step 4: Group Mapping ── */}
         {step === 4 && (
           <div className="ldap-wizard-body">
-            {hasGroupSample ? (
-              renderMappingPanel(
-                groupMappingStatus, groupMappingError,
-                groupMappings, groupFieldOptions, missingGroupFields,
-                updateGroupMapping,
-                () => { setGroupMappings([]); setMissingGroupFields([]); setGroupMappingStatus('idle'); },
-                'group',
-                doRunGroupMapping,
-              )
-            ) : (
-              <div className="ldap-sample-placeholder" style={{ padding: 32 }}>
-                No group sample data — group mapping skipped. Click Next to continue.
-              </div>
+            {renderMappingPanel(
+              groupMappingStatus, groupMappingError,
+              groupMappings, groupFieldOptions, missingGroupFields,
+              updateGroupMapping, doRunGroupMapping, 'groups',
             )}
           </div>
         )}
@@ -787,7 +788,7 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
             {step === 3 && (
               <button className="ldap-wizard-btn ldap-wizard-btn-primary"
                 onClick={handleSaveUserMappings}
-                disabled={savingUserMappings || userMappingStatus !== 'done'}>
+                disabled={savingUserMappings || userMappingStatus === 'loading'}>
                 {savingUserMappings ? '…' : t('next_btn')}
               </button>
             )}
