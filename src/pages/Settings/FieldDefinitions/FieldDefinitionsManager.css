@@ -541,6 +541,44 @@
 .fd-options-save-btn:hover:not(:disabled) { background: #059669; }
 .fd-options-save-btn:disabled { opacity: .6; cursor: not-allowed; }
 
+/* Option-value translation sub-section inside the combobox options panel */
+.fd-option-translations {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--fd-border);
+}
+.fd-option-translations-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fd-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin: 0 0 8px;
+}
+.fd-option-translations-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fd-option-trans-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.fd-option-trans-key {
+  min-width: 110px;
+  font-size: 0.8rem;
+  color: var(--fd-muted);
+  font-family: monospace;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 3px 7px;
+}
+.fd-option-trans-input {
+  flex: 1;
+  max-width: 300px;
+}
+
 /* Sidebar combobox options input row */
 .fd-options-input-row {
   display: flex;

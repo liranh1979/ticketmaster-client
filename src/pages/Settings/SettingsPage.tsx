@@ -25,6 +25,7 @@ type ViewState =
   | 'system-fields'
   | 'custom-fields'
   | 'group-custom-fields'
+  | 'ticket-custom-fields'
   | 'ai-manager'
   | 'users-groups-hub'
   | 'users'
@@ -55,6 +56,8 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
       setCurrentView('system-fields');
     } else if (entity === 'group') {
       setCurrentView('group-custom-fields');
+    } else if (entity === 'ticket') {
+      setCurrentView('ticket-custom-fields');
     } else {
       setCurrentView('custom-fields');
     }
@@ -223,6 +226,18 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
           ← {t('back_btn')}
         </button>
         <FieldDefinitionsManager entityType="group" />
+      </div>
+    );
+  }
+
+  // 8b. Ticket Custom Fields View
+  if (currentView === 'ticket-custom-fields') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToSelection}>
+          ← {t('back_btn')}
+        </button>
+        <FieldDefinitionsManager entityType="ticket" />
       </div>
     );
   }

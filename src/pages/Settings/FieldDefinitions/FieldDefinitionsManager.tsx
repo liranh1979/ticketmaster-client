@@ -11,7 +11,7 @@ interface Language { code: string; name: string; }
 interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; }
 
 interface FieldDefinitionsManagerProps {
-  entityType?: 'user' | 'group';
+  entityType?: 'user' | 'group' | 'ticket';
   returnContext?: { ldapConfigId: number; suggestedFields: MissingField[] };
   azureReturnContext?: { azureConfigId: number; suggestedFields: AzureMissingField[] };
   onReturnFromDetour?: () => void;
@@ -86,7 +86,9 @@ export const FieldDefinitionsManager = ({ entityType = 'user', returnContext, az
       <div className="fd-page-header">
         <div className="fd-page-header-content">
           <h2 className="fd-page-title">
-            {entityType === 'group' ? t('manage_group_custom_fields') : t('manage_custom_fields')}
+            {entityType === 'group'  ? t('manage_group_custom_fields')  :
+             entityType === 'ticket' ? t('manage_ticket_custom_fields') :
+             t('manage_custom_fields')}
           </h2>
           <p className="fd-page-subtitle">
             {t('editing_language')}: <strong>{selectedLang.toUpperCase()}</strong>
@@ -96,7 +98,9 @@ export const FieldDefinitionsManager = ({ entityType = 'user', returnContext, az
         </div>
         <div className="fd-header-badge">
           <span className="fd-header-badge-dot" />
-          {entityType === 'group' ? t('field_group_groups') : t('field_group_custom')}
+          {entityType === 'group'  ? t('field_group_groups')  :
+           entityType === 'ticket' ? t('field_group_tickets') :
+           t('field_group_custom')}
         </div>
       </div>
 

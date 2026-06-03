@@ -239,6 +239,29 @@ export const FieldTranslationGrid = ({
                               {savingOpts[field.id] ? '...' : t('save_btn')}
                             </button>
                           </div>
+
+                          {/* Option-value translations — one input per option */}
+                          {drafts.length > 0 && (
+                            <div className="fd-option-translations">
+                              <p className="fd-option-translations-label">{t('option_translations_label') || 'Option Labels'}</p>
+                              <div className="fd-option-translations-grid">
+                                {drafts.map(opt => {
+                                  const optKey = `${field.fieldKey}_opt_${opt}`;
+                                  return (
+                                    <div key={opt} className="fd-option-trans-row">
+                                      <span className="fd-option-trans-key">{opt}</span>
+                                      <input
+                                        className="fd-trans-input fd-option-trans-input"
+                                        value={translations[optKey] ?? ''}
+                                        onChange={e => markDirty({ ...translations, [optKey]: e.target.value })}
+                                        placeholder={isEnglish ? opt : (englishSource[optKey] || opt)}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
