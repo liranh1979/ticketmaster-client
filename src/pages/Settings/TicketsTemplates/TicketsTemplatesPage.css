@@ -1,0 +1,128 @@
+.tt-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #0a0f1a;
+  min-height: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.tt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tt-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.tt-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tt-create-btn:hover:not(:disabled) { background: #2563eb; }
+.tt-create-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.tt-loading, .tt-empty {
+  color: #64748b;
+  text-align: center;
+  padding: 3rem 1rem;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.tt-list { display: flex; flex-direction: column; gap: 10px; }
+
+.tt-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tt-card:hover { border-color: #3b82f6; background: #243347; }
+
+.tt-card-icon { color: #64748b; flex-shrink: 0; }
+
+.tt-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.tt-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tt-card-desc {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tt-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tt-version-badge {
+  padding: 2px 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.tt-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #334155;
+  border-radius: 5px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tt-icon-btn:hover { background: #334155; color: #f1f5f9; }
+.tt-icon-delete:hover { background: #450a0a; border-color: #ef4444; color: #ef4444; }
