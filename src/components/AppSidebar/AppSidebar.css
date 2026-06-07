@@ -1,0 +1,69 @@
+.app-sidebar {
+  width: 180px;
+  min-width: 180px;
+  height: 100%;
+  background: #f8fafc;
+  border-inline-end: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 8px;
+  flex-shrink: 0;
+}
+
+.asb-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  color: #4a5568;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: start;
+  transition: background 0.12s, color 0.12s;
+  font-weight: 500;
+}
+
+.asb-item:hover {
+  background: #e9f0ff;
+  color: #2563eb;
+}
+
+.asb-item-active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.asb-item-active:hover {
+  background: #bfdbfe;
+}
+
+.asb-new-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  margin-top: 4px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #fff;
+  background: #2563eb;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: start;
+  transition: background 0.15s;
+}
+
+.asb-new-btn:hover {
+  background: #1d4ed8;
+}
+
+.asb-new-btn-active {
+  background: #1e40af;
+}

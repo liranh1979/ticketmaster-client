@@ -1,0 +1,157 @@
+.tfr-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tfr-half {
+  /* used for side-by-side fields if container is a grid */
+}
+
+.tfr-title-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #334155;
+  border-radius: 0;
+  padding: 8px 0;
+  color: #f1f5f9;
+  font-size: 1.35rem;
+  font-weight: 700;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.tfr-title-input:focus {
+  border-bottom-color: #3b82f6;
+}
+
+.tfr-title-input::placeholder {
+  color: #334155;
+  font-weight: 400;
+}
+
+.tfr-field-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-left: 3px solid #3b82f6;
+  border-radius: 12px;
+  padding: 16px 18px;
+  position: relative;
+}
+
+.tfr-field-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.tfr-field-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  flex: 1;
+  text-align: center;
+}
+
+.tfr-field-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tfr-field-type-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  text-transform: capitalize;
+}
+
+.tfr-system-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.3);
+  color: #93c5fd;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tfr-ai-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(139,92,246,0.15);
+  border: 1px solid rgba(139,92,246,0.4);
+  color: #c4b5fd;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-inline-start: auto;
+}
+
+.tfr-field-control {
+  width: 100%;
+}
+
+.tfr-input {
+  width: 100%;
+  background: #0b1228;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.tfr-input:focus {
+  border-color: #3b82f6;
+}
+
+.tfr-input[readonly] {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.tfr-select {
+  width: 100%;
+  background: #0b1228;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.tfr-select:focus {
+  border-color: #3b82f6;
+}
+
+.tfr-select:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.tfr-activity-placeholder {
+  padding: 20px;
+  text-align: center;
+  color: #475569;
+  font-size: 0.85rem;
+  border: 1px dashed #1e293b;
+  border-radius: 8px;
+  font-style: italic;
+}

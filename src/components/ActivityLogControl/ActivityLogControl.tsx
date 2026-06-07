@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PlusCircle, MessageSquare } from 'lucide-react';
 import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
 import './ActivityLogControl.css';
@@ -44,12 +44,30 @@ const SAMPLE_ENTRIES: ActivityEntry[] = [
 interface Props {
   previewMode?: boolean;
   readonly?: boolean;
+  refreshKey?: number;
+  user?: any;
 }
 
-export const ActivityLogControl = ({ previewMode = false, readonly = false }: Props) => {
+export const ActivityLogControl = ({ previewMode = false, readonly = false, refreshKey, user }: Props) => {
   const [entries, setEntries] = useState<ActivityEntry[]>(previewMode ? SAMPLE_ENTRIES : []);
   const [isAdding, setIsAdding] = useState(false);
   const [draft, setDraft] = useState('');
+  const initialRender = useRef(true);
+
+  useEffect(() => {
+    if (initialRender.current) { initialRender.current = false; return; }
+    if (!refreshKey) return;
+    const displayName: string = user?.display_name ?? 'System';
+    setEntries(prev => [{
+      id: Date.now().toString(),
+      authorName: displayName,
+      authorInitials: displayName.slice(0, 2).toUpperCase(),
+      authorColor: '#6366f1',
+      timestamp: 'Just now',
+      content: '<p>Ticket saved.</p>',
+    }, ...prev]);
+  }, [refreshKey]);
+
 
   const submitEntry = () => {
     const stripped = draft.replace(/<[^>]*>/g, '').trim();

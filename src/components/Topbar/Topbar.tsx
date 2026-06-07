@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ClipboardList } from 'lucide-react';
 import api from '../../api';
 import { AIStatusIndicator } from './AIStatusIndicator/AIStatusIndicator';
 import { isSuperAdmin } from '../../utils/permissions';
@@ -8,9 +9,10 @@ import './Topbar.css';
 interface TopbarProps {
   user: any;
   onSettingsClick: () => void;
+  onTicketListClick?: () => void;
 }
 
-export const Topbar = ({ user, onSettingsClick }: TopbarProps) => {
+export const Topbar = ({ user, onSettingsClick, onTicketListClick }: TopbarProps) => {
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -22,7 +24,6 @@ export const Topbar = ({ user, onSettingsClick }: TopbarProps) => {
   const handleLogout = async () => {
     try {
       await api.post('/auth/logout');
-      // Full reload to clear all states/caches
       window.location.reload();
     } catch (err) {
       console.error("Logout failed", err);
@@ -42,9 +43,19 @@ export const Topbar = ({ user, onSettingsClick }: TopbarProps) => {
           {t('welcome_hello')}, <strong>{user?.display_name || 'Guest'}</strong>
         </span>
 
-        <div 
-          className="settings-container" 
-          onClick={onSettingsClick} 
+        {onTicketListClick && (
+          <div
+            className="topbar-icon-btn"
+            onClick={onTicketListClick}
+            title={t('all_tickets')}
+          >
+            <ClipboardList size={20} />
+          </div>
+        )}
+
+        <div
+          className="settings-container"
+          onClick={onSettingsClick}
           title={t('settings_tooltip')}
         >
           <img src="/settings.png" alt="Settings" className="settings-icon" />

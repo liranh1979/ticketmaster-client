@@ -89,5 +89,21 @@
 .topbar-right {
     display: flex;
     align-items: center;
-    gap: 15px; /* Adds space between the user name, AI icon, and gear */
+    gap: 15px;
+}
+
+.topbar-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  color: #4a5568;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.topbar-icon-btn:hover {
+  background-color: #f0f4ff;
+  color: #2563eb;
 }
