@@ -2,23 +2,20 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FIELD_TYPES } from './fieldTypes';
 import api from '../../../api';
-interface Language { code: string; name: string; }
 interface SuggestedField {
   suggestedFieldKey: string;
   suggestedLabel: string;
   suggestedFieldType: string;
 }
 interface FieldDefinitionsSidebarProps {
-  languages: Language[];
   selectedLang: string;
   entityType: string;
-  onSelect: (code: string) => void;
   onFieldAdded: () => void;
   suggestedFields?: SuggestedField[];
 }
 
 export const FieldDefinitionsSidebar = ({
-  languages, selectedLang, entityType, onSelect, onFieldAdded, suggestedFields,
+  selectedLang, entityType, onFieldAdded, suggestedFields,
 }: FieldDefinitionsSidebarProps) => {
   const { t } = useTranslation();
   const [form, setForm] = useState({ fieldKey: '', label: '', fieldType: 'text' });
@@ -67,22 +64,6 @@ export const FieldDefinitionsSidebar = ({
 
   return (
     <div className="fd-sidebar">
-      <div className="fd-sidebar-section">
-        <p className="fd-sidebar-label">{t('languages_label')}</p>
-        <ul className="fd-lang-list">
-          {languages.map(l => (
-            <li
-              key={l.code}
-              className={`fd-lang-item ${selectedLang === l.code ? 'active' : ''}`}
-              onClick={() => onSelect(l.code)}
-            >
-              <span className="fd-lang-flag">{l.code.toUpperCase()}</span>
-              <span className="fd-lang-name">{l.name}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
       {isEnglish && suggestedFields && suggestedFields.length > 0 && (
         <div className="fd-sidebar-section fd-ldap-suggestions-section">
           <p className="fd-sidebar-label">{t('ldap_suggested_by_section')}</p>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Layers } from 'lucide-react';
+import { Plus, Pencil, Trash2, Layers, Star } from 'lucide-react';
 import api from '../../../api';
 import { TemplateBuilderPage } from './TemplateBuilderPage';
 import './TicketsTemplatesPage.css';
@@ -10,6 +10,7 @@ interface TemplateSummary {
   name: string;
   description: string;
   currentVersionNumber: number;
+  isDefault: boolean;
 }
 
 export const TicketsTemplatesPage = () => {
@@ -18,6 +19,7 @@ export const TicketsTemplatesPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
+  const [settingDefaultId, setSettingDefaultId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -38,6 +40,19 @@ export const TicketsTemplatesPage = () => {
       setSelectedId(res.data.id);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleSetDefault = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSettingDefaultId(id);
+    try {
+      await api.patch(`/templates/${id}/set-default`);
+      setTemplates(prev =>
+        prev.map(tpl => ({ ...tpl, isDefault: tpl.id === id }))
+      );
+    } finally {
+      setSettingDefaultId(null);
     }
   };
 
@@ -73,14 +88,35 @@ export const TicketsTemplatesPage = () => {
       ) : (
         <div className="tt-list">
           {templates.map(tpl => (
-            <div key={tpl.id} className="tt-card" onClick={() => setSelectedId(tpl.id)}>
-              <div className="tt-card-icon"><Layers size={22} /></div>
+            <div
+              key={tpl.id}
+              className={`tt-card${tpl.isDefault ? ' tt-card-default' : ''}`}
+              onClick={() => setSelectedId(tpl.id)}
+            >
+              <div className="tt-card-icon">
+                <Layers size={22} />
+              </div>
               <div className="tt-card-body">
-                <span className="tt-card-name">{tpl.name}</span>
+                <div className="tt-card-name-row">
+                  <span className="tt-card-name">{tpl.name}</span>
+                  {tpl.isDefault && (
+                    <span className="tt-default-badge">
+                      <Star size={10} fill="currentColor" /> {t('default_template')}
+                    </span>
+                  )}
+                </div>
                 {tpl.description && <span className="tt-card-desc">{tpl.description}</span>}
               </div>
               <div className="tt-card-actions">
                 <span className="tt-version-badge">v{tpl.currentVersionNumber}</span>
+                <button
+                  className={`tt-icon-btn tt-icon-star${tpl.isDefault ? ' tt-icon-star-active' : ''}`}
+                  onClick={(e) => handleSetDefault(tpl.id, e)}
+                  title={tpl.isDefault ? t('default_template') : t('set_as_default')}
+                  disabled={settingDefaultId === tpl.id || tpl.isDefault}
+                >
+                  <Star size={15} fill={tpl.isDefault ? 'currentColor' : 'none'} />
+                </button>
                 <button className="tt-icon-btn" onClick={() => setSelectedId(tpl.id)} title={t('template_edit_mode')}>
                   <Pencil size={15} />
                 </button>

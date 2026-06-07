@@ -126,3 +126,37 @@
 
 .tt-icon-btn:hover { background: #334155; color: #f1f5f9; }
 .tt-icon-delete:hover { background: #450a0a; border-color: #ef4444; color: #ef4444; }
+
+.tt-card-default {
+  border-color: #ca8a04;
+  background: #1c1a10;
+}
+
+.tt-card-default:hover { border-color: #eab308; background: #252110; }
+
+.tt-card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tt-default-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #eab308;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tt-icon-star { color: #475569; }
+.tt-icon-star:hover:not(:disabled) { background: #1c1a10; border-color: #ca8a04; color: #eab308; }
+.tt-icon-star-active { color: #eab308; border-color: rgba(234,179,8,0.4); background: rgba(234,179,8,0.1); cursor: default; }
+.tt-icon-star:disabled { opacity: 1; }

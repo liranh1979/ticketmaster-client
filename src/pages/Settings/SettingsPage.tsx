@@ -5,6 +5,7 @@ import { SystemFieldManager } from './LanguageManager/SystemFieldManager';
 import { FieldDefinitionsManager } from './FieldDefinitions/FieldDefinitionsManager';
 import { AIManager } from './AIManager/AIManager';
 import { TicketsTemplatesPage } from './TicketsTemplates/TicketsTemplatesPage';
+import { LabelsManagementPage } from './LabelsManagement/LabelsManagementPage';
 import { UsersPage } from './UsersManager/UsersPage';
 import { UsersGroupsHub } from './UsersGroupsHub';
 import { GroupsPage } from './GroupsManager/GroupsPage';
@@ -28,6 +29,7 @@ type ViewState =
   | 'group-custom-fields'
   | 'ticket-custom-fields'
   | 'tickets-templates'
+  | 'labels-management'
   | 'ai-manager'
   | 'users-groups-hub'
   | 'users'
@@ -60,6 +62,8 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
       setCurrentView('group-custom-fields');
     } else if (entity === 'ticket') {
       setCurrentView('ticket-custom-fields');
+    } else if (entity === 'label') {
+      setCurrentView('labels-management');
     } else {
       setCurrentView('custom-fields');
     }
@@ -145,6 +149,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
           </div>
         )}
 
+
         {canAi && (
           <div className="settings-card" onClick={() => setCurrentView('ai-manager')}>
             <div className="settings-icon-box">
@@ -171,7 +176,19 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
     );
   }
 
-  // 2b. AI Manager View
+  // 2b. Labels Management View
+  if (currentView === 'labels-management') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToSelection}>
+          ← {t('back_btn')}
+        </button>
+        <LabelsManagementPage />
+      </div>
+    );
+  }
+
+  // 2c. AI Manager View
   if (currentView === 'ai-manager') {
     return (
       <div className="view-container">

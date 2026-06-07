@@ -37,6 +37,13 @@ export const FieldEntityList = ({ onSelectEntity }: FieldEntityListProps) => {
       icon: '🎫',
       description: t('ticket_defined_fields'),
     },
+    {
+      entity: 'label',
+      category: 'custom' as const,
+      label: t('label_field_group'),
+      icon: '🏷️',
+      description: t('label_defined_fields'),
+    },
   ];
 
   return (

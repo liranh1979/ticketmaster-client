@@ -108,19 +108,31 @@ export const FieldDefinitionsManager = ({ entityType = 'user', returnContext, az
       <div className="fd-body">
         <aside className="fd-sidebar-wrapper">
           <FieldDefinitionsSidebar
-            languages={languages}
             selectedLang={selectedLang}
             entityType={entityType}
             suggestedFields={returnContext?.suggestedFields ?? azureReturnContext?.suggestedFields}
-            onSelect={(code) => {
-                if (isDirty && !window.confirm(t('confirm_discard_changes'))) return;
-                setSelectedLang(code);
-              }}
             onFieldAdded={() => fetchAll(true)}
           />
         </aside>
 
         <main className="fd-main-content">
+          {/* Language tab bar */}
+          <div className="fd-lang-tab-bar">
+            {languages.map(l => (
+              <button
+                key={l.code}
+                className={`fd-lang-tab-btn${selectedLang === l.code ? ' fd-lang-tab-active' : ''}`}
+                onClick={() => {
+                  if (isDirty && !window.confirm(t('confirm_discard_changes'))) return;
+                  setSelectedLang(l.code);
+                }}
+              >
+                <span className="fd-lang-tab-code">{l.code.toUpperCase()}</span>
+                {l.name}
+              </button>
+            ))}
+          </div>
+
           <FieldTranslationGrid
             targetLang={selectedLang}
             fieldDefs={fieldDefs}

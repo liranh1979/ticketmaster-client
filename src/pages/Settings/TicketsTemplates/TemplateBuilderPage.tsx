@@ -25,6 +25,7 @@ import { RichTextEditor } from '../../../components/RichTextEditor/RichTextEdito
 import { AttachmentsControl } from '../../../components/AttachmentsControl/AttachmentsControl';
 import { UserPickerControl } from '../../../components/UserPickerControl/UserPickerControl';
 import { ActivityLogControl } from '../../../components/ActivityLogControl/ActivityLogControl';
+import { LabelPickerControl } from '../../../components/LabelPickerControl/LabelPickerControl';
 import './TemplateBuilderPage.css';
 
 /* ── Types ── */
@@ -77,6 +78,7 @@ const FIELD_TYPE_CONFIG: Record<string, FieldConfig> = {
   attachments:  { icon: Paperclip,     color: '#f97316', label: 'File Upload'  },
   activity_log: { icon: MessageSquare, color: '#06b6d4', label: 'Activity Log' },
   emails:       { icon: Mail,          color: '#06b6d4', label: 'Email'        },
+  labels:       { icon: Tag,           color: '#3b82f6', label: 'Labels'       },
 };
 
 const FIELD_KEY_CONFIG: Record<string, FieldConfig> = {
@@ -88,6 +90,7 @@ const FIELD_KEY_CONFIG: Record<string, FieldConfig> = {
   title:        { icon: Type,          color: '#3b82f6', label: 'Title'        },
   description:  { icon: FileText,      color: '#8b5cf6', label: 'Rich Text'    },
   emails:       { icon: Mail,          color: '#06b6d4', label: 'Email'        },
+  labels:       { icon: Tag,           color: '#3b82f6', label: 'Labels'       },
 };
 
 const getFieldConfig = (fieldKey: string, fieldType: string): FieldConfig =>
@@ -149,6 +152,14 @@ function SortableFieldCard({
         <div className="tb-field-sys-note">
           <MessageSquare size={12} />
           Activity entries are created automatically as the ticket is updated
+        </div>
+      );
+    }
+    if (field.fieldKey === 'labels' || field.fieldType === 'labels') {
+      return (
+        <div className="tb-field-sys-note">
+          <Tag size={12} />
+          Labels are selected from your label library — manage them in Settings → Labels
         </div>
       );
     }
@@ -356,6 +367,11 @@ function PreviewField({
           })}
         </div>
       );
+    }
+
+    /* Labels */
+    if (field.fieldKey === 'labels' || field.fieldType === 'labels') {
+      return <LabelPickerControl previewMode readonly />;
     }
 
     switch (field.fieldType) {
