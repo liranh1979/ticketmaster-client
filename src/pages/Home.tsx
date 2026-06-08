@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Topbar } from '../components/Topbar/Topbar';
 import { AppSidebar } from '../components/AppSidebar/AppSidebar';
@@ -7,6 +7,8 @@ import { TaskProgressPanel } from '../components/TaskProgressPanel/TaskProgressP
 import { TicketListPage } from './Tickets/TicketListPage';
 import { CreateTicketPage } from './Tickets/CreateTicketPage';
 import { TicketEditPage } from './Tickets/TicketEditPage';
+import { EndUserPortal } from './EndUser/EndUserPortal';
+import { MyTicketsPage } from './EndUser/MyTicketsPage';
 import { hasPermission, isSuperAdmin, PERMISSIONS } from '../utils/permissions';
 
 interface HomeProps {
@@ -19,7 +21,7 @@ interface HomeProps {
   } | null;
 }
 
-type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket';
+type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets';
 
 export const Home = ({ user }: HomeProps) => {
   const { t } = useTranslation();
@@ -28,15 +30,35 @@ export const Home = ({ user }: HomeProps) => {
 
   const canManageTickets = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
 
+  // End users (no permissions, not super admin) get the self-contained portal
+  const isEndUserOnly = !isSuperAdmin(user) && !(user?.effective_permissions?.length);
+
   const goToTicketList   = () => setCurrentView('ticket-list');
+  const goToMyTickets    = () => setCurrentView('my-tickets');
   const goToCreateTicket = () => setCurrentView('create-ticket');
   const goToEditTicket   = (id: number) => { setEditTicketId(id); setCurrentView('edit-ticket'); };
+
+  // Deep-link: ?ticket=NNN — admin path only (end users handled inside EndUserPortal)
+  useEffect(() => {
+    if (isEndUserOnly) return;
+    const params = new URLSearchParams(window.location.search);
+    const ticketParam = params.get('ticket');
+    if (ticketParam) {
+      const id = parseInt(ticketParam, 10);
+      if (!isNaN(id) && id > 0) goToEditTicket(id);
+    }
+  }, []);
+
+  if (isEndUserOnly) return <EndUserPortal user={user} />;
 
   return (
     <div className="app-layout">
       <Topbar
         user={user}
         onSettingsClick={() => setCurrentView('settings')}
+        onTicketListClick={canManageTickets ? goToTicketList : undefined}
+        onMyTicketsClick={!canManageTickets ? goToMyTickets : undefined}
+        onTicketJump={canManageTickets ? goToEditTicket : undefined}
       />
 
       <div className="app-body">
@@ -89,7 +111,16 @@ export const Home = ({ user }: HomeProps) => {
             <TicketEditPage
               ticketId={editTicketId}
               user={user}
-              onBack={goToTicketList}
+              onBack={canManageTickets ? goToTicketList : goToMyTickets}
+            />
+          )}
+
+          {currentView === 'my-tickets' && (
+            <MyTicketsPage
+              user={user}
+              onBack={() => setCurrentView('welcome')}
+              onNewTicket={goToCreateTicket}
+              onViewTicket={goToEditTicket}
             />
           )}
         </div>

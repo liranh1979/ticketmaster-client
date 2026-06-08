@@ -4,7 +4,7 @@ import { ArrowLeft, Sparkles, CheckCircle } from 'lucide-react';
 import api from '../../api';
 import { TicketFormRenderer } from '../../components/TicketFormRenderer/TicketFormRenderer';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
-import type { TemplateSummary, TemplateWithLayout, TemplateLayoutField, AiAnalyzeResponse } from './ticketTypes';
+import type { TemplateSummary, TemplateWithLayout, TemplateTab, AiAnalyzeResponse } from './ticketTypes';
 import { flattenLayout } from './ticketTypes';
 import './CreateTicketPage.css';
 
@@ -22,7 +22,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
   const [mode, setMode]                   = useState<Mode>('manual');
   const [templates, setTemplates]         = useState<TemplateSummary[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateWithLayout | null>(null);
-  const [layoutFields, setLayoutFields]   = useState<TemplateLayoutField[]>([]);
+  const [layoutTabs, setLayoutTabs]       = useState<TemplateTab[]>([]);
   const [templateSearch, setTemplateSearch] = useState('');
   const [values, setValues]               = useState<Record<string, any>>({});
   const [aiFilledFields, setAiFilledFields] = useState<string[]>([]);
@@ -45,8 +45,9 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
     try {
       const { data } = await api.get(`/templates/${id}`);
       setSelectedTemplate(data);
+      const tabs: TemplateTab[] = data.layout?.tabs ?? [];
+      setLayoutTabs(tabs);
       const flat = flattenLayout(data.layout);
-      setLayoutFields(flat);
       const defaults: Record<string, any> = {};
       for (const f of flat) {
         defaults[f.fieldKey] = f.defaultValue ?? '';
@@ -90,9 +91,9 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
   const handleClearAi = () => {
     setAiFilledFields([]);
     setAiResult(null);
-    if (layoutFields.length > 0) {
+    if (layoutTabs.length > 0) {
       const defaults: Record<string, any> = {};
-      for (const f of layoutFields) defaults[f.fieldKey] = f.defaultValue ?? '';
+      for (const f of layoutTabs.flatMap(t => t.fields)) defaults[f.fieldKey] = f.defaultValue ?? '';
       setValues(defaults);
     }
   };
@@ -126,9 +127,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
   };
 
   const isAdmin = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
-  const visibleFields = isAdmin
-    ? layoutFields
-    : layoutFields.filter(f => !f.isAdminOnly);
+  const totalFieldCount = layoutTabs.reduce((n, tab) => n + tab.fields.length, 0);
 
   const filteredTemplates = templates.filter(t =>
     t.name.toLowerCase().includes(templateSearch.toLowerCase())
@@ -279,7 +278,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
             {selectedTemplate && (
               <div className="cp-rail-footer">
                 Selected: <strong>{selectedTemplate.name}</strong><br />
-                <span className="cp-rail-version">v{selectedTemplate.currentVersionNumber} • {visibleFields.length} fields</span>
+                <span className="cp-rail-version">v{selectedTemplate.currentVersionNumber} • {totalFieldCount} fields</span>
               </div>
             )}
           </aside>
@@ -326,11 +325,12 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
             {/* Form fields */}
             {templateLoading ? (
               <div className="cp-form-loading"><div className="tl-spinner" /></div>
-            ) : visibleFields.length > 0 ? (
+            ) : layoutTabs.length > 0 ? (
               <TicketFormRenderer
-                layout={visibleFields}
+                tabs={layoutTabs}
                 values={values}
                 onChange={(key, val) => setValues(prev => ({ ...prev, [key]: val }))}
+                isAdmin={isAdmin}
                 aiFilledFields={aiFilledFields}
               />
             ) : (
@@ -340,7 +340,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
             {/* Sticky bottom bar */}
             <div className="cp-bottom-bar">
               <p className="cp-bottom-info">
-                {visibleFields.length} fields
+                {totalFieldCount} fields
                 {aiFilledFields.length > 0 && ` • ${aiFilledFields.length} filled by AI`}
               </p>
               <div className="cp-bottom-actions">

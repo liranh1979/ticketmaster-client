@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Sparkles, AlertCircle, RefreshCw, MessageSquare, Link2 } from 'lucide-react';
 import api from '../../api';
 import { TicketFormRenderer } from '../../components/TicketFormRenderer/TicketFormRenderer';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import { ActivityLogControl } from '../../components/ActivityLogControl/ActivityLogControl';
+import { AiTicketConsultPanel } from '../../components/AiTicketConsultPanel/AiTicketConsultPanel';
 import type {
   TicketDetail,
-  TemplateLayoutField,
+  TemplateTab,
   TicketSseEvent,
 } from './ticketTypes';
-import { formatRelativeTime, flattenLayout } from './ticketTypes';
+import { formatRelativeTime } from './ticketTypes';
 import './TicketEditPage.css';
 
 interface Props {
@@ -29,7 +30,7 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
   const { t } = useTranslation();
 
   const [ticket, setTicket]         = useState<TicketDetail | null>(null);
-  const [layoutFields, setLayoutFields] = useState<TemplateLayoutField[]>([]);
+  const [layoutTabs, setLayoutTabs] = useState<TemplateTab[]>([]);
   const [values, setValues]         = useState<Record<string, any>>({});
   const [loading, setLoading]       = useState(true);
   const [saving, setSaving]         = useState(false);
@@ -40,6 +41,8 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
   const [syncedToast, setSyncedToast]     = useState(false);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [saveCount, setSaveCount]         = useState(0);
+  const [consultOpen, setConsultOpen]     = useState(false);
+  const [linkCopied, setLinkCopied]       = useState(false);
 
   const autoSaveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presencePinger = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -57,7 +60,7 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
 
         // Load template layout
         const { data: tpl } = await api.get(`/templates/${td.templateId}`);
-        setLayoutFields(flattenLayout(tpl.layout));
+        setLayoutTabs((tpl.layout?.tabs ?? []) as TemplateTab[]);
 
         // Seed values from ticket
         const vals: Record<string, any> = { ...td.ticketData };
@@ -147,6 +150,18 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
     };
   }, [ticketId, user, loading]);
 
+  // Keep URL in sync so the ticket is shareable via ?ticket={id}
+  useEffect(() => {
+    window.history.replaceState(null, '', `?ticket=${ticketId}`);
+    return () => { window.history.replaceState(null, '', window.location.pathname); };
+  }, [ticketId]);
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}?ticket=${ticketId}`);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
   const triggerTypingSSE = useCallback(() => {
     api.post(`/tickets/${ticketId}/presence/typing`, {
       displayName: user?.display_name,
@@ -227,9 +242,6 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
   }, [save, onBack]);
 
   const isAdmin = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
-  const visibleFields = isAdmin
-    ? layoutFields
-    : layoutFields.filter(f => !f.isAdminOnly);
 
   if (loading) {
     return (
@@ -248,6 +260,10 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
         <button className="te-back-btn" onClick={handleBack}><ArrowLeft size={16} /></button>
         <div className="te-header-center">
           <span className="te-ticket-id">TT-{ticketId}</span>
+          <button className="te-copy-link-btn" onClick={copyLink} title="Copy shareable link">
+            <Link2 size={13} />
+            {linkCopied ? '✓ Copied!' : 'Copy link'}
+          </button>
           <span className="te-template-name">{ticket?.templateName}</span>
           <span className="te-updated">{ticket?.updatedAt ? formatRelativeTime(ticket.updatedAt) : ''}</span>
         </div>
@@ -277,8 +293,23 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
           {!isDirty && syncedToast && (
             <span className="te-synced-toast">✓ {t('ticket_synced_toast')}</span>
           )}
+          {/* AI consult button — admins only */}
+          {isAdmin && (
+            <button className="te-consult-btn" onClick={() => setConsultOpen(true)}>
+              <MessageSquare size={14} /> {t('ai_consult_btn', { defaultValue: 'Consult AI' })}
+            </button>
+          )}
         </div>
       </div>
+
+      {isAdmin && (
+        <AiTicketConsultPanel
+          ticketId={ticketId}
+          open={consultOpen}
+          onClose={() => setConsultOpen(false)}
+          user={user}
+        />
+      )}
 
       {/* Editing indicator bar */}
       {presenceUsers.length > 0 && (
@@ -318,11 +349,12 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
 
       {/* Form body */}
       <div className="te-body">
-        {visibleFields.length > 0 && (
+        {layoutTabs.length > 0 && (
           <TicketFormRenderer
-            layout={visibleFields}
+            tabs={layoutTabs}
             values={values}
             onChange={handleChange}
+            isAdmin={isAdmin}
             entityId={ticketId}
           />
         )}

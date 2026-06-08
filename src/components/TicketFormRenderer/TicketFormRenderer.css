@@ -1,3 +1,41 @@
+.tfr-root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Tab bar ──────────────────────────────────────────────── */
+.tfr-tab-bar {
+  display: flex;
+  gap: 2px;
+  padding: 0 0 0 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  margin-bottom: 16px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.tfr-tab-btn {
+  padding: 8px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  margin-bottom: -1px;
+}
+
+.tfr-tab-btn:hover { color: #cbd5e1; }
+
+.tfr-tab-active {
+  color: #a5b4fc !important;
+  border-bottom-color: #6366f1 !important;
+  font-weight: 600;
+}
+
 .tfr-form {
   display: flex;
   flex-direction: column;
