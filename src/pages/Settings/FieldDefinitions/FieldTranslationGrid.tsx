@@ -1,22 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, XCircle, Globe, Lock } from 'lucide-react';
 import { getFieldType } from './fieldTypes';
 import api from '../../../api';
 
-interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; }
+interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; isAdminOnly?: boolean; }
 interface FieldTranslationGridProps {
   targetLang: string;
   fieldDefs: FieldDef[];
   refreshKey: number;
   translationType: string;
+  entityType?: string;
   onDirtyChange: (isDirty: boolean) => void;
 }
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
 export const FieldTranslationGrid = ({
-  targetLang, fieldDefs, refreshKey, translationType, onDirtyChange,
+  targetLang, fieldDefs, refreshKey, translationType, entityType, onDirtyChange,
 }: FieldTranslationGridProps) => {
   const { t, i18n } = useTranslation();
   const [translations, setTranslations]   = useState<Record<string, string>>({});
@@ -25,6 +26,24 @@ export const FieldTranslationGrid = ({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [translating, setTranslating] = useState(false);
   const isEnglish = targetLang === 'en';
+
+  const [adminOnlyState, setAdminOnlyState] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    const initial: Record<number, boolean> = {};
+    fieldDefs.forEach(f => { initial[f.id] = f.isAdminOnly ?? false; });
+    setAdminOnlyState(initial);
+  }, [fieldDefs]);
+
+  const toggleAdminOnly = async (field: FieldDef) => {
+    const next = !adminOnlyState[field.id];
+    setAdminOnlyState(prev => ({ ...prev, [field.id]: next }));
+    try {
+      await api.patch(`/field-definitions/${field.id}/admin-only`, null, { params: { adminOnly: next } });
+    } catch {
+      setAdminOnlyState(prev => ({ ...prev, [field.id]: !next }));
+    }
+  };
 
   // Options editor state
   const [optionsOpen, setOptionsOpen]   = useState<Record<number, boolean>>({});
@@ -125,7 +144,8 @@ export const FieldTranslationGrid = ({
     }
   };
 
-  const colSpan = isEnglish ? 3 : 4;
+  const showVisibility = entityType === 'ticket';
+  const colSpan = (isEnglish ? 3 : 4) + (showVisibility ? 1 : 0);
 
   if (fieldDefs.length === 0) {
     return (
@@ -164,6 +184,7 @@ export const FieldTranslationGrid = ({
               <th style={{ width: '180px' }}>{t('field_key_label')}</th>
               {!isEnglish && <th>{t('english_source')}</th>}
               <th>{isEnglish ? t('field_label_label') : t('translation')}</th>
+              {showVisibility && <th style={{ width: '110px' }}>Visibility</th>}
             </tr>
           </thead>
           <tbody>
@@ -201,6 +222,19 @@ export const FieldTranslationGrid = ({
                         placeholder={isEnglish ? t('field_label_hint') : ''}
                       />
                     </td>
+                    {showVisibility && (
+                      <td>
+                        <button
+                          className={`fd-visibility-btn${adminOnlyState[field.id] ? ' fd-visibility-admin' : ' fd-visibility-all'}`}
+                          onClick={() => toggleAdminOnly(field)}
+                          title={adminOnlyState[field.id] ? t('field_admin_only') : t('field_visibility_all')}
+                        >
+                          {adminOnlyState[field.id]
+                            ? <><Lock size={11} /> {t('field_admin_only')}</>
+                            : <><Globe size={11} /> {t('field_visibility_all')}</>}
+                        </button>
+                      </td>
+                    )}
                   </tr>
 
                   {isCombobox && isOpen && (

@@ -810,3 +810,32 @@
 }
 
 .fd-ldap-suggestion-fill-btn:hover { background: #0284c7; }
+
+/* ── Visibility toggle buttons ───────────────────────────────── */
+.fd-visibility-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.fd-visibility-btn:hover { opacity: 0.8; }
+
+.fd-visibility-all {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #059669;
+}
+
+.fd-visibility-admin {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #d97706;
+}

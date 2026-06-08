@@ -51,6 +51,7 @@ export interface TemplateLayoutField {
   defaultValue: string;
   fieldOptions?: string[];
   width?: 'full' | 'half';
+  isAdminOnly?: boolean;
 }
 
 export interface TemplateSummary {

@@ -214,6 +214,11 @@ export const TicketFormRenderer = ({
               <div className="tfr-field-title">
                 {t(field.fieldKey, { defaultValue: field.fieldKey.replace(/_/g, ' ') })}
               </div>
+              {field.isAdminOnly && (
+                <span className="tfr-admin-badge">
+                  <Lock size={10} /> Admin
+                </span>
+              )}
               {isAiFilled && (
                 <span className="tfr-ai-badge">
                   <Sparkles size={11} /> AI

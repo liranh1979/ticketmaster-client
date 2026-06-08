@@ -85,6 +85,18 @@
   gap: 3px;
 }
 
+.tfr-admin-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.35);
+  color: #fcd34d;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
 .tfr-ai-badge {
   font-size: 10px;
   padding: 2px 8px;

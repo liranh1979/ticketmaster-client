@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import api from '../../api';
 import { TicketFormRenderer } from '../../components/TicketFormRenderer/TicketFormRenderer';
+import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import { ActivityLogControl } from '../../components/ActivityLogControl/ActivityLogControl';
 import type {
   TicketDetail,
@@ -225,6 +226,11 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
     onBack();
   }, [save, onBack]);
 
+  const isAdmin = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
+  const visibleFields = isAdmin
+    ? layoutFields
+    : layoutFields.filter(f => !f.isAdminOnly);
+
   if (loading) {
     return (
       <div className="te-page">
@@ -312,9 +318,9 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
 
       {/* Form body */}
       <div className="te-body">
-        {layoutFields.length > 0 && (
+        {visibleFields.length > 0 && (
           <TicketFormRenderer
-            layout={layoutFields}
+            layout={visibleFields}
             values={values}
             onChange={handleChange}
             entityId={ticketId}

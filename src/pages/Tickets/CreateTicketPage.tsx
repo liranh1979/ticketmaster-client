@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Sparkles, CheckCircle } from 'lucide-react';
 import api from '../../api';
 import { TicketFormRenderer } from '../../components/TicketFormRenderer/TicketFormRenderer';
+import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import type { TemplateSummary, TemplateWithLayout, TemplateLayoutField, AiAnalyzeResponse } from './ticketTypes';
 import { flattenLayout } from './ticketTypes';
 import './CreateTicketPage.css';
@@ -50,6 +51,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
       for (const f of flat) {
         defaults[f.fieldKey] = f.defaultValue ?? '';
       }
+      if (user?.red_id) defaults.request_user = String(user.red_id);
       setValues(defaults);
       setAiFilledFields([]);
     } finally {
@@ -65,10 +67,14 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
       setAiResult(data);
       // Auto-select matched template
       if (data.matchedTemplateId) await loadTemplate(data.matchedTemplateId);
-      // Apply suggested fields
-      if (data.suggestedFields) {
-        setValues(prev => ({ ...prev, ...data.suggestedFields }));
-        setAiFilledFields(Object.keys(data.suggestedFields));
+      // Apply suggested fields + labels
+      const updates: Record<string, any> = { ...(data.suggestedFields ?? {}) };
+      if (data.suggestedLabelIds?.length > 0) {
+        updates.labels = data.suggestedLabelIds;
+      }
+      if (Object.keys(updates).length > 0) {
+        setValues(prev => ({ ...prev, ...updates }));
+        setAiFilledFields(Object.keys(data.suggestedFields ?? {}));
       }
     } catch (e) {
       console.error(e);
@@ -118,6 +124,11 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
       setSubmitting(false);
     }
   };
+
+  const isAdmin = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
+  const visibleFields = isAdmin
+    ? layoutFields
+    : layoutFields.filter(f => !f.isAdminOnly);
 
   const filteredTemplates = templates.filter(t =>
     t.name.toLowerCase().includes(templateSearch.toLowerCase())
@@ -183,7 +194,23 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
               <p className="cp-ai-note">AI will suggest — you always confirm before submit.</p>
             </div>
 
-            {aiResult && (
+            {aiLoading && (
+              <div className="cp-ai-loading-state">
+                <div className="cp-ai-thinking">
+                  <div className="cp-ai-thinking-dots">
+                    <span /><span /><span />
+                  </div>
+                  <span className="cp-ai-thinking-text">{t('ai_analyzing')}</span>
+                </div>
+                <div className="cp-ai-result-grid">
+                  <div className="cp-ai-result-card cp-ai-skeleton" />
+                  <div className="cp-ai-result-card cp-ai-skeleton" />
+                  <div className="cp-ai-result-card cp-ai-skeleton" />
+                </div>
+              </div>
+            )}
+
+            {!aiLoading && aiResult && (
               <div className="cp-ai-result-grid">
                 <div className="cp-ai-result-card cp-ai-template-card">
                   <p className="cp-ai-result-label">{t('ai_matched_template')}</p>
@@ -252,7 +279,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
             {selectedTemplate && (
               <div className="cp-rail-footer">
                 Selected: <strong>{selectedTemplate.name}</strong><br />
-                <span className="cp-rail-version">v{selectedTemplate.currentVersionNumber} • {layoutFields.length} fields</span>
+                <span className="cp-rail-version">v{selectedTemplate.currentVersionNumber} • {visibleFields.length} fields</span>
               </div>
             )}
           </aside>
@@ -299,9 +326,9 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
             {/* Form fields */}
             {templateLoading ? (
               <div className="cp-form-loading"><div className="tl-spinner" /></div>
-            ) : layoutFields.length > 0 ? (
+            ) : visibleFields.length > 0 ? (
               <TicketFormRenderer
-                layout={layoutFields}
+                layout={visibleFields}
                 values={values}
                 onChange={(key, val) => setValues(prev => ({ ...prev, [key]: val }))}
                 aiFilledFields={aiFilledFields}
@@ -313,7 +340,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
             {/* Sticky bottom bar */}
             <div className="cp-bottom-bar">
               <p className="cp-bottom-info">
-                {layoutFields.length} fields
+                {visibleFields.length} fields
                 {aiFilledFields.length > 0 && ` • ${aiFilledFields.length} filled by AI`}
               </p>
               <div className="cp-bottom-actions">

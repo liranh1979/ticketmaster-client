@@ -8,7 +8,7 @@ import type { MissingField } from '../LdapManager/LdapWizard';
 import type { AzureMissingField } from '../AzureManager/AzureWizard';
 
 interface Language { code: string; name: string; }
-interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; }
+interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; isAdminOnly?: boolean; }
 
 interface FieldDefinitionsManagerProps {
   entityType?: 'user' | 'group' | 'ticket';
@@ -138,6 +138,7 @@ export const FieldDefinitionsManager = ({ entityType = 'user', returnContext, az
             fieldDefs={fieldDefs}
             refreshKey={refreshKey}
             translationType={translationType}
+            entityType={entityType}
             onDirtyChange={setIsDirty}
           />
         </main>
