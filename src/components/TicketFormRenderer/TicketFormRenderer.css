@@ -167,3 +167,91 @@
   border-radius: 8px;
   font-style: italic;
 }
+
+/* ── Node List control ───────────────────────────────────────── */
+.tfr-nodelist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tfr-nodelist-empty {
+  font-size: 0.82rem;
+  color: #475569;
+  font-style: italic;
+}
+
+.tfr-node-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.tfr-node-input {
+  flex: 1;
+}
+
+.tfr-node-remove {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.tfr-node-remove:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.tfr-node-add-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.tfr-node-add-input {
+  flex: 1;
+  border-style: dashed !important;
+  opacity: 0.7;
+}
+
+.tfr-node-add-input:focus {
+  opacity: 1;
+  border-style: solid !important;
+}
+
+.tfr-node-add-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.tfr-node-add-btn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.35);
+}
+
+.tfr-node-add-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

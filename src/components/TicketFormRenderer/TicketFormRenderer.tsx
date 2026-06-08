@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Lock } from 'lucide-react';
 import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
@@ -30,6 +31,7 @@ const FIELD_TYPE_ICONS: Record<string, string> = {
   labels:       '🏷',
   attachments:  '📎',
   activity_log: '📋',
+  nodelist:     '≡',
 };
 
 const STATUS_OPTIONS = ['new', 'open', 'in_progress', 'waiting', 'resolved', 'closed'];
@@ -50,6 +52,60 @@ interface FieldControlProps {
   readOnly: boolean;
   entityId?: number;
 }
+
+const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: (v: string[]) => void; readOnly: boolean }) => {
+  const { t } = useTranslation();
+  const [draft, setDraft] = useState('');
+  const items: string[] = Array.isArray(value) ? value : [];
+
+  const update = (i: number, text: string) => {
+    const next = [...items];
+    next[i] = text;
+    onChange(next);
+  };
+
+  const remove = (i: number) => onChange(items.filter((_, j) => j !== i));
+
+  const add = () => {
+    const val = draft.trim();
+    if (!val) return;
+    onChange([...items, val]);
+    setDraft('');
+  };
+
+  return (
+    <div className="tfr-nodelist">
+      {items.length === 0 && readOnly && (
+        <span className="tfr-nodelist-empty">{t('nodelist_empty', { defaultValue: 'No nodes yet' })}</span>
+      )}
+      {items.map((item, i) => (
+        <div key={i} className="tfr-node-row">
+          <input
+            className="tfr-input tfr-node-input"
+            value={item}
+            onChange={e => update(i, e.target.value)}
+            readOnly={readOnly}
+          />
+          {!readOnly && (
+            <button className="tfr-node-remove" onClick={() => remove(i)}>×</button>
+          )}
+        </div>
+      ))}
+      {!readOnly && (
+        <div className="tfr-node-add-row">
+          <input
+            className="tfr-input tfr-node-add-input"
+            placeholder={t('nodelist_add_placeholder', { defaultValue: 'Add a node…' })}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+          />
+          <button className="tfr-node-add-btn" onClick={add} disabled={!draft.trim()}>+</button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Proper React component — hooks are allowed here
 const FieldControl = ({ field, value, onChange, readOnly, entityId }: FieldControlProps) => {
@@ -160,6 +216,16 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId }: FieldContr
             className="tfr-input"
             value={value ?? ''}
             onChange={(e) => onChange(field.fieldKey, e.target.value)}
+            readOnly={readOnly}
+          />
+        );
+      }
+
+      if (field.fieldType === 'nodelist') {
+        return (
+          <NodeListControl
+            value={value}
+            onChange={(v) => onChange(field.fieldKey, v)}
             readOnly={readOnly}
           />
         );
