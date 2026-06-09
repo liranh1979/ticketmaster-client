@@ -1,49 +1,72 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import api from '../../../api'; 
+import api from '../../../api';
 import './AIManager.css';
 
 interface AISetting {
   id: number;
   provider_name: string;
-  base_url: string;
   model_name: string;
   is_active: boolean;
 }
 
+interface ProviderInfo {
+  name: string;
+  label: string;
+  model_hint: string;
+}
+
 export const AIManager = () => {
   const { t } = useTranslation();
-  const [settings, setSettings] = useState<AISetting[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [settings, setSettings]   = useState<AISetting[]>([]);
+  const [providers, setProviders] = useState<ProviderInfo[]>([]);
+  const [loading, setLoading]     = useState(true);
   const [testResults, setTestResults] = useState<Record<number, string>>({});
 
   const [formData, setFormData] = useState({
     provider_name: '',
     api_key: '',
-    base_url: '',
     model_name: ''
   });
 
   useEffect(() => {
-    fetchSettings();
+    Promise.all([fetchSettings(), fetchProviders()]).finally(() => setLoading(false));
   }, []);
 
   const fetchSettings = async () => {
     try {
       const res = await api.get('/ai/settings');
       setSettings(res.data);
-    } catch (err) {
-      console.error("Failed to load AI settings");
-    } finally {
-      setLoading(false);
+    } catch {
+      console.error('Failed to load AI settings');
     }
+  };
+
+  const fetchProviders = async () => {
+    try {
+      const res = await api.get('/ai/providers');
+      setProviders(res.data);
+    } catch {
+      console.error('Failed to load provider list');
+    }
+  };
+
+  const selectedProvider = providers.find(p => p.name === formData.provider_name);
+
+  const handleProviderChange = (name: string) => {
+    const p = providers.find(p => p.name === name);
+    setFormData(prev => ({
+      ...prev,
+      provider_name: name,
+      model_name: p?.model_hint ?? ''
+    }));
   };
 
   const handleActivate = async (id: number) => {
     try {
       await api.patch(`/ai/settings/${id}/activate`);
       fetchSettings();
-    } catch (err) {
+    } catch {
       alert(t('error_activating_provider'));
     }
   };
@@ -53,7 +76,7 @@ export const AIManager = () => {
     try {
       await api.delete(`/ai/settings/${id}`);
       fetchSettings();
-    } catch (err) {
+    } catch {
       alert(t('error_deleting_provider'));
     }
   };
@@ -62,9 +85,9 @@ export const AIManager = () => {
     e.preventDefault();
     try {
       await api.post('/ai/settings', formData);
-      setFormData({ provider_name: '', api_key: '', base_url: '', model_name: '' });
+      setFormData({ provider_name: '', api_key: '', model_name: '' });
       fetchSettings();
-    } catch (err) {
+    } catch {
       alert(t('error_adding_provider'));
     }
   };
@@ -74,16 +97,14 @@ export const AIManager = () => {
     try {
       const res = await api.post(`/ai/settings/${id}/test`);
       if (res.data.success) {
-        setTestResults(prev => ({ ...prev, [id]: `✅ ${t('ai_test_success')}` }));
+        setTestResults(prev => ({ ...prev, [id]: `✅ ${res.data.message}` }));
       } else {
-        setTestResults(prev => ({ ...prev, [id]: `❌ ${t('ai_test_error')}` }));
+        setTestResults(prev => ({ ...prev, [id]: `❌ ${res.data.message}` }));
       }
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || t('ai_test_error');
       setTestResults(prev => ({ ...prev, [id]: `❌ ${errorMsg}` }));
     }
-    
-    // Clear status after 5 seconds
     setTimeout(() => {
       setTestResults(prev => {
         const next = { ...prev };
@@ -92,6 +113,8 @@ export const AIManager = () => {
       });
     }, 5000);
   };
+
+  const providerLabel = (name: string) => providers.find(p => p.name === name)?.label ?? name;
 
   if (loading) return <div className="p-4">{t('loading_ai_manager')}</div>;
 
@@ -115,7 +138,7 @@ export const AIManager = () => {
           <tbody>
             {settings.map((s) => (
               <tr key={s.id} className={s.is_active ? 'row-active' : ''}>
-                <td>{s.provider_name}</td>
+                <td>{providerLabel(s.provider_name)}</td>
                 <td>{s.model_name}</td>
                 <td>
                   {s.is_active ? (
@@ -135,13 +158,7 @@ export const AIManager = () => {
                     >
                       {testResults[s.id] || `🧪 ${t('ai_test_btn')}`}
                     </button>
-                    
-                    <button 
-                      className="delete-icon-btn" 
-                      onClick={() => handleDelete(s.id)}
-                    >
-                      🗑️
-                    </button>
+                    <button className="delete-icon-btn" onClick={() => handleDelete(s.id)}>🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -153,32 +170,33 @@ export const AIManager = () => {
       <div className="ai-form-card">
         <h3>{t('add_new_provider')}</h3>
         <form onSubmit={handleSubmit} className="ai-form">
-          <div className="form-row">
-            <input
-              placeholder={t('provider_placeholder')}
-              value={formData.provider_name}
-              onChange={e => setFormData({...formData, provider_name: e.target.value})}
-              required
-            />
-            <input
-              placeholder={t('model_placeholder')}
-              value={formData.model_name}
-              onChange={e => setFormData({...formData, model_name: e.target.value})}
-              required
-            />
-          </div>
+          <select
+            className="ai-select"
+            value={formData.provider_name}
+            onChange={e => handleProviderChange(e.target.value)}
+            required
+          >
+            <option value="">{t('select_provider_placeholder')}</option>
+            {providers.map(p => (
+              <option key={p.name} value={p.name}>{p.label}</option>
+            ))}
+          </select>
+
+          <input
+            placeholder={selectedProvider ? selectedProvider.model_hint : t('model_placeholder')}
+            value={formData.model_name}
+            onChange={e => setFormData({ ...formData, model_name: e.target.value })}
+            required
+          />
+
           <input
             placeholder={t('api_key_placeholder')}
             type="password"
             value={formData.api_key}
-            onChange={e => setFormData({...formData, api_key: e.target.value})}
+            onChange={e => setFormData({ ...formData, api_key: e.target.value })}
             required
           />
-          <input
-            placeholder={t('base_url_placeholder')}
-            value={formData.base_url}
-            onChange={e => setFormData({...formData, base_url: e.target.value})}
-          />
+
           <button type="submit" className="save-btn">{t('save_provider')}</button>
         </form>
       </div>

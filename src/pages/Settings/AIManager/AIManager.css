@@ -75,11 +75,16 @@
   gap: 15px;
 }
 
-.ai-form input {
+.ai-form input,
+.ai-select {
   padding: 10px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
   flex: 1;
+  font-size: 0.95rem;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .save-btn {
