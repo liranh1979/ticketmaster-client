@@ -9,7 +9,7 @@ i18n
     lng: 'en',
     fallbackLng: 'en',
     backend: {
-      loadPath: 'http://localhost:3000/api/v1/locales/{{lng}}',
+      loadPath: '/api/v1/locales/{{lng}}',
     },
     interpolation: {
       escapeValue: false,

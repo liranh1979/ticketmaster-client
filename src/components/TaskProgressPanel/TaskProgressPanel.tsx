@@ -21,7 +21,7 @@ export const TaskProgressPanel = () => {
   useEffect(() => {
     const connect = () => {
       const es = new EventSource(
-        (import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1') + '/tasks/stream',
+        (import.meta.env.VITE_API_URL || '/api/v1') + '/tasks/stream',
         { withCredentials: true }
       );
       esRef.current = es;
