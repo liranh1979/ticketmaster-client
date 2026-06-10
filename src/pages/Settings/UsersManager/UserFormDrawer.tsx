@@ -18,6 +18,7 @@ interface UserData {
   id?: number;
   username?: string;
   display_name?: string;
+  email?: string;
   is_super_admin?: boolean;
   metadata?: Record<string, any> | null;
   personal_permissions?: string[];
@@ -63,6 +64,7 @@ export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: 
   const [form, setForm] = useState({
     username:    '',
     displayName: '',
+    email:       '',
     password:    '',
   });
   const [metaValues, setMetaValues]         = useState<Record<string, string>>({});
@@ -97,6 +99,7 @@ export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: 
       setForm({
         username:    user.username ?? '',
         displayName: user.display_name ?? '',
+        email:       user.email ?? '',
         password:    '',
       });
       const mv: Record<string, string> = {};
@@ -126,7 +129,7 @@ export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: 
       });
 
       if (isEdit) {
-        const body: any = { displayName: form.displayName, metadata };
+        const body: any = { displayName: form.displayName, email: form.email.trim(), metadata };
         if (form.password.trim()) body.password = form.password;
         if (canEditPermissions) body.permissions = Array.from(permDrafts);
         await api.patch(`/users/${user!.id}`, body);
@@ -134,6 +137,7 @@ export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: 
         await api.post('/users', {
           username:    form.username.trim().toLowerCase(),
           displayName: form.displayName.trim(),
+          email:       form.email.trim(),
           password:    form.password,
         });
       }
@@ -190,6 +194,18 @@ export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: 
                 placeholder={t('display_name_placeholder')}
                 value={form.displayName}
                 onChange={e => setForm({ ...form, displayName: e.target.value })}
+              />
+            </div>
+
+            <div className="ufd-field">
+              <label className="ufd-label">{t('mailbox_email_address', { defaultValue: 'Email Address' })}</label>
+              <input
+                className="ufd-input"
+                type="email"
+                placeholder="user@example.com"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                autoComplete="off"
               />
             </div>
 
