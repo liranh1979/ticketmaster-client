@@ -15,6 +15,7 @@ import { AzurePage } from './AzureManager/AzurePage';
 import type { AzureMissingField } from './AzureManager/AzureWizard';
 import { hasPermission, hasAnyPermission, PERMISSIONS } from '../../utils/permissions';
 import { EmailManager } from './EmailManager/EmailManager';
+import { NotificationManager } from './NotificationManager/NotificationManager';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -33,6 +34,7 @@ type ViewState =
   | 'labels-management'
   | 'ai-manager'
   | 'email-manager'
+  | 'notification-manager'
   | 'users-groups-hub'
   | 'users'
   | 'groups'
@@ -106,8 +108,9 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
     const canFields      = hasAnyPermission(user, PERMISSIONS.MANAGE_FIELDS, PERMISSIONS.MANAGE_LANGUAGES);
     const canUsersGroups = hasAnyPermission(user, PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_GROUPS, PERMISSIONS.MANAGE_LDAP, PERMISSIONS.MANAGE_AZURE);
     const canAi          = hasPermission(user, PERMISSIONS.MANAGE_AI);
-    const canEmail       = hasPermission(user, PERMISSIONS.MANAGE_EMAIL);
-    const hasAnyAccess   = canFields || canUsersGroups || canAi || canEmail;
+    const canEmail         = hasPermission(user, PERMISSIONS.MANAGE_EMAIL);
+    const canNotifications = hasPermission(user, PERMISSIONS.MANAGE_NOTIFICATIONS);
+    const hasAnyAccess     = canFields || canUsersGroups || canAi || canEmail || canNotifications;
 
     return (
       <div className="settings-grid">
@@ -174,6 +177,17 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
             </span>
           </div>
         )}
+
+        {canNotifications && (
+          <div className="settings-card" onClick={() => setCurrentView('notification-manager')}>
+            <div className="settings-icon-box">
+              <div className="ai-icon-placeholder">🔔</div>
+            </div>
+            <span className="settings-text">
+              {t('settings_notification_manager', { defaultValue: 'Notifications' })}
+            </span>
+          </div>
+        )}
       </div>
     );
   }
@@ -222,6 +236,18 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
           ← {t('back_btn')}
         </button>
         <EmailManager />
+      </div>
+    );
+  }
+
+  // 2e. Notification Manager View
+  if (currentView === 'notification-manager') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToMenu}>
+          ← {t('back_btn')}
+        </button>
+        <NotificationManager />
       </div>
     );
   }

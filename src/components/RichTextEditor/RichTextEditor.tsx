@@ -1,4 +1,5 @@
 import { useEditor, EditorContent } from '@tiptap/react';
+import { useEffect } from 'react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Youtube from '@tiptap/extension-youtube';
@@ -17,6 +18,7 @@ interface RichTextEditorProps {
   editable?: boolean;
   compact?: boolean;
   placeholder?: string;
+  insertTrigger?: { text: string; count: number };
 }
 
 export const RichTextEditor = ({
@@ -25,6 +27,7 @@ export const RichTextEditor = ({
   editable = true,
   compact = false,
   placeholder = 'Enter text...',
+  insertTrigger,
 }: RichTextEditorProps) => {
   const editor = useEditor({
     extensions: [
@@ -41,6 +44,13 @@ export const RichTextEditor = ({
       onChange?.(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (editor && insertTrigger && insertTrigger.text) {
+      editor.chain().focus().insertContent(insertTrigger.text).run();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [insertTrigger?.count]);
 
   if (!editor) return null;
 

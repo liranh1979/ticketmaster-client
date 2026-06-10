@@ -1,0 +1,332 @@
+/* ── Page container ── */
+.nm-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+.nm-loading {
+  padding: 40px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* ── Page header ── */
+.nm-page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.nm-page-icon {
+  color: #a855f7;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.nm-page-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.nm-page-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ── Accordion cards ── */
+.nm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nm-card {
+  background: #080e1a;
+  border: 1px solid #1e3a5f;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.nm-card.expanded {
+  border-color: #3b82f6;
+}
+
+.nm-card-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #111827;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  gap: 12px;
+  transition: background 0.15s;
+}
+
+.nm-card-header:hover {
+  background: #0d1526;
+}
+
+.nm-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.nm-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.nm-dot.on  { background: #22c55e; }
+.nm-dot.off { background: #475569; }
+
+.nm-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.nm-card-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.nm-card-desc {
+  font-size: 12px;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+
+.nm-chevron {
+  color: #475569;
+  flex-shrink: 0;
+}
+
+/* ── Admin chip ── */
+.nm-admin-chip {
+  padding: 1px 7px;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 10px;
+  color: #c084fc;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Editor panel ── */
+.nm-editor {
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-top: 1px solid #1e3a5f;
+}
+
+.nm-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nm-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.nm-toggle-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.nm-toggle-text { color: #cbd5e1; }
+
+.nm-status-pill {
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.nm-status-pill.active   { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+.nm-status-pill.inactive { background: rgba(71,85,105,0.2);  color: #64748b; border: 1px solid rgba(71,85,105,0.4); }
+
+/* ── Field ── */
+.nm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nm-field-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nm-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.nm-subject-input {
+  width: 100%;
+  background: #0d1526;
+  border: 1px solid #1e3a5f;
+  border-radius: 6px;
+  padding: 9px 12px;
+  color: #e2e8f0;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.nm-subject-input:focus { border-color: #3b82f6; }
+
+/* ── Placeholder chips ── */
+.nm-placeholders {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nm-placeholder-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.nm-placeholder-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.nm-placeholder-chip {
+  padding: 2px 8px;
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 12px;
+  color: #60a5fa;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.nm-placeholder-chip:hover {
+  background: rgba(59,130,246,0.15);
+  border-color: rgba(59,130,246,0.4);
+  color: #93c5fd;
+}
+
+/* ── RTE wrapper ── */
+.nm-rte-wrap {
+  border: 1px solid #1e3a5f;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 220px;
+}
+
+/* ── Actions row ── */
+.nm-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.nm-result {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 5px;
+  margin-right: auto;
+}
+
+.nm-result.ok  { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+.nm-result.err { background: rgba(239,68,68,0.1);  color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+
+.nm-rollback-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.nm-rollback-btn:hover:not(:disabled) {
+  background: #1e293b;
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+.nm-rollback-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.nm-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 18px;
+  background: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nm-save-btn:hover:not(:disabled) { background: #2563eb; }
+.nm-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
