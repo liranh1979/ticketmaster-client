@@ -7,6 +7,7 @@ export const PERMISSIONS = {
   MANAGE_LDAP:      'MANAGE_LDAP',
   MANAGE_AZURE:     'MANAGE_AZURE',
   TICKET_MANAGER:   'TICKET_MANAGER',
+  MANAGE_EMAIL:     'MANAGE_EMAIL',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];

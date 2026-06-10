@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, RefreshCw, Tag, UserCheck, ChevronDown, X, Plus } from 'lucide-react';
+import { Trash2, RefreshCw, Tag, UserCheck, ChevronDown, X, Plus, Bell } from 'lucide-react';
 import api from '../../api';
-import type { TicketListItem, TicketLabel } from './ticketTypes';
+import type { TicketListItem, TicketLabel, TicketSseEvent } from './ticketTypes';
 import { statusColor, formatRelativeTime } from './ticketTypes';
 import './TicketListPage.css';
 
@@ -36,6 +36,8 @@ export const TicketListPage = ({
   const [selected, setSelected]     = useState<Set<number>>(new Set());
   const [bulkAction, setBulkAction] = useState<BulkAction>(null);
 
+  const [pendingNew, setPendingNew] = useState(0);
+
   const sentinelRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cursorRef   = useRef<number | null>(null);
@@ -45,6 +47,34 @@ export const TicketListPage = ({
     api.get('/ticket-labels').then(r => setLabels(r.data)).catch(() => {});
     api.get('/templates').then(r => setTemplates(r.data)).catch(() => {});
     api.get('/ticket-users/managers').then(r => setManagers(r.data)).catch(() => {});
+  }, []);
+
+  // SSE subscription — new tickets / in-place row updates
+  useEffect(() => {
+    const es = new EventSource('/api/v1/tickets/stream', { withCredentials: true });
+    es.addEventListener('ticket-event', (e: MessageEvent) => {
+      const event: TicketSseEvent = JSON.parse(e.data);
+      if (event.operation === 'TICKET_CREATED') {
+        setPendingNew(prev => prev + 1);
+      } else if (event.type === 'TICKET_UPDATED' && event.ticketId) {
+        // Update the row in-place if it's currently loaded
+        setTickets(prev => {
+          if (!prev.some(t => t.id === event.ticketId)) return prev;
+          api.get(`/tickets/${event.ticketId}`).then(r => {
+            const td = r.data;
+            setTickets(prev2 => prev2.map(t =>
+              t.id === event.ticketId
+                ? { ...t, title: td.title, status: td.status, updatedAt: td.updatedAt,
+                    labels: td.labels, responsibleUserId: td.responsibleUserId,
+                    responsibleUserDisplayName: td.responsibleUserDisplayName, version: td.version }
+                : t
+            ));
+          }).catch(() => {});
+          return prev;
+        });
+      }
+    });
+    return () => es.close();
   }, []);
 
   const buildQueryParams = useCallback((cursor: number | null) => {
@@ -146,6 +176,18 @@ export const TicketListPage = ({
   return (
     <div className="tl-page tl-page-flat">
       <main className="tl-main tl-main-full">
+        {/* New-ticket banner */}
+        {pendingNew > 0 && (
+          <div className="tl-new-banner">
+            <Bell size={14} />
+            <span>{pendingNew} new ticket{pendingNew > 1 ? 's' : ''} available</span>
+            <button className="tl-new-banner-btn" onClick={() => { setPendingNew(0); loadTickets(true); }}>
+              Refresh
+            </button>
+            <button className="tl-new-banner-dismiss" onClick={() => setPendingNew(0)}>×</button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="tl-header">
           <div className="tl-header-left">

@@ -175,7 +175,7 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId }: FieldContr
       );
 
     case 'activity_log':
-      return <ActivityLogControl readonly={readOnly} />;
+      return <ActivityLogControl ticketId={entityId} readonly={readOnly} />;
 
     default:
       if (field.fieldType === 'combobox') {

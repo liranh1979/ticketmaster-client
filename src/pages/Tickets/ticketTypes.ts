@@ -85,7 +85,7 @@ export interface TicketSseEvent {
   displayName?: string;
   newVersion?: number;
   changedFields?: string[];
-  operation?: string;
+  operation?: 'TICKET_CREATED' | 'FIELD_UPDATE' | 'EMAIL_REPLY' | 'STATUS_CHANGE' | string;
 }
 
 export interface AiAnalyzeResponse {

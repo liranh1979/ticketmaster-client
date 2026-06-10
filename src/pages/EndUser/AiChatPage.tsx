@@ -14,6 +14,7 @@ interface Props {
   user: any;
   onBack: () => void;
   onTicketCreated: (id: number) => void;
+  onSolutionSaved?: () => void;
   sessionType?: string;
   ticketId?: number;
   inline?: boolean;
@@ -30,7 +31,7 @@ const formatSessionDate = (isoDate: string) => {
 };
 
 export const AiChatPage = ({
-  onBack, onTicketCreated,
+  onBack, onTicketCreated, onSolutionSaved,
   sessionType = 'user_help', ticketId, inline = false,
 }: Props) => {
   const { t } = useTranslation();
@@ -41,6 +42,8 @@ export const AiChatPage = ({
   const [sending, setSending]           = useState(false);
   const [escalating, setEscalating]     = useState(false);
   const [escalatedTicketId, setEscalatedTicketId] = useState<number | null>(null);
+  const [savedIds, setSavedIds]         = useState<Set<number>>(new Set());
+  const [savingId, setSavingId]         = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLTextAreaElement>(null);
 
@@ -122,6 +125,17 @@ export const AiChatPage = ({
     } finally {
       setEscalating(false);
     }
+  };
+
+  const saveAsSolution = async (messageId: number, content: string) => {
+    if (!ticketId || savingId !== null) return;
+    setSavingId(messageId);
+    try {
+      await api.post(`/tickets/${ticketId}/activity/ai-solution`, { solution: content });
+      setSavedIds(prev => new Set([...prev, messageId]));
+      onSolutionSaved?.();
+    } catch { /* ignore */ }
+    finally { setSavingId(null); }
   };
 
   const aiMessages = messages.filter(m => m.role !== 'system');
@@ -226,10 +240,21 @@ export const AiChatPage = ({
               {aiMessages.map(m => (
                 <div key={m.id} className={`chat-message chat-${m.role}`}>
                   {m.role === 'assistant' && <div className="chat-avatar">AI</div>}
-                  <div className="chat-bubble">
-                    {m.content.split('\n').map((line, i) => (
-                      <span key={i}>{line}{i < m.content.split('\n').length - 1 && <br />}</span>
-                    ))}
+                  <div className="chat-message-body">
+                    <div className="chat-bubble">
+                      {m.content.split('\n').map((line, i) => (
+                        <span key={i}>{line}{i < m.content.split('\n').length - 1 && <br />}</span>
+                      ))}
+                    </div>
+                    {isConsult && m.role === 'assistant' && (
+                      <button
+                        className={`chat-save-solution-btn${savedIds.has(m.id) ? ' saved' : ''}`}
+                        onClick={() => saveAsSolution(m.id, m.content)}
+                        disabled={savedIds.has(m.id) || savingId !== null}
+                      >
+                        {savedIds.has(m.id) ? '✓ Saved as AI Solution' : savingId === m.id ? 'Saving…' : '💾 Save as AI Solution'}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

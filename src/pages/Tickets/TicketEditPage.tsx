@@ -40,9 +40,9 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
   const [aiProcessing, setAiProcessing]   = useState(false);
   const [syncedToast, setSyncedToast]     = useState(false);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
-  const [saveCount, setSaveCount]         = useState(0);
   const [consultOpen, setConsultOpen]     = useState(false);
   const [linkCopied, setLinkCopied]       = useState(false);
+  const [solutionSavedCount, setSolutionSavedCount] = useState(0);
 
   const autoSaveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presencePinger = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -68,6 +68,10 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
         vals.description = td.description;
         vals.status      = td.status;
         vals.labels      = td.labels.map((l: any) => l.id);
+        // Seed request_user from top-level fields if not already in ticketData
+        if (!vals.request_user && td.requestUserId) {
+          vals.request_user = String(td.requestUserId);
+        }
         setValues(vals);
       } finally {
         setLoading(false);
@@ -115,6 +119,9 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
               vals.description = td.description;
               vals.status      = td.status;
               vals.labels      = td.labels.map((l: any) => l.id);
+              if (!vals.request_user && td.requestUserId) {
+                vals.request_user = String(td.requestUserId);
+              }
               setValues(vals);
               setSyncedToast(true);
               setTimeout(() => setSyncedToast(false), 3000);
@@ -203,7 +210,6 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
       setIsDirty(false);
       setConflict(null);
       setTouchedFields(new Set());
-      setSaveCount(prev => prev + 1);
     } catch (err: any) {
       if (err?.response?.status === 409) {
         setConflict(err.response.data as TicketDetail);
@@ -307,6 +313,7 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
           ticketId={ticketId}
           open={consultOpen}
           onClose={() => setConsultOpen(false)}
+          onSolutionSaved={() => setSolutionSavedCount(c => c + 1)}
           user={user}
         />
       )}
@@ -362,7 +369,14 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
         {/* Activity log section */}
         <div className="te-activity-section">
           <h3 className="te-activity-title">{t('ticket_activity_log')}</h3>
-          <ActivityLogControl readonly={false} refreshKey={saveCount} user={user} />
+          <ActivityLogControl
+            ticketId={ticketId}
+            ticketTitle={ticket?.title}
+            readonly={false}
+            user={user}
+            isAdmin={isAdmin}
+            refreshSignal={solutionSavedCount}
+          />
         </div>
       </div>
     </div>

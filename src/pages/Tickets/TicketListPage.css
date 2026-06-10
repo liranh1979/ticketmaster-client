@@ -1,3 +1,38 @@
+/* ── New-ticket notification banner ── */
+.tl-new-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(59, 130, 246, 0.15);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.35);
+  font-size: 13px;
+  color: #93c5fd;
+  flex-shrink: 0;
+}
+.tl-new-banner-btn {
+  margin-left: 4px;
+  padding: 3px 10px;
+  background: #3b82f6;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tl-new-banner-btn:hover { background: #2563eb; }
+.tl-new-banner-dismiss {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+}
+.tl-new-banner-dismiss:hover { color: #94a3b8; }
+
 /* ── Page layout ── */
 .tl-page {
   display: flex;

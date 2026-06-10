@@ -5,10 +5,11 @@ interface Props {
   ticketId: number;
   open: boolean;
   onClose: () => void;
+  onSolutionSaved?: () => void;
   user: any;
 }
 
-export const AiTicketConsultPanel = ({ ticketId, open, onClose, user }: Props) => {
+export const AiTicketConsultPanel = ({ ticketId, open, onClose, onSolutionSaved, user }: Props) => {
   return (
     <>
       {open && <div className="atcp-overlay" onClick={onClose} />}
@@ -18,6 +19,7 @@ export const AiTicketConsultPanel = ({ ticketId, open, onClose, user }: Props) =
             user={user}
             onBack={onClose}
             onTicketCreated={() => {}}
+            onSolutionSaved={onSolutionSaved}
             sessionType="ticket_consult"
             ticketId={ticketId}
             inline

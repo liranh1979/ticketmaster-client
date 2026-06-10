@@ -14,6 +14,7 @@ import type { MissingField } from './LdapManager/LdapWizard';
 import { AzurePage } from './AzureManager/AzurePage';
 import type { AzureMissingField } from './AzureManager/AzureWizard';
 import { hasPermission, hasAnyPermission, PERMISSIONS } from '../../utils/permissions';
+import { EmailManager } from './EmailManager/EmailManager';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -31,6 +32,7 @@ type ViewState =
   | 'tickets-templates'
   | 'labels-management'
   | 'ai-manager'
+  | 'email-manager'
   | 'users-groups-hub'
   | 'users'
   | 'groups'
@@ -104,7 +106,8 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
     const canFields      = hasAnyPermission(user, PERMISSIONS.MANAGE_FIELDS, PERMISSIONS.MANAGE_LANGUAGES);
     const canUsersGroups = hasAnyPermission(user, PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_GROUPS, PERMISSIONS.MANAGE_LDAP, PERMISSIONS.MANAGE_AZURE);
     const canAi          = hasPermission(user, PERMISSIONS.MANAGE_AI);
-    const hasAnyAccess   = canFields || canUsersGroups || canAi;
+    const canEmail       = hasPermission(user, PERMISSIONS.MANAGE_EMAIL);
+    const hasAnyAccess   = canFields || canUsersGroups || canAi || canEmail;
 
     return (
       <div className="settings-grid">
@@ -160,6 +163,17 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
             </span>
           </div>
         )}
+
+        {canEmail && (
+          <div className="settings-card" onClick={() => setCurrentView('email-manager')}>
+            <div className="settings-icon-box">
+              <div className="ai-icon-placeholder">✉️</div>
+            </div>
+            <span className="settings-text">
+              {t('settings_email_manager')}
+            </span>
+          </div>
+        )}
       </div>
     );
   }
@@ -196,6 +210,18 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
           ← {t('back_btn')}
         </button>
         <AIManager />
+      </div>
+    );
+  }
+
+  // 2d. Email Manager View
+  if (currentView === 'email-manager') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToMenu}>
+          ← {t('back_btn')}
+        </button>
+        <EmailManager />
       </div>
     );
   }

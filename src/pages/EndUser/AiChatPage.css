@@ -407,3 +407,37 @@
 
 .chat-send-btn:hover:not(:disabled) { opacity: 0.85; transform: scale(1.03); }
 .chat-send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Message body wrapper (bubbles + actions) ────────────────── */
+.chat-message-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* ── Save as AI Solution button ──────────────────────────────── */
+.chat-save-solution-btn {
+  align-self: flex-start;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid rgba(5, 150, 105, 0.4);
+  border-radius: 6px;
+  color: #6ee7b7;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.chat-save-solution-btn:hover:not(:disabled) {
+  background: rgba(5, 150, 105, 0.12);
+  border-color: rgba(5, 150, 105, 0.7);
+}
+.chat-save-solution-btn.saved {
+  border-color: rgba(5, 150, 105, 0.5);
+  color: #34d399;
+  background: rgba(5, 150, 105, 0.1);
+  cursor: default;
+}
+.chat-save-solution-btn:disabled { opacity: 0.5; cursor: not-allowed; }
