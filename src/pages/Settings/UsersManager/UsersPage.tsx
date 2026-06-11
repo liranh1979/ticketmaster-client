@@ -21,6 +21,7 @@ interface User {
   display_name: string;
   is_super_admin: boolean;
   metadata: Record<string, any> | null;
+  company_id?: number | null;
 }
 
 interface UsersPageProps {
@@ -33,6 +34,7 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
   const { t } = useTranslation();
   const [users, setUsers]             = useState<User[]>([]);
   const [fields, setFields]           = useState<FieldDef[]>([]);
+  const [companyMap, setCompanyMap]   = useState<Record<number, string>>({});
   const [loading, setLoading]         = useState(true);
   const [syncing, setSyncing]         = useState(false);
   const [showColumns, setShowColumns] = useState(false);
@@ -52,12 +54,16 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
 
   const fetchAll = async () => {
     try {
-      const [usersRes, fieldsRes] = await Promise.all([
+      const [usersRes, fieldsRes, companiesRes] = await Promise.all([
         api.get('/users'),
         api.get('/field-definitions'),
+        api.get<{ id: number; name: string }[]>('/companies').catch(() => ({ data: [] })),
       ]);
       setUsers(usersRes.data);
       setFields(fieldsRes.data);
+      const map: Record<number, string> = {};
+      companiesRes.data.forEach((c: { id: number; name: string }) => { map[c.id] = c.name; });
+      setCompanyMap(map);
     } catch (err) {
       console.error('Failed to load users', err);
     } finally {
@@ -209,6 +215,7 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
             <col className="col-display-name" />
             {visibleFields.map(f => <col key={f.id} className="col-field" />)}
             <col className="col-role" />
+            <col style={{ width: 120 }} />
           </colgroup>
           <thead>
             <tr>
@@ -229,6 +236,9 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
                 <th key={f.id} className="col-field up-th-field">{f.fieldKey}</th>
               ))}
               <th className="col-role">{t('col_role')}</th>
+              <th style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {t('company_section')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -279,6 +289,13 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
                   {user.is_super_admin
                     ? <span className="up-badge up-badge-admin">{t('badge_super_admin')}</span>
                     : <span className="up-badge up-badge-user">{t('badge_user')}</span>}
+                </td>
+                <td>
+                  {user.company_id
+                    ? <span style={{ fontSize: '0.78rem', background: '#1e3a5f', color: '#7dd3fc', padding: '2px 8px', borderRadius: 6 }}>
+                        {companyMap[user.company_id] ?? `#${user.company_id}`}
+                      </span>
+                    : <span style={{ fontSize: '0.75rem', color: '#475569' }}>—</span>}
                 </td>
               </tr>
             ))}

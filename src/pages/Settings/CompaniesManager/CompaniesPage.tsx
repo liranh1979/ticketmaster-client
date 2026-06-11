@@ -29,6 +29,8 @@ export const CompaniesPage = () => {
   const [editing, setEditing]     = useState<Company | null>(null);
   const [form, setForm]           = useState({ name: '', description: '', timezone: 'UTC' });
   const [saving, setSaving]       = useState(false);
+  const [syncing, setSyncing]     = useState(false);
+  const [syncMsg, setSyncMsg]     = useState('');
 
   const load = () =>
     api.get<Company[]>('/companies').then(r => setCompanies(r.data)).catch(() => {});
@@ -55,6 +57,17 @@ export const CompaniesPage = () => {
     load();
   };
 
+  const handleSyncTickets = async () => {
+    setSyncing(true);
+    setSyncMsg('');
+    try {
+      const r = await api.post<{ users_processed: number }>('/companies/sync-tickets');
+      setSyncMsg(`✓ Synced tickets for ${r.data.users_processed} users`);
+      setTimeout(() => setSyncMsg(''), 4000);
+    } catch { setSyncMsg('Sync failed'); }
+    finally { setSyncing(false); }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -71,6 +84,11 @@ export const CompaniesPage = () => {
       <div className="cp-header">
         <h1 className="cp-title">{t('companies_title')}</h1>
         <div className="cp-header-actions">
+          {syncMsg && <span style={{ fontSize: '0.8rem', color: '#6ee7b7' }}>{syncMsg}</span>}
+          <button className="cp-btn cp-btn--secondary" onClick={handleSyncTickets} disabled={syncing}
+            title="Retroactively stamp all existing tickets with their request-user's current company">
+            {syncing ? '⟳ Syncing…' : '⟳ Sync Tickets'}
+          </button>
           <button className="cp-btn cp-btn--secondary" onClick={() => setDrawer('global-hours')}>
             🌐 {t('company_global_hours_btn')}
           </button>
