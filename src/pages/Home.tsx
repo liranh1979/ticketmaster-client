@@ -10,6 +10,7 @@ import { TicketEditPage } from './Tickets/TicketEditPage';
 import { EndUserPortal } from './EndUser/EndUserPortal';
 import { MyTicketsPage } from './EndUser/MyTicketsPage';
 import { hasPermission, isSuperAdmin, PERMISSIONS } from '../utils/permissions';
+import api from '../api';
 
 interface HomeProps {
   user: {
@@ -27,6 +28,7 @@ export const Home = ({ user }: HomeProps) => {
   const { t } = useTranslation();
   const [currentView, setCurrentView] = useState<HomeView>('welcome');
   const [editTicketId, setEditTicketId] = useState<number | null>(null);
+  const [settingsInitialView, setSettingsInitialView] = useState<string>('menu');
 
   const canManageTickets = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
 
@@ -47,6 +49,22 @@ export const Home = ({ user }: HomeProps) => {
       const id = parseInt(ticketParam, 10);
       if (!isNaN(id) && id > 0) goToEditTicket(id);
     }
+  }, []);
+
+  // Auto-open Setup Guide for super admins on a fresh unconfigured system
+  useEffect(() => {
+    if (!isSuperAdmin(user)) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('ticket')) return; // deep-link takes priority
+    api.get<{ ai_configured: boolean; template_configured: boolean; email_configured: boolean; users_configured: boolean }>('/setup/status')
+      .then(r => {
+        const s = r.data;
+        if (!s.ai_configured && !s.template_configured) {
+          setSettingsInitialView('setup-guide');
+          setCurrentView('settings');
+        }
+      })
+      .catch(() => {});
   }, []);
 
   if (isEndUserOnly) return <EndUserPortal user={user} />;
@@ -88,7 +106,11 @@ export const Home = ({ user }: HomeProps) => {
           )}
 
           {currentView === 'settings' && (
-            <SettingsPage user={user} onNavigate={(view) => setCurrentView(view as any)} />
+            <SettingsPage
+              user={user}
+              initialView={settingsInitialView}
+              onNavigate={(view) => setCurrentView(view as any)}
+            />
           )}
 
           {currentView === 'ticket-list' && (

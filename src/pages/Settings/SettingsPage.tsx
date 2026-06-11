@@ -13,18 +13,21 @@ import { LdapPage } from './LdapManager/LdapPage';
 import type { MissingField } from './LdapManager/LdapWizard';
 import { AzurePage } from './AzureManager/AzurePage';
 import type { AzureMissingField } from './AzureManager/AzureWizard';
-import { hasPermission, hasAnyPermission, PERMISSIONS } from '../../utils/permissions';
+import { hasPermission, hasAnyPermission, isSuperAdmin, PERMISSIONS } from '../../utils/permissions';
 import { EmailManager } from './EmailManager/EmailManager';
 import { NotificationManager } from './NotificationManager/NotificationManager';
+import { SetupGuidePage } from './SetupGuide/SetupGuidePage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
-  onNavigate: (view: string) => void;
-  user?: any;
+  onNavigate:    (view: string) => void;
+  user?:         any;
+  initialView?:  string;
 }
 
 type ViewState =
   | 'menu'
+  | 'setup-guide'
   | 'selection'
   | 'system-fields'
   | 'custom-fields'
@@ -41,10 +44,10 @@ type ViewState =
   | 'ldap'
   | 'azure';
 
-export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProps) => {
+export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: SettingsPageProps) => {
   const { t } = useTranslation();
 
-  const [currentView, setCurrentView] = useState<ViewState>('menu');
+  const [currentView, setCurrentView] = useState<ViewState>((initialView as ViewState) ?? 'menu');
   const [returnContext, setReturnContext] = useState<{
     ldapConfigId: number;
     suggestedFields: MissingField[];
@@ -112,11 +115,24 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
     const canNotifications = hasPermission(user, PERMISSIONS.MANAGE_NOTIFICATIONS);
     const hasAnyAccess     = canFields || canUsersGroups || canAi || canEmail || canNotifications;
 
+    const isSuperAdminUser = isSuperAdmin(user);
+
     return (
       <div className="settings-grid">
         {!hasAnyAccess && (
           <div style={{ gridColumn: '1 / -1', color: '#94a3b8', textAlign: 'center', padding: '2rem', fontStyle: 'italic' }}>
             {t('no_settings_access')}
+          </div>
+        )}
+
+        {isSuperAdminUser && (
+          <div className="settings-card" onClick={() => setCurrentView('setup-guide')}>
+            <div className="settings-icon-box">
+              <div className="ai-icon-placeholder">🚀</div>
+            </div>
+            <span className="settings-text">
+              {t('setup_guide_card_label')}
+            </span>
           </div>
         )}
 
@@ -188,6 +204,18 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user }: SettingsPageProp
             </span>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // 1b. Setup Guide View
+  if (currentView === 'setup-guide') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToMenu}>
+          ← {t('back_btn')}
+        </button>
+        <SetupGuidePage onNavigate={(view) => setCurrentView(view as ViewState)} />
       </div>
     );
   }
