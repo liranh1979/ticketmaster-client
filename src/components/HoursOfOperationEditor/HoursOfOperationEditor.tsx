@@ -115,7 +115,7 @@ export const HoursOfOperationEditor = ({ companyId, timezone: initialTz, onSaved
                 onChange={e => update(idx, { slot1_start: e.target.value || null })} />
               <span className="hoo-sep">—</span>
               <input type="time" className="hoo-time-input" disabled={!day.is_open}
-                value={(day.slot2_start != null ? day.slot1_end : '') ?? ''} placeholder="--:--"
+                value={day.slot1_end ?? ''} placeholder="--:--"
                 onChange={e => update(idx, { slot1_end: e.target.value || null })} />
 
               {day.is_open && day.slot2_start == null && (
