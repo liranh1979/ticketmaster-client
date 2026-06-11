@@ -83,8 +83,8 @@
   box-shadow: var(--up-shadow);
 }
 .up-table {
-  width: 100%;
-  min-width: 800px;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
   color: var(--up-text);
@@ -115,7 +115,7 @@
 .up-table .col-username     { width: 240px; }
 .up-table .col-display-name { width: 220px; }
 .up-table .col-role         { width: 130px; }
-.up-table .col-field        { min-width: 160px; }
+.up-table .col-field        { width: 160px; }
 
 .up-th-field {
   background: #eef2ff;
