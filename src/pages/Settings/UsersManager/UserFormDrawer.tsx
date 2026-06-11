@@ -22,7 +22,10 @@ interface UserData {
   is_super_admin?: boolean;
   metadata?: Record<string, any> | null;
   personal_permissions?: string[];
+  company_id?: number | null;
 }
+
+interface CompanyOption { id: number; name: string; }
 
 interface PermissionDef {
   id: number;
@@ -75,6 +78,8 @@ export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: 
   const [groupsLoading, setGroupsLoading]   = useState(false);
   const [allPermissions, setAllPermissions] = useState<PermissionDef[]>([]);
   const [permDrafts, setPermDrafts]         = useState<Set<string>>(new Set());
+  const [companies, setCompanies]           = useState<CompanyOption[]>([]);
+  const [companyId, setCompanyId]           = useState<number | null>(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -95,6 +100,14 @@ export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: 
   }, [canEditPermissions]);
 
   useEffect(() => {
+    if (isSuperAdmin(currentUser)) {
+      api.get<CompanyOption[]>('/companies')
+        .then(res => setCompanies(res.data))
+        .catch(() => {});
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
     if (user) {
       setForm({
         username:    user.username ?? '',
@@ -106,6 +119,7 @@ export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: 
       fields.forEach(f => { mv[f.fieldKey] = getMetaValue(user, f.fieldKey); });
       setMetaValues(mv);
       setPermDrafts(new Set(user.personal_permissions ?? []));
+      setCompanyId(user.company_id ?? null);
     }
   }, [user]);
 
@@ -132,6 +146,7 @@ export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: 
         const body: any = { displayName: form.displayName, email: form.email.trim(), metadata };
         if (form.password.trim()) body.password = form.password;
         if (canEditPermissions) body.permissions = Array.from(permDrafts);
+        if (isSuperAdmin(currentUser)) body.company_id = companyId ?? -1;
         await api.patch(`/users/${user!.id}`, body);
       } else {
         await api.post('/users', {
@@ -208,6 +223,19 @@ export const UserFormDrawer = ({ user, fields, currentUser, onClose, onSaved }: 
                 autoComplete="off"
               />
             </div>
+
+            {isSuperAdmin(currentUser) && (
+              <div className="ufd-field">
+                <label className="ufd-label">{t('company_section')}</label>
+                <select
+                  className="ufd-input"
+                  value={companyId ?? ''}
+                  onChange={e => setCompanyId(e.target.value === '' ? null : Number(e.target.value))}>
+                  <option value="">{t('companies_none_assigned')}</option>
+                  {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
 
             <div className="ufd-field">
               <label className="ufd-label">

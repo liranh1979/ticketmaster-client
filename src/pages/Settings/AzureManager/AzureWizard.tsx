@@ -99,8 +99,10 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
   const [savingGroupMappings, setSavingGroupMappings] = useState(false);
 
   // Step 5
-  const [runInitialSync, setRunInitialSync] = useState(true);
-  const [activating, setActivating] = useState(false);
+  const [runInitialSync, setRunInitialSync]   = useState(true);
+  const [activating, setActivating]           = useState(false);
+  const [syncCompanyId, setSyncCompanyId]     = useState<number | null>(null);
+  const [companies, setCompanies]             = useState<{ id: number; name: string }[]>([]);
 
   // Load existing config when editing
   useEffect(() => {
@@ -195,6 +197,12 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
   useEffect(() => {
     if (step === 4 && savedId) initGroupMappingStep();
   }, [step]); // eslint-disable-line
+
+  useEffect(() => {
+    if (step === 5) {
+      api.get<{ id: number; name: string }[]>('/companies').then(r => setCompanies(r.data)).catch(() => {});
+    }
+  }, [step]);
 
   // ── Step 1 handlers ────────────────────────────────────────────
   const handleStep1Next = async () => {
@@ -348,7 +356,8 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
     setActivating(true);
     try {
       await api.post(`/azure/configs/${savedId}/activate`, null, { params: { active } });
-      if (active && runInitialSync) await api.post(`/azure/configs/${savedId}/sync`);
+      if (active && runInitialSync) await api.post(`/azure/configs/${savedId}/sync`, null,
+        syncCompanyId ? { params: { companyId: syncCompanyId } } : undefined);
       onSaved();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to save configuration');
@@ -736,6 +745,20 @@ export const AzureWizard = ({ configId, onClose, onSaved, onMissingFields, initi
                 )}
               </div>
             </div>
+
+            {/* Company assignment */}
+            {companies.length > 0 && (
+              <div className="ldap-form-section" style={{ marginTop: 16 }}>
+                <div className="ldap-form-section-title">{t('company_section')}</div>
+                <select
+                  className="ldap-fi-input"
+                  value={syncCompanyId ?? ''}
+                  onChange={e => setSyncCompanyId(e.target.value === '' ? null : Number(e.target.value))}>
+                  <option value="">{t('companies_none_assigned')}</option>
+                  {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
 
             <label className="ldap-sync-card">
               <input type="checkbox" className="ldap-sync-checkbox"

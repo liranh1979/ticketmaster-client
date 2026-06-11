@@ -93,7 +93,9 @@ export const LdapWizard = ({ configId, onClose, onSaved, onMissingFields, initia
   const [savingMappings, setSavingMappings] = useState(false);
 
   // Step 4
-  const [runInitialSync, setRunInitialSync] = useState(true);
+  const [runInitialSync, setRunInitialSync]   = useState(true);
+  const [syncCompanyId, setSyncCompanyId]     = useState<number | null>(null);
+  const [companies, setCompanies]             = useState<{ id: number; name: string }[]>([]);
   const [activating, setActivating] = useState(false);
 
   // Load existing config data whenever the wizard opens in edit mode
@@ -290,6 +292,9 @@ export const LdapWizard = ({ configId, onClose, onSaved, onMissingFields, initia
 
   useEffect(() => {
     if (step === 3 && savedId) initMappingStep();
+    if (step === 4) {
+      api.get<{ id: number; name: string }[]>('/companies').then(r => setCompanies(r.data)).catch(() => {});
+    }
   }, [step]); // eslint-disable-line
 
   const doRunMapping = async () => {
@@ -371,7 +376,8 @@ export const LdapWizard = ({ configId, onClose, onSaved, onMissingFields, initia
     try {
       await api.post(`/ldap/configs/${savedId}/activate`, null, { params: { active } });
       if (active && runInitialSync) {
-        await api.post(`/ldap/configs/${savedId}/sync`);
+        await api.post(`/ldap/configs/${savedId}/sync`, null,
+          syncCompanyId ? { params: { companyId: syncCompanyId } } : undefined);
       }
       onSaved();
     } catch (err: any) {
@@ -877,6 +883,20 @@ export const LdapWizard = ({ configId, onClose, onSaved, onMissingFields, initia
 
               </div>
             </div>
+
+            {/* Company assignment */}
+            {companies.length > 0 && (
+              <div className="ldap-form-section" style={{ marginTop: 16 }}>
+                <div className="ldap-form-section-title">{t('company_section')}</div>
+                <select
+                  className="ldap-fi-input"
+                  value={syncCompanyId ?? ''}
+                  onChange={e => setSyncCompanyId(e.target.value === '' ? null : Number(e.target.value))}>
+                  <option value="">{t('companies_none_assigned')}</option>
+                  {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
 
             {/* Sync option */}
             <label className="ldap-sync-card">

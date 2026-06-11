@@ -17,6 +17,7 @@ import { hasPermission, hasAnyPermission, isSuperAdmin, PERMISSIONS } from '../.
 import { EmailManager } from './EmailManager/EmailManager';
 import { NotificationManager } from './NotificationManager/NotificationManager';
 import { SetupGuidePage } from './SetupGuide/SetupGuidePage';
+import { CompaniesPage } from './CompaniesManager/CompaniesPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -28,6 +29,7 @@ interface SettingsPageProps {
 type ViewState =
   | 'menu'
   | 'setup-guide'
+  | 'companies'
   | 'selection'
   | 'system-fields'
   | 'custom-fields'
@@ -136,6 +138,17 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
           </div>
         )}
 
+        {isSuperAdminUser && (
+          <div className="settings-card" onClick={() => setCurrentView('companies')}>
+            <div className="settings-icon-box">
+              <div className="ai-icon-placeholder">🏢</div>
+            </div>
+            <span className="settings-text">
+              {t('companies_settings_card')}
+            </span>
+          </div>
+        )}
+
         {canFields && (
           <div className="settings-card" onClick={handleMainMenuClick}>
             <div className="settings-icon-box">
@@ -216,6 +229,18 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
           ← {t('back_btn')}
         </button>
         <SetupGuidePage onNavigate={(view) => setCurrentView(view as ViewState)} />
+      </div>
+    );
+  }
+
+  // 1c. Companies View
+  if (currentView === 'companies') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToMenu}>
+          ← {t('back_btn')}
+        </button>
+        <CompaniesPage />
       </div>
     );
   }
