@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Loader2, CheckCircle, XCircle, Globe, Lock } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { getFieldType } from './fieldTypes';
 import api from '../../../api';
 
-interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; isAdminOnly?: boolean; }
+interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; isAdminOnly?: boolean; fieldVisibility?: string; }
 interface FieldTranslationGridProps {
   targetLang: string;
   fieldDefs: FieldDef[];
@@ -27,21 +27,23 @@ export const FieldTranslationGrid = ({
   const [translating, setTranslating] = useState(false);
   const isEnglish = targetLang === 'en';
 
-  const [adminOnlyState, setAdminOnlyState] = useState<Record<number, boolean>>({});
+  const [visibilityState, setVisibilityState] = useState<Record<number, string>>({});
 
   useEffect(() => {
-    const initial: Record<number, boolean> = {};
-    fieldDefs.forEach(f => { initial[f.id] = f.isAdminOnly ?? false; });
-    setAdminOnlyState(initial);
+    const initial: Record<number, string> = {};
+    fieldDefs.forEach(f => {
+      initial[f.id] = f.fieldVisibility ?? (f.isAdminOnly ? 'admin_only' : 'all');
+    });
+    setVisibilityState(initial);
   }, [fieldDefs]);
 
-  const toggleAdminOnly = async (field: FieldDef) => {
-    const next = !adminOnlyState[field.id];
-    setAdminOnlyState(prev => ({ ...prev, [field.id]: next }));
+  const setVisibility = async (field: FieldDef, vis: string) => {
+    const prev = visibilityState[field.id];
+    setVisibilityState(p => ({ ...p, [field.id]: vis }));
     try {
-      await api.patch(`/field-definitions/${field.id}/admin-only`, null, { params: { adminOnly: next } });
+      await api.patch(`/field-definitions/${field.id}/visibility`, null, { params: { visibility: vis } });
     } catch {
-      setAdminOnlyState(prev => ({ ...prev, [field.id]: !next }));
+      setVisibilityState(p => ({ ...p, [field.id]: prev }));
     }
   };
 
@@ -224,15 +226,15 @@ export const FieldTranslationGrid = ({
                     </td>
                     {showVisibility && (
                       <td>
-                        <button
-                          className={`fd-visibility-btn${adminOnlyState[field.id] ? ' fd-visibility-admin' : ' fd-visibility-all'}`}
-                          onClick={() => toggleAdminOnly(field)}
-                          title={adminOnlyState[field.id] ? t('field_admin_only') : t('field_visibility_all')}
+                        <select
+                          className="fd-visibility-select"
+                          value={visibilityState[field.id] ?? 'all'}
+                          onChange={e => setVisibility(field, e.target.value)}
                         >
-                          {adminOnlyState[field.id]
-                            ? <><Lock size={11} /> {t('field_admin_only')}</>
-                            : <><Globe size={11} /> {t('field_visibility_all')}</>}
-                        </button>
+                          <option value="all">👥 All</option>
+                          <option value="user_view_admin_edit">👁 View / Admin edits</option>
+                          <option value="admin_only">🔒 Admin only</option>
+                        </select>
                       </td>
                     )}
                   </tr>

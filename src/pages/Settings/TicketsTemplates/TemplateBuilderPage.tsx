@@ -59,6 +59,7 @@ interface FieldDefinition {
   fieldType: string;
   isSystem: boolean;
   fieldOptions?: string[];
+  fieldVisibility?: string;
 }
 
 interface Props {
@@ -589,6 +590,7 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
       defaultValue: '',
       width: 'full',
       fieldOptions: field.fieldOptions || [],
+      fieldVisibility: (field.fieldVisibility as FieldVisibility) ?? 'all',
     };
     setLayout(prev => ({
       tabs: prev.tabs.map((t, i) =>
