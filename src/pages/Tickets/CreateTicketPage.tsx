@@ -50,6 +50,15 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
       const flat = flattenLayout(data.layout);
       const defaults: Record<string, any> = {};
       for (const f of flat) {
+        if (f.fieldType === 'timer' && f.defaultValue) {
+          try {
+            const parsed = JSON.parse(f.defaultValue);
+            if (parsed?.duration_value && parsed?.duration_unit) {
+              defaults[f.fieldKey] = parsed;
+              continue;
+            }
+          } catch {}
+        }
         defaults[f.fieldKey] = f.defaultValue ?? '';
       }
       if (user?.red_id) defaults.request_user = String(user.red_id);

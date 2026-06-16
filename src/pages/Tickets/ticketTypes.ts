@@ -44,6 +44,8 @@ export interface TicketDetail {
   version: number;
 }
 
+export type FieldVisibility = 'admin_only' | 'all' | 'user_view_admin_edit';
+
 export interface TemplateLayoutField {
   fieldKey: string;
   fieldType: string;
@@ -55,6 +57,7 @@ export interface TemplateLayoutField {
   isListVisible?: boolean;
   width?: 'full' | 'half';
   isAdminOnly?: boolean;
+  fieldVisibility?: FieldVisibility;
 }
 
 export interface AdminNotification {

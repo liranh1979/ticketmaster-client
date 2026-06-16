@@ -29,6 +29,8 @@ import { LabelPickerControl } from '../../../components/LabelPickerControl/Label
 import './TemplateBuilderPage.css';
 
 /* ── Types ── */
+type FieldVisibility = 'admin_only' | 'all' | 'user_view_admin_edit';
+
 export interface LayoutField {
   fieldKey: string;
   fieldType: string;
@@ -38,6 +40,7 @@ export interface LayoutField {
   width: 'full' | 'half';
   fieldOptions?: string[];
   label?: string;
+  fieldVisibility?: FieldVisibility;
 }
 
 export interface TabData {
@@ -116,12 +119,14 @@ function SortableFieldCard({
   onRemove,
   onDefaultChange,
   onWidthToggle,
+  onVisibilityChange,
 }: {
   field: LayoutField;
   translations: Record<string, string>;
   onRemove: (key: string) => void;
   onDefaultChange: (key: string, value: string) => void;
   onWidthToggle: (key: string) => void;
+  onVisibilityChange: (key: string, vis: FieldVisibility) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: field.fieldKey });
@@ -208,6 +213,35 @@ function SortableFieldCard({
         </select>
       );
     }
+    if (field.fieldType === 'timer') {
+      let parsed: { duration_value?: number; duration_unit?: string } = {};
+      try { parsed = JSON.parse(field.defaultValue || '{}'); } catch {}
+      const dv = parsed.duration_value ?? 1;
+      const du = parsed.duration_unit ?? 'hours';
+      const update = (nextDv: number, nextDu: string) =>
+        onDefaultChange(field.fieldKey, JSON.stringify({ duration_value: nextDv, duration_unit: nextDu }));
+      return (
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <input
+            type="number"
+            min={1}
+            value={dv}
+            onChange={e => update(Math.max(1, parseInt(e.target.value) || 1), du)}
+            className="tb-default-input"
+            style={{ width: 72 }}
+          />
+          <select
+            value={du}
+            onChange={e => update(dv, e.target.value)}
+            className="tb-default-select"
+          >
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+            <option value="days">Days</option>
+          </select>
+        </div>
+      );
+    }
     if (field.fieldType === 'date') {
       return (
         <div className="tb-date-wrap">
@@ -260,6 +294,17 @@ function SortableFieldCard({
         </div>
 
         <div className="tb-field-actions">
+          <select
+            className="tb-visibility-select"
+            value={field.fieldVisibility ?? 'all'}
+            onChange={e => onVisibilityChange(field.fieldKey, e.target.value as FieldVisibility)}
+            title="Who can see / edit this field"
+          >
+            <option value="all">👥 All</option>
+            <option value="user_view_admin_edit">👁 View / Admin edits</option>
+            <option value="admin_only">🔒 Admin only</option>
+          </select>
+
           <button
             className={`tb-width-btn ${field.width}`}
             onClick={() => onWidthToggle(field.fieldKey)}
@@ -573,6 +618,18 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
     setIsDirty(true);
   }, [safeTabIdx]);
 
+  const onVisibilityChange = useCallback((key: string, vis: FieldVisibility) => {
+    setLayout(prev => ({
+      tabs: prev.tabs.map((t, i) =>
+        i !== safeTabIdx ? t : {
+          ...t,
+          fields: t.fields.map(f => f.fieldKey === key ? { ...f, fieldVisibility: vis } : f),
+        }
+      ),
+    }));
+    setIsDirty(true);
+  }, [safeTabIdx]);
+
   const onWidthToggle = useCallback((key: string) => {
     setLayout(prev => ({
       tabs: prev.tabs.map((t, i) =>
@@ -612,8 +669,8 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
           tabs: layout.tabs.map(tab => ({
             tabKey: tab.tabKey,
             label: tab.label,
-            fields: tab.fields.map(({ fieldKey, fieldType, isSystem, displayOrder, defaultValue, width }) => ({
-              fieldKey, fieldType, isSystem, displayOrder, defaultValue, width,
+            fields: tab.fields.map(({ fieldKey, fieldType, isSystem, displayOrder, defaultValue, width, fieldVisibility }) => ({
+              fieldKey, fieldType, isSystem, displayOrder, defaultValue, width, fieldVisibility,
             })),
           })),
         },
@@ -866,6 +923,7 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
                       onRemove={removeField}
                       onDefaultChange={onDefaultChange}
                       onWidthToggle={onWidthToggle}
+                      onVisibilityChange={onVisibilityChange}
                     />
                   ))}
                 </div>

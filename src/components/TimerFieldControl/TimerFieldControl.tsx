@@ -14,10 +14,9 @@ interface Props {
   value: TimerValue | null | undefined;
   onChange: (key: string, value: TimerValue) => void;
   readOnly: boolean;
-  isAdmin: boolean;
 }
 
-export const TimerFieldControl = ({ fieldKey, value, onChange, readOnly, isAdmin }: Props) => {
+export const TimerFieldControl = ({ fieldKey, value, onChange, readOnly }: Props) => {
   const { t } = useTranslation();
   const [durationValue, setDurationValue] = useState<number>(
     value?.duration_value ?? 24
@@ -32,7 +31,7 @@ export const TimerFieldControl = ({ fieldKey, value, onChange, readOnly, isAdmin
     if (value?.duration_unit)          setDurationUnit(value.duration_unit);
   }, [value?.duration_value, value?.duration_unit]);
 
-  const canEdit = isAdmin && !readOnly;
+  const canEdit = !readOnly;
 
   const handleSet = () => {
     onChange(fieldKey, { duration_value: durationValue, duration_unit: durationUnit });
@@ -42,9 +41,10 @@ export const TimerFieldControl = ({ fieldKey, value, onChange, readOnly, isAdmin
 
   return (
     <div className="tfc-root">
-      {hasTarget && (
-        <TimerProgressBar value={value} />
-      )}
+      {hasTarget
+        ? <TimerProgressBar value={value} />
+        : <span className="tfc-not-set">{t('timer_not_set', { defaultValue: 'Not set' })}</span>
+      }
 
       {canEdit && (
         <div className="tfc-edit-row">
@@ -65,13 +65,9 @@ export const TimerFieldControl = ({ fieldKey, value, onChange, readOnly, isAdmin
             <option value="days">{t('timer_unit_days', { defaultValue: 'Days' })}</option>
           </select>
           <button className="tfc-set-btn" onClick={handleSet}>
-            {hasTarget ? 'Update timer' : 'Set timer'}
+            {hasTarget ? t('timer_update_btn', { defaultValue: 'Update timer' }) : t('timer_set_btn', { defaultValue: 'Set timer' })}
           </button>
         </div>
-      )}
-
-      {!hasTarget && !canEdit && (
-        <span className="tfc-not-set">{t('timer_not_set', { defaultValue: 'Not set' })}</span>
       )}
     </div>
   );

@@ -7,7 +7,7 @@ import { LabelPickerControl } from '../LabelPickerControl/LabelPickerControl';
 import { AttachmentsControl } from '../AttachmentsControl/AttachmentsControl';
 import { ActivityLogControl } from '../ActivityLogControl/ActivityLogControl';
 import { TimerFieldControl } from '../TimerFieldControl/TimerFieldControl';
-import type { TemplateLayoutField, TemplateTab } from '../../pages/Tickets/ticketTypes';
+import type { TemplateLayoutField, TemplateTab, FieldVisibility } from '../../pages/Tickets/ticketTypes';
 import './TicketFormRenderer.css';
 import '../TimerFieldControl/TimerFieldControl.css';
 
@@ -54,7 +54,6 @@ interface FieldControlProps {
   onChange: (key: string, value: any) => void;
   readOnly: boolean;
   entityId?: number;
-  isAdmin?: boolean;
 }
 
 const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: (v: string[]) => void; readOnly: boolean }) => {
@@ -112,7 +111,7 @@ const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: 
 };
 
 // Proper React component — hooks are allowed here
-const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin }: FieldControlProps) => {
+const FieldControl = ({ field, value, onChange, readOnly, entityId }: FieldControlProps) => {
   const { t } = useTranslation();
 
   if (field.fieldType === 'timer') {
@@ -122,7 +121,6 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin }: F
         value={value}
         onChange={onChange}
         readOnly={readOnly}
-        isAdmin={!!isAdmin}
       />
     );
   }
@@ -297,9 +295,14 @@ const FieldCards = ({
             <div className="tfr-field-title">
               {t(field.fieldKey, { defaultValue: field.fieldKey.replace(/_/g, ' ') })}
             </div>
-            {field.isAdminOnly && (
+            {(field.fieldVisibility === 'admin_only' || (!field.fieldVisibility && field.isAdminOnly)) && (
               <span className="tfr-admin-badge">
-                <Lock size={10} /> Admin
+                <Lock size={10} /> Admin only
+              </span>
+            )}
+            {field.fieldVisibility === 'user_view_admin_edit' && !isAdmin && (
+              <span className="tfr-admin-badge">
+                👁 View only
               </span>
             )}
             {isAiFilled && (
@@ -314,9 +317,8 @@ const FieldCards = ({
               field={field}
               value={value}
               onChange={onChange}
-              readOnly={readOnly}
+              readOnly={(field as any)._effectiveReadOnly ?? readOnly}
               entityId={entityId}
-              isAdmin={isAdmin}
             />
           </div>
         </div>
@@ -337,10 +339,18 @@ export const TicketFormRenderer = ({
   const { t } = useTranslation();
   const [activeTabKey, setActiveTabKey] = useState<string>(() => tabs[0]?.tabKey ?? '');
 
-  // Build visible tabs (filter admin-only fields; drop tabs that become empty)
+  const getVisibility = (f: TemplateLayoutField): FieldVisibility =>
+    f.fieldVisibility ?? (f.isAdminOnly ? 'admin_only' : 'all');
+
+  // Build visible tabs: filter hidden fields, compute per-field effective readOnly
   const visibleTabs = tabs.map(tab => ({
     ...tab,
-    fields: isAdmin ? tab.fields : tab.fields.filter(f => !f.isAdminOnly),
+    fields: tab.fields
+      .filter(f => isAdmin || getVisibility(f) !== 'admin_only')
+      .map(f => ({
+        ...f,
+        _effectiveReadOnly: readOnly || (!isAdmin && getVisibility(f) === 'user_view_admin_edit'),
+      })),
   })).filter(tab => tab.fields.length > 0);
 
   const showTabs = visibleTabs.length > 1;
