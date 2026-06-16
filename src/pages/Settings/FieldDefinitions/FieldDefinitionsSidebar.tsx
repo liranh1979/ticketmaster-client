@@ -21,6 +21,7 @@ export const FieldDefinitionsSidebar = ({
   const [form, setForm] = useState({ fieldKey: '', label: '', fieldType: 'text' });
   const [options, setOptions] = useState<string[]>([]);
   const [optionInput, setOptionInput] = useState('');
+  const [alertThreshold, setAlertThreshold] = useState(20);
   const [adding, setAdding] = useState(false);
   const isEnglish = selectedLang === 'en';
 
@@ -47,10 +48,14 @@ export const FieldDefinitionsSidebar = ({
         fieldType: form.fieldType,
         label: form.label.trim(),
         fieldOptions: form.fieldType === 'combobox' ? options : null,
+        fieldConfig: form.fieldType === 'timer'
+          ? { alert_threshold_percent: alertThreshold }
+          : null,
       });
       setForm({ fieldKey: '', label: '', fieldType: 'text' });
       setOptions([]);
       setOptionInput('');
+      setAlertThreshold(20);
       onFieldAdded();
     } catch (err) {
       console.error('Failed to add field', err);
@@ -60,6 +65,7 @@ export const FieldDefinitionsSidebar = ({
   };
 
   const isCombobox = form.fieldType === 'combobox';
+  const isTimer    = form.fieldType === 'timer';
   const canAdd = !adding && form.fieldKey.trim() && form.label.trim() && (!isCombobox || options.length > 0);
 
   return (
@@ -155,6 +161,20 @@ export const FieldDefinitionsSidebar = ({
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {isTimer && (
+            <div className="fd-form-group">
+              <label className="fd-form-label">Alert when % remaining ≤</label>
+              <input
+                type="number"
+                className="fd-input"
+                min={1}
+                max={99}
+                value={alertThreshold}
+                onChange={e => setAlertThreshold(Math.min(99, Math.max(1, parseInt(e.target.value) || 20)))}
+              />
             </div>
           )}
 

@@ -11,6 +11,7 @@ export const FIELD_TYPES = [
   { value: 'url',          label: 'URL',                    color: '#ccfbf1', text: '#065f46', symbol: '🔗' },
   { value: 'label',        label: 'Label',                  color: '#ede9fe', text: '#5b21b6', symbol: '🏷' },
   { value: 'nodelist',    label: 'Node List',              color: '#dcfce7', text: '#166534', symbol: '≡'  },
+  { value: 'timer',       label: 'Timer / Countdown',      color: '#fef3c7', text: '#92400e', symbol: '⏱' },
 ];
 
 export const getFieldType = (value: string) =>
