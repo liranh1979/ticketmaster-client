@@ -44,6 +44,13 @@ export const FieldEntityList = ({ onSelectEntity }: FieldEntityListProps) => {
       icon: '🏷️',
       description: t('label_defined_fields'),
     },
+    {
+      entity: 'workflow',
+      category: 'custom' as const,
+      label: 'Workflow Fields',
+      icon: '⚙️',
+      description: 'Built-in and custom fields for workflow entities',
+    },
   ];
 
   return (

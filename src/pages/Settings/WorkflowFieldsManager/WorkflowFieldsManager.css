@@ -1,0 +1,27 @@
+.wfm-badge {
+  background: #eef2ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+}
+
+.wfm-system-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  margin: 0 0 10px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #0369a1;
+  line-height: 1.4;
+}
+
+.fd-lock-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.7rem;
+  vertical-align: middle;
+  opacity: 0.75;
+}

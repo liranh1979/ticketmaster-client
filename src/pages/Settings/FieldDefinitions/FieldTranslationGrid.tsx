@@ -4,7 +4,7 @@ import { Sparkles, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { getFieldType } from './fieldTypes';
 import api from '../../../api';
 
-interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; isAdminOnly?: boolean; fieldVisibility?: string; }
+interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; isAdminOnly?: boolean; fieldVisibility?: string; isSystem?: boolean; }
 interface FieldTranslationGridProps {
   targetLang: string;
   fieldDefs: FieldDef[];
@@ -214,7 +214,10 @@ export const FieldTranslationGrid = ({
                         )}
                       </div>
                     </td>
-                    <td><code className="fd-key-code">{field.fieldKey}</code></td>
+                    <td>
+                      <code className="fd-key-code">{field.fieldKey}</code>
+                      {field.isSystem && <span className="fd-lock-badge" title="Built-in field">🔒</span>}
+                    </td>
                     {!isEnglish && <td className="fd-source-text">{englishSource[field.fieldKey] || ''}</td>}
                     <td>
                       <input

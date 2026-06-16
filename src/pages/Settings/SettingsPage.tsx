@@ -16,6 +16,7 @@ import type { AzureMissingField } from './AzureManager/AzureWizard';
 import { hasPermission, hasAnyPermission, isSuperAdmin, PERMISSIONS } from '../../utils/permissions';
 import { EmailManager } from './EmailManager/EmailManager';
 import { NotificationManager } from './NotificationManager/NotificationManager';
+import { WorkflowFieldsManager } from './WorkflowFieldsManager/WorkflowFieldsManager';
 import { SetupGuidePage } from './SetupGuide/SetupGuidePage';
 import { CompaniesPage } from './CompaniesManager/CompaniesPage';
 import './SettingsPage.css';
@@ -44,7 +45,8 @@ type ViewState =
   | 'users'
   | 'groups'
   | 'ldap'
-  | 'azure';
+  | 'azure'
+  | 'workflow-fields';
 
 export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: SettingsPageProps) => {
   const { t } = useTranslation();
@@ -73,6 +75,8 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
       setCurrentView('ticket-custom-fields');
     } else if (entity === 'label') {
       setCurrentView('labels-management');
+    } else if (entity === 'workflow') {
+      setCurrentView('workflow-fields');
     } else {
       setCurrentView('custom-fields');
     }
@@ -385,6 +389,18 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
           ← {t('back_btn')}
         </button>
         <FieldDefinitionsManager entityType="ticket" />
+      </div>
+    );
+  }
+
+  // 8c. Workflow Fields View
+  if (currentView === 'workflow-fields') {
+    return (
+      <div className="view-container">
+        <button className="back-button" onClick={handleBackToSelection}>
+          ← {t('back_btn')}
+        </button>
+        <WorkflowFieldsManager />
       </div>
     );
   }

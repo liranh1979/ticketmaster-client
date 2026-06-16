@@ -12,6 +12,7 @@ export const FIELD_TYPES = [
   { value: 'label',        label: 'Label',                  color: '#ede9fe', text: '#5b21b6', symbol: '🏷' },
   { value: 'nodelist',    label: 'Node List',              color: '#dcfce7', text: '#166534', symbol: '≡'  },
   { value: 'timer',       label: 'Timer / Countdown',      color: '#fef3c7', text: '#92400e', symbol: '⏱' },
+  { value: 'assignee',   label: 'Assignee',               color: '#e0f2fe', text: '#0369a1', symbol: '👤' },
 ];
 
 export const getFieldType = (value: string) =>
