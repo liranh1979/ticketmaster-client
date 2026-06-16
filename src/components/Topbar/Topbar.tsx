@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ClipboardList, Search } from 'lucide-react';
 import api from '../../api';
 import { AIStatusIndicator } from './AIStatusIndicator/AIStatusIndicator';
+import { AdminInboxBell } from '../AdminInboxBell/AdminInboxBell';
 import { isSuperAdmin } from '../../utils/permissions';
 import './Topbar.css';
 
@@ -69,6 +70,7 @@ export const Topbar = ({ user, onSettingsClick, onTicketListClick, onMyTicketsCl
 
       <div className="topbar-right">
         {isSuperAdmin(user) && <AIStatusIndicator />}
+        {onTicketJump && <AdminInboxBell onTicketClick={onTicketJump} />}
 
         <span className="user-greeting">
           {t('welcome_hello')}, <strong>{user?.display_name || 'Guest'}</strong>

@@ -6,8 +6,10 @@ import { UserPickerControl } from '../UserPickerControl/UserPickerControl';
 import { LabelPickerControl } from '../LabelPickerControl/LabelPickerControl';
 import { AttachmentsControl } from '../AttachmentsControl/AttachmentsControl';
 import { ActivityLogControl } from '../ActivityLogControl/ActivityLogControl';
+import { TimerFieldControl } from '../TimerFieldControl/TimerFieldControl';
 import type { TemplateLayoutField, TemplateTab } from '../../pages/Tickets/ticketTypes';
 import './TicketFormRenderer.css';
+import '../TimerFieldControl/TimerFieldControl.css';
 
 const FIELD_BAR_COLORS: Record<string, string> = {
   title:        '#3b82f6',
@@ -52,6 +54,7 @@ interface FieldControlProps {
   onChange: (key: string, value: any) => void;
   readOnly: boolean;
   entityId?: number;
+  isAdmin?: boolean;
 }
 
 const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: (v: string[]) => void; readOnly: boolean }) => {
@@ -109,8 +112,20 @@ const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: 
 };
 
 // Proper React component — hooks are allowed here
-const FieldControl = ({ field, value, onChange, readOnly, entityId }: FieldControlProps) => {
+const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin }: FieldControlProps) => {
   const { t } = useTranslation();
+
+  if (field.fieldType === 'timer') {
+    return (
+      <TimerFieldControl
+        fieldKey={field.fieldKey}
+        value={value}
+        onChange={onChange}
+        readOnly={readOnly}
+        isAdmin={!!isAdmin}
+      />
+    );
+  }
 
   switch (field.fieldKey) {
     case 'title':
@@ -245,7 +260,7 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId }: FieldContr
 };
 
 const FieldCards = ({
-  fields, values, onChange, aiFilledFields, readOnly, entityId, t,
+  fields, values, onChange, aiFilledFields, readOnly, entityId, isAdmin, t,
 }: {
   fields: TemplateLayoutField[];
   values: Record<string, any>;
@@ -253,6 +268,7 @@ const FieldCards = ({
   aiFilledFields: string[];
   readOnly: boolean;
   entityId?: number;
+  isAdmin?: boolean;
   t: (key: string, opts?: any) => string;
 }) => (
   <>
@@ -300,6 +316,7 @@ const FieldCards = ({
               onChange={onChange}
               readOnly={readOnly}
               entityId={entityId}
+              isAdmin={isAdmin}
             />
           </div>
         </div>
@@ -354,6 +371,7 @@ export const TicketFormRenderer = ({
           aiFilledFields={aiFilledFields}
           readOnly={readOnly}
           entityId={entityId}
+          isAdmin={isAdmin}
           t={t}
         />
       </div>

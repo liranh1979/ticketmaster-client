@@ -21,6 +21,7 @@ export interface TicketListItem {
   createdAt: string;
   updatedAt: string;
   version: number;
+  ticketData?: Record<string, any>;
 }
 
 export interface TicketDetail {
@@ -50,8 +51,20 @@ export interface TemplateLayoutField {
   displayOrder: number;
   defaultValue: string;
   fieldOptions?: string[];
+  fieldConfig?: Record<string, any>;
+  isListVisible?: boolean;
   width?: 'full' | 'half';
   isAdminOnly?: boolean;
+}
+
+export interface AdminNotification {
+  id: number;
+  ticketId: number;
+  fieldKey: string;
+  notificationType: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface TemplateSummary {

@@ -1,0 +1,51 @@
+.tfc-root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tfc-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.tfc-num-input {
+  width: 70px;
+  padding: 5px 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.tfc-unit-select {
+  padding: 5px 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.tfc-set-btn {
+  padding: 5px 12px;
+  background: rgba(59,130,246,0.2);
+  border: 1px solid rgba(59,130,246,0.4);
+  border-radius: 6px;
+  color: #93c5fd;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tfc-set-btn:hover {
+  background: rgba(59,130,246,0.35);
+}
+
+.tfc-not-set {
+  font-size: 12px;
+  color: #64748b;
+}

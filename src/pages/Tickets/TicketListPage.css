@@ -503,3 +503,9 @@
   color: #475569;
   font-style: italic;
 }
+
+.tl-timer-cell {
+  display: flex;
+  align-items: center;
+  min-width: 90px;
+}

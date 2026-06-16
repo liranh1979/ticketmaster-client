@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2, RefreshCw, Tag, UserCheck, ChevronDown, X, Plus, Bell } from 'lucide-react';
 import api from '../../api';
-import type { TicketListItem, TicketLabel, TicketSseEvent } from './ticketTypes';
+import type { TicketListItem, TicketLabel, TicketSseEvent, TemplateLayoutField } from './ticketTypes';
 import { statusColor, formatRelativeTime } from './ticketTypes';
+import { TimerProgressBar } from '../../components/TimerProgressBar/TimerProgressBar';
 import './TicketListPage.css';
 
 interface Props {
@@ -27,6 +28,7 @@ export const TicketListPage = ({
   const [labels, setLabels]         = useState<TicketLabel[]>([]);
   const [templates, setTemplates]   = useState<TemplateSummary[]>([]);
   const [managers, setManagers]     = useState<UserOption[]>([]);
+  const [timerFields, setTimerFields] = useState<TemplateLayoutField[]>([]);
   const [loading, setLoading]       = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore]       = useState(true);
@@ -47,6 +49,11 @@ export const TicketListPage = ({
     api.get('/ticket-labels').then(r => setLabels(r.data)).catch(() => {});
     api.get('/templates').then(r => setTemplates(r.data)).catch(() => {});
     api.get('/ticket-users/managers').then(r => setManagers(r.data)).catch(() => {});
+    api.get('/field-definitions?entityType=ticket').then(r => {
+      const listVisibleTimers = (r.data as TemplateLayoutField[])
+        .filter((f: TemplateLayoutField) => f.fieldType === 'timer' && f.isListVisible);
+      setTimerFields(listVisibleTimers);
+    }).catch(() => {});
   }, []);
 
   // SSE subscription — new tickets / in-place row updates
@@ -241,6 +248,9 @@ export const TicketListPage = ({
             <div>{t('ticket_labels_col')}</div>
             <div>{t('ticket_assignee_col')}</div>
             <div>{t('ticket_updated_col')}</div>
+            {timerFields.map(tf => (
+              <div key={tf.fieldKey}>{tf.fieldKey.replace(/_/g, ' ')}</div>
+            ))}
           </div>
 
           <div className="tl-table-body">
@@ -291,6 +301,14 @@ export const TicketListPage = ({
                     ) : <span className="tl-unassigned">—</span>}
                   </div>
                   <div className="tl-updated">{formatRelativeTime(ticket.updatedAt)}</div>
+                  {timerFields.map(tf => (
+                    <div key={tf.fieldKey} className="tl-timer-cell">
+                      <TimerProgressBar
+                        value={ticket.ticketData?.[tf.fieldKey]}
+                        compact
+                      />
+                    </div>
+                  ))}
                 </div>
               );
             })}
