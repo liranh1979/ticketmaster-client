@@ -60,6 +60,7 @@ export const TimerFieldControl = ({ fieldKey, value, onChange, readOnly, isAdmin
             value={durationUnit}
             onChange={e => setDurationUnit(e.target.value)}
           >
+            <option value="minutes">{t('timer_unit_minutes', { defaultValue: 'Minutes' })}</option>
             <option value="hours">{t('timer_unit_hours', { defaultValue: 'Hours' })}</option>
             <option value="days">{t('timer_unit_days', { defaultValue: 'Days' })}</option>
           </select>
