@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
+import { FieldUpdateCard } from './FieldUpdateCard';
 import type { ActivityEntry } from './ActivityLogControl';
 import api from '../../api';
 import './ActivityFullScreenModal.css';
@@ -14,6 +15,7 @@ const TYPE_COLORS: Record<string, string> = {
   email_outbound: '#d97706',
   field_change:   '#6b7280',
   status_change:  '#dc2626',
+  file_attached:  '#0ea5e9',
   system:         '#9ca3af',
 };
 
@@ -25,10 +27,11 @@ const TYPE_LABELS: Record<string, string> = {
   email_outbound: 'Email Out',
   field_change:   'Changed',
   status_change:  'Status',
+  file_attached:  'File',
   system:         'System',
 };
 
-const ALL_TYPES = Object.keys(TYPE_LABELS);
+const ALL_TYPES = Object.keys(TYPE_LABELS); // order matches TYPE_LABELS declaration
 
 interface Props {
   ticketId: number;
@@ -98,6 +101,11 @@ export const ActivityFullScreenModal = ({ ticketId, ticketTitle, onClose }: Prop
     if (e.changes?.from && e.changes?.subject) {
       return `<p>Email from <strong>${e.changes.from}</strong>: ${e.changes.subject}</p>` +
         (e.changes.body ? `<div>${e.changes.body}</div>` : '');
+    }
+    if (e.changes?.filenames) {
+      const names = (e.changes.filenames as string[]);
+      const items = names.map(n => `<li>📎 ${n}</li>`).join('');
+      return `<p>${names.length === 1 ? '1 file attached' : `${names.length} files attached`}:</p><ul>${items}</ul>`;
     }
     if (e.changes?.message) return `<p>${e.changes.message}</p>`;
     return `<p><em>${e.operation}</em></p>`;
@@ -193,8 +201,11 @@ export const ActivityFullScreenModal = ({ ticketId, ticketTitle, onClose }: Prop
                           {new Date(entry.createdAt).toLocaleString()}
                         </span>
                       </div>
-                      <div className="afm-entry-body">
-                        <RichTextEditor content={getEntryContent(entry)} editable={false} />
+                      <div className={`afm-entry-body${entry.operation === 'FIELD_UPDATE' ? ' afm-entry-body--bare' : ''}`}>
+                        {entry.operation === 'FIELD_UPDATE'
+                          ? <FieldUpdateCard changes={entry.changes} />
+                          : <RichTextEditor content={getEntryContent(entry)} editable={false} />
+                        }
                       </div>
                     </div>
                   </div>

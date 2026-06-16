@@ -43,6 +43,7 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
   const [consultOpen, setConsultOpen]     = useState(false);
   const [linkCopied, setLinkCopied]       = useState(false);
   const [solutionSavedCount, setSolutionSavedCount] = useState(0);
+  const [saveCount, setSaveCount] = useState(0);
 
   const autoSaveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presencePinger = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -107,6 +108,7 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
 
       if (event.type === 'TICKET_UPDATED') {
         setAiProcessing(false);
+        setSaveCount(c => c + 1);
         if (event.newVersion && event.newVersion > serverVersion.current) {
           serverVersion.current = event.newVersion;
           if (!isDirty) {
@@ -198,6 +200,7 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
         title:               values.title,
         description:         values.description,
         status:              values.status,
+        requestUserId:       values.request_user ? Number(values.request_user) : undefined,
         responsibleUserId:   values.responsible?.id ?? null,
         responsibleGroupId:  null,
         ticketData:          values,
@@ -210,6 +213,7 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
       setIsDirty(false);
       setConflict(null);
       setTouchedFields(new Set());
+      setSaveCount(c => c + 1);
     } catch (err: any) {
       if (err?.response?.status === 409) {
         setConflict(err.response.data as TicketDetail);
@@ -375,7 +379,7 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
             readonly={false}
             user={user}
             isAdmin={isAdmin}
-            refreshSignal={solutionSavedCount}
+            refreshSignal={solutionSavedCount + saveCount}
           />
         </div>
       </div>

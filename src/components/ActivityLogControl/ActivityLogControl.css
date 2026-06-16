@@ -346,6 +346,211 @@
 }
 .alc-empty-cta:hover { background: #1e3a5f; border-style: solid; }
 
+/* ── Field Update Card ── */
+.alc-entry-body--bare {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.fu-card {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(8, 14, 26, 0.98) 0%, rgba(11, 18, 34, 0.98) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Indigo left accent bar */
+.fu-accent {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #6366f1 0%, #a5b4fc 100%);
+  border-radius: 10px 0 0 10px;
+}
+
+/* Header */
+.fu-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 16px 9px 18px;
+  border-bottom: 1px solid rgba(30, 58, 95, 0.45);
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, transparent 55%);
+}
+
+.fu-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  color: #a5b4fc;
+  flex-shrink: 0;
+}
+
+.fu-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #818cf8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Rows */
+.fu-rows { padding: 2px 0 3px; }
+
+.fu-row {
+  display: flex;
+  align-items: center;
+  padding: 9px 16px 9px 18px;
+  gap: 12px;
+  border-bottom: 1px solid rgba(17, 30, 50, 0.7);
+  transition: background 0.12s ease;
+}
+.fu-row:last-child { border-bottom: none; }
+.fu-row:hover { background: rgba(99, 102, 241, 0.04); }
+
+/* Field name label */
+.fu-label {
+  width: 100px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+/* Diff container */
+.fu-diff {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+/* Wrapper spans (for layout) */
+.fu-from, .fu-to { display: inline-flex; max-width: 200px; }
+
+/* Generic text value — old */
+.fu-val--old {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: #64748b;
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.14);
+  text-decoration: line-through;
+  text-decoration-color: rgba(239, 68, 68, 0.4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Generic text value — new */
+.fu-val--new {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: #c7d2fe;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.07);
+  border: 1px solid rgba(16, 185, 129, 0.16);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Status pill */
+.fu-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.fu-status--old {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+.fu-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* User / group ID badge */
+.fu-id--old {
+  display: inline-flex;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: monospace;
+  color: #64748b;
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.14);
+  text-decoration: line-through;
+  text-decoration-color: rgba(239, 68, 68, 0.4);
+}
+.fu-id--new {
+  display: inline-flex;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: monospace;
+  color: #c7d2fe;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.07);
+  border: 1px solid rgba(16, 185, 129, 0.16);
+}
+
+/* Arrow */
+.fu-arrow {
+  color: #334155;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  user-select: none;
+}
+
+/* "Updated" badge for ticketData / labels */
+.fu-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-style: italic;
+  color: #818cf8;
+  background: rgba(99, 102, 241, 0.09);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+/* "none" / empty placeholder */
+.fu-empty {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1;
+  padding: 0 3px;
+}
+
 /* ── Send to User button (on ai_solution entries) ── */
 .alc-send-btn {
   display: inline-flex;

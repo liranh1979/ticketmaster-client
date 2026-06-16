@@ -18,6 +18,8 @@ export interface ActivityEntry {
   createdAt: string;
 }
 
+import { FieldUpdateCard } from './FieldUpdateCard';
+
 const TYPE_COLORS: Record<string, string> = {
   manual:         '#3b82f6',
   ai:             '#8b5cf6',
@@ -26,6 +28,7 @@ const TYPE_COLORS: Record<string, string> = {
   email_outbound: '#d97706',
   field_change:   '#6b7280',
   status_change:  '#dc2626',
+  file_attached:  '#0ea5e9',
   system:         '#9ca3af',
 };
 
@@ -38,10 +41,11 @@ const TYPE_LABELS: Record<string, string> = {
   email_outbound: 'Email Out',
   field_change:   'Changed',
   status_change:  'Status',
+  file_attached:  'File',
   system:         'System',
 };
 
-const FILTER_TYPES = ['all', 'manual', 'email_inbound', 'email_outbound', 'ai_solution', 'field_change', 'status_change'];
+const FILTER_TYPES = ['all', 'manual', 'email_inbound', 'email_outbound', 'ai_solution', 'field_change', 'status_change', 'file_attached'];
 
 interface Props {
   ticketId?: number;
@@ -170,6 +174,11 @@ export const ActivityLogControl = ({
       return `<p>Email from <strong>${e.changes.from}</strong>: ${e.changes.subject}</p>` +
         (e.changes.body ? `<div>${e.changes.body}</div>` : '');
     }
+    if (e.changes?.filenames) {
+      const names = (e.changes.filenames as string[]);
+      const items = names.map(n => `<li>📎 ${n}</li>`).join('');
+      return `<p>${names.length === 1 ? '1 file attached' : `${names.length} files attached`}:</p><ul>${items}</ul>`;
+    }
     if (e.changes?.message) return `<p>${e.changes.message}</p>`;
     return `<p><em>${e.operation}</em></p>`;
   };
@@ -297,8 +306,11 @@ export const ActivityLogControl = ({
                       </button>
                     )}
                   </div>
-                  <div className="alc-entry-body">
-                    <RichTextEditor content={getEntryContent(entry)} editable={false} />
+                  <div className={`alc-entry-body${entry.operation === 'FIELD_UPDATE' ? ' alc-entry-body--bare' : ''}`}>
+                    {entry.operation === 'FIELD_UPDATE'
+                      ? <FieldUpdateCard changes={entry.changes} />
+                      : <RichTextEditor content={getEntryContent(entry)} editable={false} />
+                    }
                   </div>
                 </div>
               </div>

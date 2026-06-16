@@ -121,7 +121,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
         status:              values.status ?? 'new',
         templateId:          selectedTemplate.id,
         templateVersionId:   selectedTemplate.currentVersionId,
-        requestUserId:       user?.red_id,
+        requestUserId:       values.request_user ? Number(values.request_user) : user?.red_id,
         responsibleUserId:   values.responsible?.id ?? null,
         responsibleGroupId:  null,
         ticketData:          values,
