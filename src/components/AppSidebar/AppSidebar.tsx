@@ -1,18 +1,19 @@
 import { useTranslation } from 'react-i18next';
-import { ClipboardList, Plus } from 'lucide-react';
+import { ClipboardList, Plus, CheckSquare } from 'lucide-react';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import './AppSidebar.css';
 
-type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets';
+type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks';
 
 interface Props {
   user: any;
   currentView: HomeView;
   onNewTicket: () => void;
   onServiceDesk: () => void;
+  onMyTasks?: () => void;
 }
 
-export const AppSidebar = ({ user, currentView, onNewTicket, onServiceDesk }: Props) => {
+export const AppSidebar = ({ user, currentView, onNewTicket, onServiceDesk, onMyTasks }: Props) => {
   const { t } = useTranslation();
   const canTickets = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
 
@@ -37,6 +38,16 @@ export const AppSidebar = ({ user, currentView, onNewTicket, onServiceDesk }: Pr
         <Plus size={17} />
         <span>{t('new_ticket')}</span>
       </button>
+
+      {onMyTasks && (
+        <button
+          className={`asb-item${currentView === 'my-tasks' ? ' asb-item-active' : ''}`}
+          onClick={onMyTasks}
+        >
+          <CheckSquare size={17} />
+          <span>My Tasks</span>
+        </button>
+      )}
     </nav>
   );
 };

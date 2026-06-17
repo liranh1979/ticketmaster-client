@@ -1,0 +1,281 @@
+.mwi-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #070f1e;
+  color: #e2e8f0;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.mwi-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 20px;
+  border-bottom: 1px solid #1e293b;
+  background: #0c1829;
+  flex-shrink: 0;
+}
+
+.mwi-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.mwi-back-btn:hover {
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+.mwi-header-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.mwi-header-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+/* ── Body split ── */
+.mwi-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Sidebar filters ── */
+.mwi-sidebar {
+  width: 172px;
+  flex-shrink: 0;
+  border-right: 1px solid #1e293b;
+  padding: 10px 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mwi-filter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  width: 100%;
+  gap: 6px;
+}
+
+.mwi-filter-btn:hover {
+  background: #0f1e36;
+  color: #e2e8f0;
+}
+
+.mwi-filter-btn.active {
+  background: #1e3a5f;
+  border-color: #1d4ed8;
+  color: #93c5fd;
+}
+
+.mwi-filter-label {
+  flex: 1;
+}
+
+.mwi-filter-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  background: #1e293b;
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.mwi-filter-btn.active .mwi-filter-count {
+  background: rgba(29, 78, 216, 0.35);
+  color: #93c5fd;
+}
+
+/* ── Main content ── */
+.mwi-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.mwi-state {
+  font-size: 13px;
+  color: #475569;
+  font-style: italic;
+  padding: 20px 0;
+}
+
+/* Empty state */
+.mwi-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.mwi-empty-icon {
+  font-size: 36px;
+  color: #1e293b;
+}
+
+.mwi-empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.mwi-empty-sub {
+  font-size: 12px;
+  color: #334155;
+}
+
+/* ── Card list ── */
+.mwi-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mwi-card {
+  display: flex;
+  align-items: center;
+  background: #0c1829;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 11px 14px;
+  gap: 12px;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.mwi-card:hover {
+  border-color: #334155;
+  background: #0f1e36;
+}
+
+.mwi-card-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.mwi-card-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mwi-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mwi-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mwi-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.mwi-ticket-ref {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: monospace;
+  color: #64748b;
+  background: #1e293b;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.mwi-status-chip {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+/* Right side controls */
+.mwi-card-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.mwi-status-select {
+  font-size: 12px;
+  font-family: inherit;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 5px;
+  color: #94a3b8;
+  padding: 5px 8px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.mwi-status-select:hover:not(:disabled) {
+  border-color: #334155;
+}
+
+.mwi-status-select:focus {
+  border-color: #4f46e5;
+}
+
+.mwi-status-select option {
+  background: #0f172a;
+}
+
+.mwi-status-select:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mwi-updating {
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+}

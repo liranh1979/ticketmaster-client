@@ -18,8 +18,9 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   GripVertical, Lock, X, Plus, Sparkles, Save, Check, Columns, AlignJustify,
   Type, FileText, List, Calendar, Paperclip, MessageSquare, Mail, Tag, User,
-  ChevronRight, ArrowLeft,
+  ChevronRight, ArrowLeft, GitBranch,
 } from 'lucide-react';
+import { WorkflowDesignerModal, type WorkflowFieldConfig } from './WorkflowDesignerModal';
 import api from '../../../api';
 import { RichTextEditor } from '../../../components/RichTextEditor/RichTextEditor';
 import { AttachmentsControl } from '../../../components/AttachmentsControl/AttachmentsControl';
@@ -41,6 +42,7 @@ export interface LayoutField {
   fieldOptions?: string[];
   label?: string;
   fieldVisibility?: FieldVisibility;
+  fieldConfig?: WorkflowFieldConfig;
 }
 
 export interface TabData {
@@ -83,6 +85,7 @@ const FIELD_TYPE_CONFIG: Record<string, FieldConfig> = {
   activity_log: { icon: MessageSquare, color: '#06b6d4', label: 'Activity Log' },
   emails:       { icon: Mail,          color: '#06b6d4', label: 'Email'        },
   labels:       { icon: Tag,           color: '#3b82f6', label: 'Labels'       },
+  workflow:     { icon: GitBranch,     color: '#4f46e5', label: 'Workflow'     },
 };
 
 const FIELD_KEY_CONFIG: Record<string, FieldConfig> = {
@@ -121,6 +124,7 @@ function SortableFieldCard({
   onDefaultChange,
   onWidthToggle,
   onVisibilityChange,
+  onOpenDesigner,
 }: {
   field: LayoutField;
   translations: Record<string, string>;
@@ -128,6 +132,7 @@ function SortableFieldCard({
   onDefaultChange: (key: string, value: string) => void;
   onWidthToggle: (key: string) => void;
   onVisibilityChange: (key: string, vis: FieldVisibility) => void;
+  onOpenDesigner?: (key: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: field.fieldKey });
@@ -241,6 +246,15 @@ function SortableFieldCard({
             <option value="days">Days</option>
           </select>
         </div>
+      );
+    }
+    if (field.fieldType === 'workflow') {
+      const nodeCount = field.fieldConfig?.nodes?.length ?? 0;
+      return (
+        <button className="tb-design-workflow-btn" onClick={() => onOpenDesigner?.(field.fieldKey)}>
+          <GitBranch size={12} />
+          {nodeCount > 0 ? `${nodeCount} node${nodeCount === 1 ? '' : 's'} designed` : 'Design Workflow'}
+        </button>
       );
     }
     if (field.fieldType === 'date') {
@@ -490,6 +504,8 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
   const [isSaving, setIsSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
 
+  const [workflowDesignerKey, setWorkflowDesignerKey] = useState<string | null>(null);
+
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<TemplateLayout | null>(null);
@@ -584,23 +600,31 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
 
   /* ── Field operations ── */
   const addField = useCallback((field: FieldDefinition) => {
-    const newField: LayoutField = {
-      fieldKey: field.fieldKey,
-      fieldType: field.fieldType,
-      isSystem: field.isSystem,
-      displayOrder: (activeTab?.fields.length ?? 0) + 1,
-      defaultValue: '',
-      width: 'full',
-      fieldOptions: field.fieldOptions || [],
-      fieldVisibility: (field.fieldVisibility as FieldVisibility) ?? 'all',
-    };
-    setLayout(prev => ({
-      tabs: prev.tabs.map((t, i) =>
-        i === safeTabIdx ? { ...t, fields: [...t.fields, newField] } : t
-      ),
-    }));
+    setLayout(prev => {
+      if (field.fieldType === 'workflow') {
+        const alreadyHas = prev.tabs.some(t => t.fields.some(f => f.fieldType === 'workflow'));
+        if (alreadyHas) return prev;
+      }
+      const activeTabFields = prev.tabs[safeTabIdx]?.fields ?? [];
+      const newField: LayoutField = {
+        fieldKey: field.fieldKey,
+        fieldType: field.fieldType,
+        isSystem: field.isSystem,
+        displayOrder: activeTabFields.length + 1,
+        defaultValue: '',
+        width: 'full',
+        fieldOptions: field.fieldOptions || [],
+        fieldVisibility: (field.fieldVisibility as FieldVisibility) ?? 'all',
+        ...(field.fieldType === 'workflow' ? { fieldConfig: { nodes: [] } } : {}),
+      };
+      return {
+        tabs: prev.tabs.map((t, i) =>
+          i === safeTabIdx ? { ...t, fields: [...t.fields, newField] } : t
+        ),
+      };
+    });
     setIsDirty(true);
-  }, [activeTab, safeTabIdx]);
+  }, [safeTabIdx]);
 
   const removeField = useCallback((key: string) => {
     setLayout(prev => ({
@@ -645,6 +669,19 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
     setIsDirty(true);
   }, [safeTabIdx]);
 
+  const handleWorkflowSave = useCallback((fieldKey: string, config: WorkflowFieldConfig) => {
+    setLayout(prev => ({
+      tabs: prev.tabs.map(t => ({
+        ...t,
+        fields: t.fields.map(f =>
+          f.fieldKey === fieldKey ? { ...f, fieldConfig: config } : f
+        ),
+      })),
+    }));
+    setWorkflowDesignerKey(null);
+    setIsDirty(true);
+  }, []);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -674,8 +711,15 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
           tabs: layout.tabs.map(tab => ({
             tabKey: tab.tabKey,
             label: tab.label,
-            fields: tab.fields.map(({ fieldKey, fieldType, isSystem, displayOrder, defaultValue, width, fieldVisibility }) => ({
-              fieldKey, fieldType, isSystem, displayOrder, defaultValue, width, fieldVisibility,
+            fields: tab.fields.map(f => ({
+              fieldKey: f.fieldKey,
+              fieldType: f.fieldType,
+              isSystem: f.isSystem,
+              displayOrder: f.displayOrder,
+              defaultValue: f.defaultValue,
+              width: f.width,
+              fieldVisibility: f.fieldVisibility,
+              ...(f.fieldConfig !== undefined ? { fieldConfig: f.fieldConfig } : {}),
             })),
           })),
         },
@@ -938,6 +982,7 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
                       onDefaultChange={onDefaultChange}
                       onWidthToggle={onWidthToggle}
                       onVisibilityChange={onVisibilityChange}
+                      onOpenDesigner={setWorkflowDesignerKey}
                     />
                   ))}
                 </div>
@@ -997,6 +1042,23 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
           </div>
         </div>
       )}
+
+      {/* ── Workflow designer modal ── */}
+      {workflowDesignerKey !== null && (() => {
+        const wfField = layout.tabs.flatMap(t => t.fields).find(f => f.fieldKey === workflowDesignerKey);
+        if (!wfField) return null;
+        return (
+          <WorkflowDesignerModal
+            fieldLabel={translations[wfField.fieldKey] || wfField.fieldKey}
+            fieldConfig={wfField.fieldConfig ?? { nodes: [] }}
+            ticketFieldKeys={layout.tabs.flatMap(t => t.fields)
+              .filter(f => f.fieldType !== 'workflow')
+              .map(f => f.fieldKey)}
+            onSave={config => handleWorkflowSave(workflowDesignerKey, config)}
+            onClose={() => setWorkflowDesignerKey(null)}
+          />
+        );
+      })()}
 
       {/* ── Preview mode ── */}
       {mode === 'preview' && (

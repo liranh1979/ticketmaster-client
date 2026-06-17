@@ -9,6 +9,7 @@ import { CreateTicketPage } from './Tickets/CreateTicketPage';
 import { TicketEditPage } from './Tickets/TicketEditPage';
 import { EndUserPortal } from './EndUser/EndUserPortal';
 import { MyTicketsPage } from './EndUser/MyTicketsPage';
+import { MyWorkflowItemsPage } from './Workflow/MyWorkflowItemsPage';
 import { hasPermission, isSuperAdmin, PERMISSIONS } from '../utils/permissions';
 import api from '../api';
 
@@ -22,7 +23,7 @@ interface HomeProps {
   } | null;
 }
 
-type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets';
+type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks';
 
 export const Home = ({ user }: HomeProps) => {
   const { t } = useTranslation();
@@ -37,6 +38,7 @@ export const Home = ({ user }: HomeProps) => {
 
   const goToTicketList   = () => setCurrentView('ticket-list');
   const goToMyTickets    = () => setCurrentView('my-tickets');
+  const goToMyTasks      = () => setCurrentView('my-tasks');
   const goToCreateTicket = () => setCurrentView('create-ticket');
   const goToEditTicket   = (id: number) => { setEditTicketId(id); setCurrentView('edit-ticket'); };
 
@@ -85,6 +87,7 @@ export const Home = ({ user }: HomeProps) => {
           currentView={currentView}
           onNewTicket={goToCreateTicket}
           onServiceDesk={goToTicketList}
+          onMyTasks={goToMyTasks}
         />
 
         <div className="app-main">
@@ -142,6 +145,13 @@ export const Home = ({ user }: HomeProps) => {
               user={user}
               onBack={() => setCurrentView('welcome')}
               onNewTicket={goToCreateTicket}
+              onViewTicket={goToEditTicket}
+            />
+          )}
+
+          {currentView === 'my-tasks' && (
+            <MyWorkflowItemsPage
+              onBack={() => setCurrentView('welcome')}
               onViewTicket={goToEditTicket}
             />
           )}

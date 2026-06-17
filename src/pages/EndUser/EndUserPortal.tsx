@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, ClipboardList, Plus, LogOut } from 'lucide-react';
+import { MessageSquare, ClipboardList, Plus, LogOut, CheckSquare } from 'lucide-react';
 import api from '../../api';
 import { AiChatPage } from './AiChatPage';
 import { MyTicketsPage } from './MyTicketsPage';
+import { MyWorkflowItemsPage } from '../Workflow/MyWorkflowItemsPage';
 import { CreateTicketPage } from '../Tickets/CreateTicketPage';
 import { TicketEditPage } from '../Tickets/TicketEditPage';
 import { formatRelativeTime } from '../Tickets/ticketTypes';
 import './EndUserPortal.css';
 
-type PortalView = 'home' | 'ai-chat' | 'my-tickets' | 'create-ticket' | 'view-ticket';
+type PortalView = 'home' | 'ai-chat' | 'my-tickets' | 'create-ticket' | 'view-ticket' | 'my-tasks';
 
 interface RecentTicket { id: number; title: string; status: string; updatedAt: string; }
 
@@ -75,6 +76,15 @@ export const EndUserPortal = ({ user }: Props) => {
     );
   }
 
+  if (view === 'my-tasks') {
+    return (
+      <MyWorkflowItemsPage
+        onBack={() => setView('home')}
+        onViewTicket={openTicket}
+      />
+    );
+  }
+
   if (view === 'view-ticket' && viewTicketId !== null) {
     return (
       <TicketEditPage
@@ -98,6 +108,9 @@ export const EndUserPortal = ({ user }: Props) => {
           </button>
           <button className="eu-nav-btn" onClick={() => setView('my-tickets')}>
             <ClipboardList size={16} /> {t('eu_my_tickets_btn', { defaultValue: 'My Tickets' })}
+          </button>
+          <button className="eu-nav-btn" onClick={() => setView('my-tasks')}>
+            <CheckSquare size={16} /> My Tasks
           </button>
         </nav>
         <div className="eu-topbar-right">

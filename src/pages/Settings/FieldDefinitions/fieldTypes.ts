@@ -14,6 +14,7 @@ export const FIELD_TYPES = [
   { value: 'timer',       label: 'Timer / Countdown',      color: '#fef3c7', text: '#92400e', symbol: '⏱' },
   { value: 'assignee',   label: 'Assignee',               color: '#e0f2fe', text: '#0369a1', symbol: '👤' },
   { value: 'file',       label: 'File Attachments',       color: '#f0fdf4', text: '#166534', symbol: '📎' },
+  { value: 'workflow',   label: 'Workflow',               color: '#eef2ff', text: '#4338ca', symbol: '⚙'  },
 ];
 
 export const getFieldType = (value: string) =>

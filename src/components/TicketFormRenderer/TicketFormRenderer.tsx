@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Lock } from 'lucide-react';
+import { Sparkles, Lock, GitBranch } from 'lucide-react';
+import { WorkflowTreePanel } from '../WorkflowTreePanel/WorkflowTreePanel';
+import '../WorkflowTreePanel/WorkflowTreePanel.css';
 import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
 import { UserPickerControl } from '../UserPickerControl/UserPickerControl';
 import { LabelPickerControl } from '../LabelPickerControl/LabelPickerControl';
@@ -21,6 +23,7 @@ const FIELD_BAR_COLORS: Record<string, string> = {
   attachments:  '#f97316',
   activity_log: '#10b981',
   emails:       '#ec4899',
+  approval_flow:'#4f46e5',
 };
 
 const FIELD_TYPE_ICONS: Record<string, string> = {
@@ -34,6 +37,7 @@ const FIELD_TYPE_ICONS: Record<string, string> = {
   attachments:  '📎',
   activity_log: '📋',
   nodelist:     '≡',
+  workflow:     '⚙',
 };
 
 const STATUS_OPTIONS = ['new', 'open', 'in_progress', 'waiting', 'resolved', 'closed'];
@@ -54,7 +58,32 @@ interface FieldControlProps {
   onChange: (key: string, value: any) => void;
   readOnly: boolean;
   entityId?: number;
+  isAdmin?: boolean;
 }
+
+const WorkflowFieldButton = ({ entityId, isAdmin }: { entityId?: number; isAdmin?: boolean }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        className="tfr-workflow-btn"
+        onClick={() => setOpen(true)}
+        disabled={!entityId}
+        title={!entityId ? 'Save the ticket first to view its workflow' : 'View workflow items'}
+      >
+        <GitBranch size={14} />
+        View Workflow
+      </button>
+      {open && entityId != null && (
+        <WorkflowTreePanel
+          ticketId={entityId}
+          isAdmin={isAdmin ?? false}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  );
+};
 
 const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: (v: string[]) => void; readOnly: boolean }) => {
   const { t } = useTranslation();
@@ -111,8 +140,12 @@ const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: 
 };
 
 // Proper React component — hooks are allowed here
-const FieldControl = ({ field, value, onChange, readOnly, entityId }: FieldControlProps) => {
+const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin }: FieldControlProps) => {
   const { t } = useTranslation();
+
+  if (field.fieldType === 'workflow') {
+    return <WorkflowFieldButton entityId={entityId} isAdmin={isAdmin} />;
+  }
 
   if (field.fieldType === 'timer') {
     return (
@@ -319,6 +352,7 @@ const FieldCards = ({
               onChange={onChange}
               readOnly={(field as any)._effectiveReadOnly ?? readOnly}
               entityId={entityId}
+              isAdmin={isAdmin}
             />
           </div>
         </div>
