@@ -165,6 +165,26 @@
 }
 .tb-desc-input:focus { border-bottom-color: #334155; color: #94a3b8; }
 
+/* ── AI Purpose textarea ── */
+.tb-ai-purpose-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 8px 10px;
+  margin-top: 6px;
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+  transition: border-color 0.15s, color 0.15s;
+}
+.tb-ai-purpose-textarea:focus { border-color: #334155; color: #94a3b8; }
+.tb-ai-purpose-textarea::placeholder { color: #334155; font-style: italic; }
+
 /* ════════════════════════════════════════════════════
    Tab bar
    ════════════════════════════════════════════════════ */

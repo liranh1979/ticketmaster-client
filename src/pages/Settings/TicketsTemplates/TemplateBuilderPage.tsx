@@ -484,6 +484,7 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [templateName, setTemplateName] = useState('');
   const [templateDesc, setTemplateDesc] = useState('');
+  const [templateAiPurpose, setTemplateAiPurpose] = useState('');
   const [versionNumber, setVersionNumber] = useState(1);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -504,6 +505,7 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
       const tpl = tplRes.data;
       setTemplateName(tpl.name);
       setTemplateDesc(tpl.description || '');
+      setTemplateAiPurpose(tpl.aiPurpose || '');
       setVersionNumber(tpl.currentVersionNumber);
 
       const fieldDefs: FieldDefinition[] = fieldsRes.data;
@@ -667,6 +669,7 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
       const res = await api.put(`/templates/${templateId}`, {
         name: templateName,
         description: templateDesc,
+        aiPurpose: templateAiPurpose,
         layout: {
           tabs: layout.tabs.map(tab => ({
             tabKey: tab.tabKey,
@@ -781,6 +784,15 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
         value={templateDesc}
         onChange={e => { setTemplateDesc(e.target.value); setIsDirty(true); }}
         placeholder={t('template_description_label')}
+      />
+
+      {/* ── AI Purpose ── */}
+      <textarea
+        className="tb-ai-purpose-textarea"
+        value={templateAiPurpose}
+        onChange={e => { setTemplateAiPurpose(e.target.value); setIsDirty(true); }}
+        placeholder="AI guidance (optional): Describe when to use this template so the AI can auto-select it. E.g. 'Use for customer service requests where the user needs a new feature. Not for incidents or outages.'"
+        rows={3}
       />
 
       {/* ── Tab bar ── */}
