@@ -52,6 +52,9 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
   const visibleFields = fields.filter(f => f.isListVisible);
   const visibleUsers  = users.slice(0, visibleCount);
 
+  const CW = { actions: 80, select: 44, num: 52, username: 240, displayName: 220, role: 130, extra: 120, field: 160 } as const;
+  const tableWidth = CW.actions + CW.select + CW.num + CW.username + CW.displayName + CW.role + CW.extra + visibleFields.length * CW.field;
+
   const fetchAll = async () => {
     try {
       const [usersRes, fieldsRes, companiesRes] = await Promise.all([
@@ -206,16 +209,19 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
 
       {/* Table */}
       <div className="up-table-wrap">
-        <table className="up-table">
+        {/* up-table-sizer is a plain block div — plain divs reliably create horizontal overflow
+            inside overflow-x:auto containers, unlike <table> which has special browser quirks */}
+        <div className="up-table-sizer" style={{ minWidth: tableWidth }}>
+        <table className="up-table" style={{ width: '100%' }}>
           <colgroup>
-            <col className="col-actions" />
-            <col className="col-select" />
-            <col className="col-num" />
-            <col className="col-username" />
-            <col className="col-display-name" />
-            {visibleFields.map(f => <col key={f.id} className="col-field" />)}
-            <col className="col-role" />
-            <col style={{ width: 120 }} />
+            <col className="col-actions"      style={{ width: CW.actions }} />
+            <col className="col-select"       style={{ width: CW.select }} />
+            <col className="col-num"          style={{ width: CW.num }} />
+            <col className="col-username"     style={{ width: CW.username }} />
+            <col className="col-display-name" style={{ width: CW.displayName }} />
+            {visibleFields.map(f => <col key={f.id} className="col-field" style={{ width: CW.field }} />)}
+            <col className="col-role"         style={{ width: CW.role }} />
+            <col                              style={{ width: CW.extra }} />
           </colgroup>
           <thead>
             <tr>
@@ -302,12 +308,13 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
           </tbody>
         </table>
 
-        {/* Lazy-load sentinel */}
+        {/* Lazy-load sentinel — inside sizer so it scrolls with table content */}
         {visibleCount < users.length && (
           <div ref={sentinelRef} className="up-lazy-sentinel">
             <div className="up-spinner" />
           </div>
         )}
+        </div>{/* /up-table-sizer */}
 
         {users.length === 0 && (
           <div className="up-empty">{t('no_users_found')}</div>

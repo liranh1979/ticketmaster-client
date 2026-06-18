@@ -1,12 +1,15 @@
 .tt-page {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  background: #0a0f1a;
-  min-height: 100%;
-  padding: 24px;
+  flex: 1;
+  min-height: 0;
+  gap: var(--sd-space-5);
+  background: var(--sd-bg);
+  padding: var(--sd-space-6);
   box-sizing: border-box;
   overflow-y: auto;
+  font-family: var(--sd-font);
+  color: var(--sd-fg);
 }
 
 .tt-header {
@@ -14,59 +17,56 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--sd-space-3);
 }
 
 .tt-title {
-  font-size: 1.25rem;
+  font-size: var(--sd-text-xl);
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--sd-fg);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .tt-create-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  background: #3b82f6;
-  color: #fff;
+  height: 32px; padding: 0 14px;
+  background: var(--sd-brand);
+  color: var(--sd-brand-fg);
   border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
+  border-radius: var(--sd-radius-sm);
+  font: 500 var(--sd-text-sm)/1 var(--sd-font);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--sd-dur-fast) var(--sd-ease);
 }
-
-.tt-create-btn:hover:not(:disabled) { background: #2563eb; }
+.tt-create-btn:hover:not(:disabled) { background: var(--sd-brand-hover); }
 .tt-create-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .tt-loading, .tt-empty {
-  color: #64748b;
+  color: var(--sd-fg-subtle);
   text-align: center;
   padding: 3rem 1rem;
-  font-size: 14px;
-  font-style: italic;
+  font-size: var(--sd-text-sm);
 }
 
-.tt-list { display: flex; flex-direction: column; gap: 10px; }
+.tt-list { display: flex; flex-direction: column; gap: 8px; }
 
 .tt-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 8px;
+  gap: var(--sd-space-4);
+  padding: 12px var(--sd-space-4);
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--sd-dur-fast) var(--sd-ease), background var(--sd-dur-fast) var(--sd-ease);
 }
+.tt-card:hover { border-color: var(--sd-border-strong); background: var(--sd-surface-2); }
 
-.tt-card:hover { border-color: #3b82f6; background: #243347; }
-
-.tt-card-icon { color: #64748b; flex-shrink: 0; }
+.tt-card-icon { color: var(--sd-fg-subtle); flex-shrink: 0; }
 
 .tt-card-body {
   flex: 1;
@@ -74,20 +74,28 @@
   flex-direction: column;
   gap: 3px;
   overflow: hidden;
+  min-width: 0;
+}
+
+.tt-card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .tt-card-name {
-  font-size: 14px;
+  font-size: var(--sd-text-sm);
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--sd-fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .tt-card-desc {
-  font-size: 12px;
-  color: #64748b;
+  font-size: var(--sd-text-xs);
+  color: var(--sd-fg-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -101,62 +109,53 @@
 }
 
 .tt-version-badge {
-  padding: 2px 8px;
-  background: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 12px;
-  font-size: 11px;
-  color: #94a3b8;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  height: 20px; padding: 0 8px;
+  background: var(--sd-surface-2);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-pill);
+  font: 500 var(--sd-text-xs)/1 var(--sd-font-mono);
+  color: var(--sd-fg-subtle);
 }
 
 .tt-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid #334155;
-  border-radius: 5px;
+  width: 28px; height: 28px;
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
   background: transparent;
-  color: #64748b;
+  color: var(--sd-fg-muted);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--sd-dur-fast) var(--sd-ease);
 }
+.tt-icon-btn:hover { background: var(--sd-surface-2); color: var(--sd-fg); border-color: var(--sd-border-strong); }
+.tt-icon-delete:hover { background: oklch(0.25 0.08 25 / 0.5); border-color: oklch(0.55 0.18 25); color: oklch(0.75 0.18 25); }
 
-.tt-icon-btn:hover { background: #334155; color: #f1f5f9; }
-.tt-icon-delete:hover { background: #450a0a; border-color: #ef4444; color: #ef4444; }
-
+/* Default template card */
 .tt-card-default {
-  border-color: #ca8a04;
-  background: #1c1a10;
+  border-color: oklch(0.55 0.15 75 / 0.5);
+  background: oklch(0.22 0.06 75 / 0.3);
 }
-
-.tt-card-default:hover { border-color: #eab308; background: #252110; }
-
-.tt-card-name-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
+.tt-card-default:hover { border-color: oklch(0.65 0.16 75); background: oklch(0.25 0.08 75 / 0.4); }
 
 .tt-default-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
-  background: rgba(234, 179, 8, 0.15);
-  border: 1px solid rgba(234, 179, 8, 0.4);
-  border-radius: 12px;
-  font-size: 10px;
-  font-weight: 600;
-  color: #eab308;
+  height: 18px; padding: 0 7px;
+  background: oklch(0.34 0.10 75 / 0.4);
+  border: 1px solid oklch(0.55 0.15 75 / 0.5);
+  border-radius: var(--sd-radius-pill);
+  font: 600 10px/1 var(--sd-font);
+  color: oklch(0.85 0.14 75);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.tt-icon-star { color: #475569; }
-.tt-icon-star:hover:not(:disabled) { background: #1c1a10; border-color: #ca8a04; color: #eab308; }
-.tt-icon-star-active { color: #eab308; border-color: rgba(234,179,8,0.4); background: rgba(234,179,8,0.1); cursor: default; }
+.tt-icon-star { color: var(--sd-fg-subtle); }
+.tt-icon-star:hover:not(:disabled) { background: oklch(0.25 0.08 75 / 0.4); border-color: oklch(0.55 0.15 75 / 0.5); color: oklch(0.82 0.14 75); }
+.tt-icon-star-active { color: oklch(0.82 0.14 75); border-color: oklch(0.50 0.14 75 / 0.5); background: oklch(0.28 0.08 75 / 0.3); cursor: default; }
 .tt-icon-star:disabled { opacity: 1; }

@@ -1,0 +1,120 @@
+/* =========================================================================
+   Service Desk V2 — Design Tokens
+   Namespace: --sd-* (layout/surface) and --status-* (semantic status)
+   Safe to import alongside existing styles; nothing is overwritten.
+   ========================================================================= */
+
+:root {
+  /* Surfaces (dark canvas) */
+  --sd-bg:            oklch(0.16 0.01 250);
+  --sd-surface:       oklch(0.19 0.012 250);
+  --sd-surface-2:     oklch(0.22 0.014 250);
+  --sd-surface-3:     oklch(0.26 0.016 250);
+  --sd-border:        oklch(0.30 0.015 250 / 0.6);
+  --sd-border-strong: oklch(0.40 0.018 250 / 0.9);
+
+  /* Foreground */
+  --sd-fg:            oklch(0.96 0.005 250);
+  --sd-fg-muted:      oklch(0.72 0.01 250);
+  --sd-fg-subtle:     oklch(0.55 0.01 250);
+
+  /* Brand */
+  --sd-brand:         oklch(0.65 0.18 255);
+  --sd-brand-hover:   oklch(0.70 0.18 255);
+  --sd-brand-fg:      oklch(0.99 0 0);
+  --sd-focus-ring:    oklch(0.70 0.18 255 / 0.55);
+
+  /* Status — New (sky blue) */
+  --status-new-bg:        oklch(0.30 0.04 250);
+  --status-new-fg:        oklch(0.92 0.04 250);
+  --status-new-dot:       oklch(0.72 0.12 250);
+
+  /* Status — Open (cyan) */
+  --status-open-bg:       oklch(0.32 0.10 200);
+  --status-open-fg:       oklch(0.94 0.05 200);
+  --status-open-dot:      oklch(0.75 0.14 200);
+
+  /* Status — In Progress (amber) */
+  --status-in-progress-bg:  oklch(0.34 0.10 75);
+  --status-in-progress-fg:  oklch(0.94 0.07 90);
+  --status-in-progress-dot: oklch(0.80 0.15 80);
+
+  /* Status — Waiting (purple) */
+  --status-waiting-bg:      oklch(0.30 0.10 295);
+  --status-waiting-fg:      oklch(0.94 0.05 295);
+  --status-waiting-dot:     oklch(0.75 0.18 295);
+
+  /* Status — Resolved (emerald) */
+  --status-resolved-bg:     oklch(0.30 0.07 150);
+  --status-resolved-fg:     oklch(0.94 0.07 150);
+  --status-resolved-dot:    oklch(0.75 0.15 150);
+
+  /* Status — Closed (slate) */
+  --status-closed-bg:     oklch(0.30 0.04 150);
+  --status-closed-fg:     oklch(0.94 0.07 150);
+  --status-closed-dot:    oklch(0.75 0.15 150);
+
+  /* Status — Rejected (rose) */
+  --status-rejected-bg:   oklch(0.32 0.10 25);
+  --status-rejected-fg:   oklch(0.95 0.06 25);
+  --status-rejected-dot:  oklch(0.72 0.18 25);
+
+  /* Label dots (categorical) */
+  --label-hardware:   oklch(0.78 0.14 95);
+  --label-software:   oklch(0.72 0.13 200);
+  --label-network:    oklch(0.68 0.18 25);
+  --label-permission: oklch(0.74 0.12 295);
+  --label-mobile:     oklch(0.74 0.12 160);
+
+  /* Spacing scale (4px base) */
+  --sd-space-1: 4px;
+  --sd-space-2: 8px;
+  --sd-space-3: 12px;
+  --sd-space-4: 16px;
+  --sd-space-5: 24px;
+  --sd-space-6: 32px;
+
+  /* Radii */
+  --sd-radius-sm:   6px;
+  --sd-radius:      10px;
+  --sd-radius-lg:   14px;
+  --sd-radius-pill: 999px;
+
+  /* Shadows */
+  --sd-shadow-1: 0 1px 0 0 oklch(1 0 0 / 0.04) inset,
+                 0 1px 2px oklch(0 0 0 / 0.35);
+  --sd-shadow-2: 0 8px 24px -8px oklch(0 0 0 / 0.55);
+
+  /* Typography */
+  --sd-font:      ui-sans-serif, "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sd-font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+  --sd-text-xs: 11px;
+  --sd-text-sm: 12px;
+  --sd-text:    13px;
+  --sd-text-md: 14px;
+  --sd-text-lg: 16px;
+  --sd-text-xl: 20px;
+
+  /* Motion */
+  --sd-ease:      cubic-bezier(0.2, 0.7, 0.2, 1);
+  --sd-dur-fast:  120ms;
+  --sd-dur:       180ms;
+
+  /* Layout */
+  --sd-header-h:  56px;
+  --sd-sidebar-w: 240px;
+  --sd-row-h:     44px;
+}
+
+/* Scrollbar theming — visible on the dark canvas */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.38 0.03 250) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: oklch(0.38 0.03 250);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover { background: oklch(0.50 0.04 250); }

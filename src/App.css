@@ -1,9 +1,90 @@
-/* ── Root layout: topbar on top, sidebar + main below ── */
+/* ── App root container ── */
+.App {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+/* ── sd-shell content area (grid-area: main) ── */
+.sd-app-content {
+  grid-area: main;
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Welcome screen — dark V2 theme ── */
+.welcome-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sd-bg);
+}
+
+.welcome-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.welcome-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.welcome-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--sd-fg);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.welcome-sub {
+  color: var(--sd-fg-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.welcome-cta {
+  margin-top: 8px;
+  padding: 10px 28px;
+  background: var(--sd-brand);
+  color: var(--sd-brand-fg);
+  border: none;
+  border-radius: var(--sd-radius-pill);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.welcome-cta:hover {
+  background: var(--sd-brand-hover);
+}
+
+/* ── Legacy helpers (kept for SettingsPage compat) ── */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Fallback app-layout (kept for compatibility) ── */
 .app-layout {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -21,64 +102,4 @@
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
-}
-
-/* ── Welcome screen ── */
-.welcome-screen {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f8fafc;
-}
-
-.welcome-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  text-align: center;
-}
-
-.welcome-icon {
-  font-size: 3rem;
-  line-height: 1;
-}
-
-.welcome-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0;
-}
-
-.welcome-sub {
-  color: #718096;
-  font-size: 1rem;
-  margin: 0;
-}
-
-.welcome-cta {
-  margin-top: 8px;
-  padding: 10px 28px;
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.92rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.welcome-cta:hover {
-  background: #1d4ed8;
-}
-
-/* ── Legacy helpers (kept for SettingsPage compat) ── */
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }

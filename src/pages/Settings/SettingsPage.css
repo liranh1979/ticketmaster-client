@@ -1,11 +1,109 @@
-/* Container for the settings cards */
+/* ── Settings layout (sidebar + content) ── */
+.stg-layout {
+  display: flex;
+  flex-direction: row;
+  height: calc(100vh - var(--sd-header-h));
+  min-height: 0;
+  min-width: 0;
+  background: var(--sd-bg);
+}
+
+.stg-nav {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--sd-surface);
+  border-right: 1px solid var(--sd-border);
+  padding: var(--sd-space-3) var(--sd-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.stg-nav__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--sd-radius-sm);
+  color: var(--sd-fg-muted);
+  font: 500 var(--sd-text-sm)/1 var(--sd-font);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--sd-dur-fast) var(--sd-ease), color var(--sd-dur-fast) var(--sd-ease);
+}
+
+.stg-nav__item:hover {
+  background: var(--sd-surface-2);
+  color: var(--sd-fg);
+}
+
+.stg-nav__item--active {
+  background: oklch(0.22 0.06 260 / 0.3);
+  color: oklch(0.72 0.16 260);
+  font-weight: 600;
+}
+
+.stg-nav__divider {
+  height: 1px;
+  background: var(--sd-border);
+  margin: var(--sd-space-2) 0;
+}
+
+/* Content pane — scrolls the rendered sub-page */
+.stg-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sub-page wrapper — fills stg-content height */
+.view-container {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--sd-bg);
+}
+
+/* Back button (within-section navigation) */
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  margin: 14px 20px 0;
+  background: var(--sd-surface-2);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  cursor: pointer;
+  font: 500 var(--sd-text-sm)/1 var(--sd-font);
+  color: var(--sd-fg-muted);
+  transition: background var(--sd-dur-fast) var(--sd-ease), color var(--sd-dur-fast) var(--sd-ease);
+  align-self: flex-start;
+  flex-shrink: 0;
+}
+.back-button:hover { background: var(--sd-surface-3); color: var(--sd-fg); }
+
+/* ── Settings overview grid (landing cards) ── */
 .settings-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 60px; /* More space between items */
-  width: 100%;
-  justify-content: center;
-  padding-top: 80px; /* Push down from the topbar */
+  gap: 20px;
+  padding: var(--sd-space-6);
+  align-content: flex-start;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  background: var(--sd-bg);
 }
 
 /* Individual setting card */
@@ -14,96 +112,58 @@
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  transition: transform 0.2s ease;
-  width: 250px; /* Wider card to accommodate bigger image */
+  transition: transform var(--sd-dur) var(--sd-ease);
+  width: 160px;
 }
 
 .settings-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-4px);
 }
 
-/* Bigger Square box for the icon */
+/* Icon box */
 .settings-icon-box {
-  width: 200px; /* Increased from 120px */
-  height: 200px; /* Increased from 120px */
-  background: #ffffff;
-  border-radius: 24px;
+  width: 140px;
+  height: 140px;
+  background: var(--sd-surface);
+  border-radius: var(--sd-radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-  border: 1px solid #eef2f7;
-  margin-bottom: 20px;
+  border: 1px solid var(--sd-border);
+  margin-bottom: 12px;
   overflow: hidden;
+  transition: border-color var(--sd-dur) var(--sd-ease), box-shadow var(--sd-dur) var(--sd-ease);
 }
 
 .settings-card:hover .settings-icon-box {
-  box-shadow: 0 15px 35px rgba(49, 130, 206, 0.15);
-  border-color: #3182ce;
+  border-color: var(--sd-brand);
+  box-shadow: 0 0 0 3px var(--sd-focus-ring);
 }
 
-/* FIX: Make the image fill the box */
 .settings-icon-img {
-  width: 90%; /* Larger percentage to fill the space */
-  height: 90%;
-  object-fit: contain; /* Keeps the icon sharp without stretching */
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
 }
 
-/* Label text below the icon */
+/* Label */
 .settings-text {
-  font-size: 20px; /* Slightly larger text for the bigger icon */
+  font-size: var(--sd-text-sm);
   font-weight: 600;
-  color: #2d3748;
+  color: var(--sd-fg-muted);
   text-align: center;
   width: 100%;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
-.view-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+.settings-card:hover .settings-text {
+  color: var(--sd-fg);
 }
-
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  margin: 14px 20px 0;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #475569;
-  transition: background .15s, color .15s;
-  align-self: flex-start;
-  flex-shrink: 0;
-}
-.back-button:hover { background: #f1f5f9; color: #1e293b; }
 
 .ai-icon-placeholder {
-  font-size: 3rem;
+  font-size: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
-}
-
-/* Ensure the grid handles multiple cards nicely */
-.settings-grid {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  padding: 20px;
-}
-
-settings-icon-img {
-  width: 60px; /* Slightly larger to show the detail */
-  height: 60px;
-  object-fit: contain;
 }

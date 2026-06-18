@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ClipboardList, Plus, CheckSquare } from 'lucide-react';
+import { Inbox, Plus, CheckSquare, Settings } from 'lucide-react';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import './AppSidebar.css';
 
@@ -11,43 +11,71 @@ interface Props {
   onNewTicket: () => void;
   onServiceDesk: () => void;
   onMyTasks?: () => void;
+  onSettings: () => void;
+  ticketCount?: number;
+  hasMoreTickets?: boolean;
 }
 
-export const AppSidebar = ({ user, currentView, onNewTicket, onServiceDesk, onMyTasks }: Props) => {
+export const AppSidebar = ({
+  user,
+  currentView,
+  onNewTicket,
+  onServiceDesk,
+  onMyTasks,
+  onSettings,
+  ticketCount,
+  hasMoreTickets,
+}: Props) => {
   const { t } = useTranslation();
   const canTickets = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
 
-  if (!canTickets) return null;
-
-  const inDesk = currentView === 'ticket-list' || currentView === 'edit-ticket';
+  const inDesk = currentView === 'ticket-list' || currentView === 'edit-ticket' || currentView === 'create-ticket';
 
   return (
-    <nav className="app-sidebar">
-      <button
-        className={`asb-item${inDesk ? ' asb-item-active' : ''}`}
-        onClick={onServiceDesk}
-      >
-        <ClipboardList size={17} />
-        <span>{t('service_desk')}</span>
-      </button>
+    <aside className="sd-sidebar">
+      <nav>
+        <div className="sd-nav__label">Workspace</div>
 
-      <button
-        className={`asb-item asb-new-btn${currentView === 'create-ticket' ? ' asb-new-btn-active' : ''}`}
-        onClick={onNewTicket}
-      >
-        <Plus size={17} />
-        <span>{t('new_ticket')}</span>
-      </button>
+        {canTickets && (
+          <button
+            className={`sd-nav__item${inDesk ? ' sd-nav__item--active' : ''}`}
+            onClick={onServiceDesk}
+          >
+            <Inbox size={15} strokeWidth={1.75} />
+            {t('service_desk')}
+            {ticketCount != null && inDesk && (
+              <span className="sd-nav__count">{ticketCount}{hasMoreTickets ? '+' : ''}</span>
+            )}
+          </button>
+        )}
 
-      {onMyTasks && (
+        {onMyTasks && (
+          <button
+            className={`sd-nav__item${currentView === 'my-tasks' ? ' sd-nav__item--active' : ''}`}
+            onClick={onMyTasks}
+          >
+            <CheckSquare size={15} strokeWidth={1.75} />
+            My Tasks
+          </button>
+        )}
+
         <button
-          className={`asb-item${currentView === 'my-tasks' ? ' asb-item-active' : ''}`}
-          onClick={onMyTasks}
+          className={`sd-nav__item${currentView === 'settings' ? ' sd-nav__item--active' : ''}`}
+          onClick={onSettings}
         >
-          <CheckSquare size={17} />
-          <span>My Tasks</span>
+          <Settings size={15} strokeWidth={1.75} />
+          {t('settings') || 'Settings'}
         </button>
+      </nav>
+
+      {canTickets && (
+        <div className="sd-sidebar__foot">
+          <button className="sd-new-ticket-btn" onClick={onNewTicket}>
+            <Plus size={14} strokeWidth={2} />
+            {t('new_ticket')}
+          </button>
+        </div>
       )}
-    </nav>
+    </aside>
   );
 };

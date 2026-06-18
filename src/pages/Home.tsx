@@ -4,7 +4,7 @@ import { Topbar } from '../components/Topbar/Topbar';
 import { AppSidebar } from '../components/AppSidebar/AppSidebar';
 import { SettingsPage } from './Settings/SettingsPage';
 import { TaskProgressPanel } from '../components/TaskProgressPanel/TaskProgressPanel';
-import { TicketListPage } from './Tickets/TicketListPage';
+import { ServiceDeskPage } from './Tickets/ServiceDeskPage';
 import { CreateTicketPage } from './Tickets/CreateTicketPage';
 import { TicketEditPage } from './Tickets/TicketEditPage';
 import { EndUserPortal } from './EndUser/EndUserPortal';
@@ -30,10 +30,10 @@ export const Home = ({ user }: HomeProps) => {
   const [currentView, setCurrentView] = useState<HomeView>('welcome');
   const [editTicketId, setEditTicketId] = useState<number | null>(null);
   const [settingsInitialView, setSettingsInitialView] = useState<string>('menu');
+  const [ticketCount, setTicketCount] = useState<number | undefined>(undefined);
+  const [hasMoreTickets, setHasMoreTickets] = useState(false);
 
   const canManageTickets = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
-
-  // End users (no permissions, not super admin) get the self-contained portal
   const isEndUserOnly = !isSuperAdmin(user) && !(user?.effective_permissions?.length);
 
   const goToTicketList   = () => setCurrentView('ticket-list');
@@ -42,7 +42,7 @@ export const Home = ({ user }: HomeProps) => {
   const goToCreateTicket = () => setCurrentView('create-ticket');
   const goToEditTicket   = (id: number) => { setEditTicketId(id); setCurrentView('edit-ticket'); };
 
-  // Deep-link: ?ticket=NNN — admin path only (end users handled inside EndUserPortal)
+  // Deep-link: ?ticket=NNN
   useEffect(() => {
     if (isEndUserOnly) return;
     const params = new URLSearchParams(window.location.search);
@@ -57,7 +57,7 @@ export const Home = ({ user }: HomeProps) => {
   useEffect(() => {
     if (!isSuperAdmin(user)) return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get('ticket')) return; // deep-link takes priority
+    if (params.get('ticket')) return;
     api.get<{ ai_configured: boolean; template_configured: boolean; email_configured: boolean; users_configured: boolean }>('/setup/status')
       .then(r => {
         const s = r.data;
@@ -72,90 +72,91 @@ export const Home = ({ user }: HomeProps) => {
   if (isEndUserOnly) return <EndUserPortal user={user} />;
 
   return (
-    <div className="app-layout">
+    <div className="sd-shell">
+      <TaskProgressPanel />
+
       <Topbar
         user={user}
-        onSettingsClick={() => setCurrentView('settings')}
-        onTicketListClick={canManageTickets ? goToTicketList : undefined}
-        onMyTicketsClick={!canManageTickets ? goToMyTickets : undefined}
         onTicketJump={canManageTickets ? goToEditTicket : undefined}
       />
 
-      <div className="app-body">
-        <AppSidebar
-          user={user}
-          currentView={currentView}
-          onNewTicket={goToCreateTicket}
-          onServiceDesk={goToTicketList}
-          onMyTasks={goToMyTasks}
-        />
+      <AppSidebar
+        user={user}
+        currentView={currentView}
+        onNewTicket={goToCreateTicket}
+        onServiceDesk={goToTicketList}
+        onMyTasks={goToMyTasks}
+        onSettings={() => setCurrentView('settings')}
+        ticketCount={ticketCount}
+        hasMoreTickets={hasMoreTickets}
+      />
 
-        <div className="app-main">
-          <TaskProgressPanel />
-
-          {currentView === 'welcome' && (
-            <div className="welcome-screen">
-              <div className="welcome-content">
-                <div className="welcome-icon">🎫</div>
-                <h1 className="welcome-title">{t('welcome_hello')}, {user?.display_name}!</h1>
-                <p className="welcome-sub">{t('home_subtitle')}</p>
-                {canManageTickets && (
-                  <button className="welcome-cta" onClick={goToTicketList}>
-                    {t('all_tickets')} →
-                  </button>
-                )}
-              </div>
+      <div className="sd-app-content">
+        {currentView === 'welcome' && (
+          <div className="welcome-screen">
+            <div className="welcome-content">
+              <div className="welcome-icon">🎫</div>
+              <h1 className="welcome-title">{t('welcome_hello')}, {user?.display_name}!</h1>
+              <p className="welcome-sub">{t('home_subtitle')}</p>
+              {canManageTickets && (
+                <button className="welcome-cta" onClick={goToTicketList}>
+                  {t('all_tickets')} →
+                </button>
+              )}
             </div>
-          )}
+          </div>
+        )}
 
-          {currentView === 'settings' && (
-            <SettingsPage
-              user={user}
-              initialView={settingsInitialView}
-              onNavigate={(view) => setCurrentView(view as any)}
-            />
-          )}
+        {currentView === 'ticket-list' && (
+          <ServiceDeskPage
+            user={user}
+            onNewTicket={goToCreateTicket}
+            onEditTicket={goToEditTicket}
+            onSettings={() => setCurrentView('settings')}
+            onMyTasks={goToMyTasks}
+            onTicketCountChange={(count, hasMore) => { setTicketCount(count); setHasMoreTickets(hasMore); }}
+          />
+        )}
 
-          {currentView === 'ticket-list' && (
-            <TicketListPage
-              user={user}
-              onNewTicket={goToCreateTicket}
-              onEditTicket={goToEditTicket}
-            />
-          )}
+        {currentView === 'settings' && (
+          <SettingsPage
+            user={user}
+            initialView={settingsInitialView}
+            onNavigate={(view) => setCurrentView(view as any)}
+          />
+        )}
 
-          {currentView === 'create-ticket' && (
-            <CreateTicketPage
-              user={user}
-              onBack={goToTicketList}
-              onCreated={goToTicketList}
-            />
-          )}
+        {currentView === 'create-ticket' && (
+          <CreateTicketPage
+            user={user}
+            onBack={goToTicketList}
+            onCreated={goToTicketList}
+          />
+        )}
 
-          {currentView === 'edit-ticket' && editTicketId !== null && (
-            <TicketEditPage
-              ticketId={editTicketId}
-              user={user}
-              onBack={canManageTickets ? goToTicketList : goToMyTickets}
-            />
-          )}
+        {currentView === 'edit-ticket' && editTicketId !== null && (
+          <TicketEditPage
+            ticketId={editTicketId}
+            user={user}
+            onBack={canManageTickets ? goToTicketList : goToMyTickets}
+          />
+        )}
 
-          {currentView === 'my-tickets' && (
-            <MyTicketsPage
-              user={user}
-              onBack={() => setCurrentView('welcome')}
-              onNewTicket={goToCreateTicket}
-              onViewTicket={goToEditTicket}
-            />
-          )}
+        {currentView === 'my-tickets' && (
+          <MyTicketsPage
+            user={user}
+            onBack={() => setCurrentView('welcome')}
+            onNewTicket={goToCreateTicket}
+            onViewTicket={goToEditTicket}
+          />
+        )}
 
-          {currentView === 'my-tasks' && (
-            <MyWorkflowItemsPage
-              onBack={() => setCurrentView('welcome')}
-              onViewTicket={goToEditTicket}
-            />
-          )}
-        </div>
+        {currentView === 'my-tasks' && (
+          <MyWorkflowItemsPage
+            onBack={() => setCurrentView('welcome')}
+            onViewTicket={goToEditTicket}
+          />
+        )}
       </div>
     </div>
   );

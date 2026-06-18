@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ClipboardList, Search } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Search, LogOut } from 'lucide-react';
 import api from '../../api';
 import { AIStatusIndicator } from './AIStatusIndicator/AIStatusIndicator';
 import { AdminInboxBell } from '../AdminInboxBell/AdminInboxBell';
@@ -9,24 +8,20 @@ import './Topbar.css';
 
 interface TopbarProps {
   user: any;
-  onSettingsClick: () => void;
-  onTicketListClick?: () => void;
-  onMyTicketsClick?: () => void;
   onTicketJump?: (id: number) => void;
 }
 
-export const Topbar = ({ user, onSettingsClick, onTicketListClick, onMyTicketsClick, onTicketJump }: TopbarProps) => {
-  const { t } = useTranslation();
+function initials(name: string = '') {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase() || '?';
+}
+
+export const Topbar = ({ user, onTicketJump }: TopbarProps) => {
   const [jumpInput, setJumpInput] = useState('');
   const [jumpError, setJumpError] = useState('');
   const [jumping, setJumping] = useState(false);
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      console.log("Topbar detected user:", user.display_name, "| Super Admin:", isSuperAdmin(user));
-    }
-  }, [user]);
 
   const showError = (msg: string) => {
     setJumpError(msg);
@@ -54,55 +49,27 @@ export const Topbar = ({ user, onSettingsClick, onTicketListClick, onMyTicketsCl
   };
 
   const handleLogout = async () => {
-    try {
-      await api.post('/auth/logout');
-      window.location.reload();
-    } catch (err) {
-      console.error("Logout failed", err);
-    }
+    try { await api.post('/auth/logout'); } catch {}
+    window.location.reload();
   };
 
   return (
-    <header className="topbar">
-      <div className="topbar-left">
-        <img src="/logo.png" alt="TicketMaster" className="small-logo" />
+    <header className="sd-header">
+      <div className="sd-logo">
+        <span className="sd-logo__mark" aria-hidden />
+        <span>TurboTickets</span>
       </div>
 
-      <div className="topbar-right">
+      <div className="sd-header__right">
         {isSuperAdmin(user) && <AIStatusIndicator />}
         {onTicketJump && <AdminInboxBell onTicketClick={onTicketJump} />}
 
-        <span className="user-greeting">
-          {t('welcome_hello')}, <strong>{user?.display_name || 'Guest'}</strong>
-        </span>
-
-        {onTicketListClick && (
-          <div
-            className="topbar-icon-btn"
-            onClick={onTicketListClick}
-            title={t('all_tickets')}
-          >
-            <ClipboardList size={20} />
-          </div>
-        )}
-
-        {onMyTicketsClick && (
-          <div
-            className="topbar-icon-btn"
-            onClick={onMyTicketsClick}
-            title="My Tickets"
-          >
-            <ClipboardList size={20} />
-          </div>
-        )}
-
-        {/* Quick ticket jump — shown only when onTicketJump is provided (admin) */}
         {onTicketJump && (
-          <div className="topbar-jump-wrap">
-            <div className={`topbar-jump-box${jumpError ? ' topbar-jump-error' : ''}`}>
-              <span className="topbar-jump-prefix">TT-</span>
+          <div className="tb-jump-wrap">
+            <div className={`tb-jump-box${jumpError ? ' tb-jump-box--error' : ''}`}>
+              <span className="tb-jump-prefix">TT-</span>
               <input
-                className="topbar-jump-input"
+                className="tb-jump-input"
                 placeholder="ID"
                 value={jumpInput}
                 onChange={e => { setJumpInput(e.target.value); setJumpError(''); }}
@@ -110,25 +77,19 @@ export const Topbar = ({ user, onSettingsClick, onTicketListClick, onMyTicketsCl
                 disabled={jumping}
                 maxLength={10}
               />
-              <button className="topbar-jump-btn" onClick={handleJump} disabled={jumping || !jumpInput.trim()}>
+              <button className="tb-jump-btn" onClick={handleJump} disabled={jumping || !jumpInput.trim()}>
                 <Search size={13} />
               </button>
             </div>
-            {jumpError && <span className="topbar-jump-err-msg">{jumpError}</span>}
+            {jumpError && <span className="tb-jump-err">{jumpError}</span>}
           </div>
         )}
 
-        <div
-          className="settings-container"
-          onClick={onSettingsClick}
-          title={t('settings_tooltip')}
-        >
-          <img src="/settings.png" alt="Settings" className="settings-icon" />
+        <div className="sd-user" onClick={handleLogout} title="Logout">
+          <div className="sd-avatar">{initials(user?.display_name)}</div>
+          <span className="sd-user-name">{user?.display_name}</span>
+          <LogOut size={13} strokeWidth={1.75} style={{ color: 'var(--sd-fg-subtle)' }} />
         </div>
-
-        <button onClick={handleLogout} className="btn-logout">
-          {t('logout_btn')}
-        </button>
       </div>
     </header>
   );

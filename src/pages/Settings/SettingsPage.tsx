@@ -62,9 +62,8 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     suggestedFields: AzureMissingField[];
   } | null>(null);
 
-  const handleMainMenuClick = () => {
-    setCurrentView('selection');
-  };
+  // ── Handlers ────────────────────────────────────────────────────────────
+  const handleMainMenuClick = () => setCurrentView('selection');
 
   const handleEntitySelection = (entity: string, category: string) => {
     if (category === 'system') {
@@ -82,379 +81,237 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     }
   };
 
-  const handleBackToMenu = () => {
-    setCurrentView('menu');
-  };
-
-  const handleBackToSelection = () => {
-    setCurrentView('selection');
-  };
-
-  const handleBackToHub = () => {
-    setCurrentView('users-groups-hub');
-  };
+  const handleBackToSelection = () => setCurrentView('selection');
+  const handleBackToHub      = () => setCurrentView('users-groups-hub');
 
   const handleLdapFieldsDetour = (configId: number, suggestions: MissingField[]) => {
     setReturnContext({ ldapConfigId: configId, suggestedFields: suggestions });
     setCurrentView('custom-fields');
   };
 
-  const handleReturnFromDetour = () => {
-    setCurrentView('ldap');
-  };
+  const handleReturnFromDetour = () => setCurrentView('ldap');
 
   const handleAzureFieldsDetour = (configId: number, suggestions: AzureMissingField[]) => {
     setAzureReturnContext({ azureConfigId: configId, suggestedFields: suggestions });
     setCurrentView('custom-fields');
   };
 
-  const handleReturnFromAzureDetour = () => {
-    setCurrentView('azure');
-  };
+  const handleReturnFromAzureDetour = () => setCurrentView('azure');
 
-  // 1. Initial State: Main Settings Grid
-  if (currentView === 'menu') {
-    const canFields      = hasAnyPermission(user, PERMISSIONS.MANAGE_FIELDS, PERMISSIONS.MANAGE_LANGUAGES);
-    const canUsersGroups = hasAnyPermission(user, PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_GROUPS, PERMISSIONS.MANAGE_LDAP, PERMISSIONS.MANAGE_AZURE);
-    const canAi          = hasPermission(user, PERMISSIONS.MANAGE_AI);
-    const canEmail         = hasPermission(user, PERMISSIONS.MANAGE_EMAIL);
-    const canNotifications = hasPermission(user, PERMISSIONS.MANAGE_NOTIFICATIONS);
-    const hasAnyAccess     = canFields || canUsersGroups || canAi || canEmail || canNotifications;
+  // ── Permissions ─────────────────────────────────────────────────────────
+  const isSuperAdminUser  = isSuperAdmin(user);
+  const canFields         = hasAnyPermission(user, PERMISSIONS.MANAGE_FIELDS, PERMISSIONS.MANAGE_LANGUAGES);
+  const canUsersGroups    = hasAnyPermission(user, PERMISSIONS.MANAGE_USERS, PERMISSIONS.MANAGE_GROUPS, PERMISSIONS.MANAGE_LDAP, PERMISSIONS.MANAGE_AZURE);
+  const canAi             = hasPermission(user, PERMISSIONS.MANAGE_AI);
+  const canEmail          = hasPermission(user, PERMISSIONS.MANAGE_EMAIL);
+  const canNotifications  = hasPermission(user, PERMISSIONS.MANAGE_NOTIFICATIONS);
 
-    const isSuperAdminUser = isSuperAdmin(user);
+  // ── Active sidebar group ─────────────────────────────────────────────────
+  const activeGroup = (() => {
+    if (currentView === 'menu') return 'overview';
+    if (currentView === 'setup-guide') return 'setup-guide';
+    if (currentView === 'companies') return 'companies';
+    if (['selection','system-fields','custom-fields','group-custom-fields',
+         'ticket-custom-fields','labels-management','workflow-fields'].includes(currentView)) return 'fields';
+    if (currentView === 'tickets-templates') return 'templates';
+    if (currentView === 'ai-manager') return 'ai';
+    if (currentView === 'email-manager') return 'email';
+    if (currentView === 'notification-manager') return 'notifications';
+    if (['users-groups-hub','users','groups','ldap','azure'].includes(currentView)) return 'users-groups';
+    return '';
+  })();
 
-    return (
-      <div className="settings-grid">
-        {!hasAnyAccess && (
-          <div style={{ gridColumn: '1 / -1', color: '#94a3b8', textAlign: 'center', padding: '2rem', fontStyle: 'italic' }}>
-            {t('no_settings_access')}
-          </div>
-        )}
+  const navBtn = (key: string, label: string, onClick: () => void) => (
+    <button
+      key={key}
+      className={`stg-nav__item${activeGroup === key ? ' stg-nav__item--active' : ''}`}
+      onClick={onClick}
+    >
+      {label}
+    </button>
+  );
 
-        {isSuperAdminUser && (
-          <div className="settings-card" onClick={() => setCurrentView('setup-guide')}>
-            <div className="settings-icon-box">
-              <div className="ai-icon-placeholder">🚀</div>
+  // ── Content renderer ─────────────────────────────────────────────────────
+  const renderContent = () => {
+    // Settings overview (card grid)
+    if (currentView === 'menu') {
+      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications;
+      return (
+        <div className="settings-grid">
+          {!hasAnyAccess && (
+            <div style={{ gridColumn: '1 / -1', color: '#94a3b8', textAlign: 'center', padding: '2rem', fontStyle: 'italic' }}>
+              {t('no_settings_access')}
             </div>
-            <span className="settings-text">
-              {t('setup_guide_card_label')}
-            </span>
-          </div>
-        )}
+          )}
 
-        {isSuperAdminUser && (
-          <div className="settings-card" onClick={() => setCurrentView('companies')}>
-            <div className="settings-icon-box">
-              <div className="ai-icon-placeholder">🏢</div>
+          {isSuperAdminUser && (
+            <div className="settings-card" onClick={() => setCurrentView('setup-guide')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🚀</div></div>
+              <span className="settings-text">{t('setup_guide_card_label')}</span>
             </div>
-            <span className="settings-text">
-              {t('companies_settings_card')}
-            </span>
-          </div>
-        )}
+          )}
 
-        {canFields && (
-          <div className="settings-card" onClick={handleMainMenuClick}>
-            <div className="settings-icon-box">
-              <img
-                src="/CustomFieldsManager.png"
-                alt="Custom Fields"
-                className="settings-icon-img"
-              />
+          {isSuperAdminUser && (
+            <div className="settings-card" onClick={() => setCurrentView('companies')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🏢</div></div>
+              <span className="settings-text">{t('companies_settings_card')}</span>
             </div>
-            <span className="settings-text">
-              {t('settings_fields_manager')}
-            </span>
-          </div>
-        )}
+          )}
 
-        {canUsersGroups && (
-          <div className="settings-card" onClick={() => setCurrentView('users-groups-hub')}>
-            <div className="settings-icon-box">
-              <div className="ai-icon-placeholder">👥</div>
+          {canFields && (
+            <div className="settings-card" onClick={handleMainMenuClick}>
+              <div className="settings-icon-box">
+                <img src="/CustomFieldsManager.png" alt="Custom Fields" className="settings-icon-img" />
+              </div>
+              <span className="settings-text">{t('settings_fields_manager')}</span>
             </div>
-            <span className="settings-text">{t('settings_users_groups_manager')}</span>
-          </div>
-        )}
+          )}
 
-        {canFields && (
-          <div className="settings-card" onClick={() => setCurrentView('tickets-templates')}>
-            <div className="settings-icon-box">
-              <div className="ai-icon-placeholder">🎫</div>
+          {canUsersGroups && (
+            <div className="settings-card" onClick={() => setCurrentView('users-groups-hub')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">👥</div></div>
+              <span className="settings-text">{t('settings_users_groups_manager')}</span>
             </div>
-            <span className="settings-text">
-              {t('tickets_and_templates')}
-            </span>
-          </div>
-        )}
+          )}
 
-
-        {canAi && (
-          <div className="settings-card" onClick={() => setCurrentView('ai-manager')}>
-            <div className="settings-icon-box">
-               <div className="ai-icon-placeholder">🤖</div>
+          {canFields && (
+            <div className="settings-card" onClick={() => setCurrentView('tickets-templates')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🎫</div></div>
+              <span className="settings-text">{t('tickets_and_templates')}</span>
             </div>
-            <span className="settings-text">
-              {t('settings_ai_manager')}
-            </span>
-          </div>
-        )}
+          )}
 
-        {canEmail && (
-          <div className="settings-card" onClick={() => setCurrentView('email-manager')}>
-            <div className="settings-icon-box">
-              <div className="ai-icon-placeholder">✉️</div>
+          {canAi && (
+            <div className="settings-card" onClick={() => setCurrentView('ai-manager')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🤖</div></div>
+              <span className="settings-text">{t('settings_ai_manager')}</span>
             </div>
-            <span className="settings-text">
-              {t('settings_email_manager')}
-            </span>
-          </div>
-        )}
+          )}
 
-        {canNotifications && (
-          <div className="settings-card" onClick={() => setCurrentView('notification-manager')}>
-            <div className="settings-icon-box">
-              <div className="ai-icon-placeholder">🔔</div>
+          {canEmail && (
+            <div className="settings-card" onClick={() => setCurrentView('email-manager')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">✉️</div></div>
+              <span className="settings-text">{t('settings_email_manager')}</span>
             </div>
-            <span className="settings-text">
-              {t('settings_notification_manager', { defaultValue: 'Notifications' })}
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  }
+          )}
 
-  // 1b. Setup Guide View
-  if (currentView === 'setup-guide') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToMenu}>
-          ← {t('back_btn')}
-        </button>
-        <SetupGuidePage onNavigate={(view) => setCurrentView(view as ViewState)} />
-      </div>
-    );
-  }
+          {canNotifications && (
+            <div className="settings-card" onClick={() => setCurrentView('notification-manager')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🔔</div></div>
+              <span className="settings-text">{t('settings_notification_manager', { defaultValue: 'Notifications' })}</span>
+            </div>
+          )}
+        </div>
+      );
+    }
 
-  // 1c. Companies View
-  if (currentView === 'companies') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToMenu}>
-          ← {t('back_btn')}
-        </button>
-        <CompaniesPage />
-      </div>
-    );
-  }
+    // Top-level views (no within-section back button needed — sidebar handles nav)
+    if (currentView === 'setup-guide') {
+      return <SetupGuidePage onNavigate={(view) => setCurrentView(view as ViewState)} />;
+    }
+    if (currentView === 'companies') return <CompaniesPage />;
+    if (currentView === 'tickets-templates') return <TicketsTemplatesPage />;
+    if (currentView === 'ai-manager') return <AIManager />;
+    if (currentView === 'email-manager') return <EmailManager />;
+    if (currentView === 'notification-manager') return <NotificationManager />;
+    if (currentView === 'selection') return <FieldEntityList onSelectEntity={handleEntitySelection} />;
+    if (currentView === 'users-groups-hub') return <UsersGroupsHub user={user} onSelect={(entity) => setCurrentView(entity)} />;
 
-  // 2. Tickets & Templates View
-  if (currentView === 'tickets-templates') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToMenu}>
-          ← {t('back_btn')}
-        </button>
-        <TicketsTemplatesPage />
-      </div>
+    // Within-section views (back button navigates to section parent)
+    const back = (onClick: () => void) => (
+      <button className="back-button" onClick={onClick}>← {t('back_btn')}</button>
     );
-  }
 
-  // 2b. Labels Management View
-  if (currentView === 'labels-management') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToSelection}>
-          ← {t('back_btn')}
-        </button>
-        <LabelsManagementPage />
-      </div>
+    if (currentView === 'system-fields') return (
+      <>{back(handleBackToSelection)}<SystemFieldManager /></>
     );
-  }
 
-  // 2c. AI Manager View
-  if (currentView === 'ai-manager') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToMenu}>
-          ← {t('back_btn')}
-        </button>
-        <AIManager />
-      </div>
+    if (currentView === 'group-custom-fields') return (
+      <>{back(handleBackToSelection)}<FieldDefinitionsManager entityType="group" /></>
     );
-  }
 
-  // 2d. Email Manager View
-  if (currentView === 'email-manager') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToMenu}>
-          ← {t('back_btn')}
-        </button>
-        <EmailManager />
-      </div>
+    if (currentView === 'ticket-custom-fields') return (
+      <>{back(handleBackToSelection)}<FieldDefinitionsManager entityType="ticket" /></>
     );
-  }
 
-  // 2e. Notification Manager View
-  if (currentView === 'notification-manager') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToMenu}>
-          ← {t('back_btn')}
-        </button>
-        <NotificationManager />
-      </div>
+    if (currentView === 'workflow-fields') return (
+      <>{back(handleBackToSelection)}<WorkflowFieldsManager /></>
     );
-  }
 
-  // 3. Selection State (Field Definitions entity picker)
-  if (currentView === 'selection') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToMenu}>
-          ← {t('back_btn')}
-        </button>
-        <FieldEntityList onSelectEntity={handleEntitySelection} />
-      </div>
+    if (currentView === 'labels-management') return (
+      <>{back(handleBackToSelection)}<LabelsManagementPage /></>
     );
-  }
 
-  // 4. System Fields View
-  if (currentView === 'system-fields') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToSelection}>
-          ← {t('back_btn')}
-        </button>
-        <SystemFieldManager />
-      </div>
+    if (currentView === 'users') return (
+      <>{back(handleBackToHub)}<UsersPage currentUser={user} /></>
     );
-  }
 
-  // 5. Users & Groups Hub
-  if (currentView === 'users-groups-hub') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToMenu}>
-          ← {t('back_btn')}
-        </button>
-        <UsersGroupsHub user={user} onSelect={(entity) => setCurrentView(entity)} />
-      </div>
+    if (currentView === 'groups') return (
+      <>{back(handleBackToHub)}<GroupsPage currentUser={user} /></>
     );
-  }
 
-  // 6. Users View
-  if (currentView === 'users') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToHub}>
-          ← {t('back_btn')}
-        </button>
-        <UsersPage currentUser={user} />
-      </div>
-    );
-  }
-
-  // 7. Groups View
-  if (currentView === 'groups') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToHub}>
-          ← {t('back_btn')}
-        </button>
-        <GroupsPage currentUser={user} />
-      </div>
-    );
-  }
-
-  // 8. Group Custom Fields View
-  if (currentView === 'group-custom-fields') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToSelection}>
-          ← {t('back_btn')}
-        </button>
-        <FieldDefinitionsManager entityType="group" />
-      </div>
-    );
-  }
-
-  // 8b. Ticket Custom Fields View
-  if (currentView === 'ticket-custom-fields') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToSelection}>
-          ← {t('back_btn')}
-        </button>
-        <FieldDefinitionsManager entityType="ticket" />
-      </div>
-    );
-  }
-
-  // 8c. Workflow Fields View
-  if (currentView === 'workflow-fields') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToSelection}>
-          ← {t('back_btn')}
-        </button>
-        <WorkflowFieldsManager />
-      </div>
-    );
-  }
-
-  // 9. LDAP View
-  if (currentView === 'ldap') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToHub}>
-          ← {t('back_btn')}
-        </button>
+    if (currentView === 'ldap') return (
+      <>
+        {back(handleBackToHub)}
         <LdapPage
           currentUser={user}
           retriggerConfigId={returnContext?.ldapConfigId}
           onMissingFields={handleLdapFieldsDetour}
           onRetriggerConsumed={() => setReturnContext(null)}
         />
-      </div>
+      </>
     );
-  }
 
-  // 10. Azure View
-  if (currentView === 'azure') {
-    return (
-      <div className="view-container">
-        <button className="back-button" onClick={handleBackToHub}>
-          ← {t('back_btn')}
-        </button>
+    if (currentView === 'azure') return (
+      <>
+        {back(handleBackToHub)}
         <AzurePage
           currentUser={user}
           retriggerConfigId={azureReturnContext?.azureConfigId}
           onMissingFields={handleAzureFieldsDetour}
           onRetriggerConsumed={() => setAzureReturnContext(null)}
         />
-      </div>
+      </>
     );
-  }
 
-  // 11. User Custom Fields View
-  const isAzureDetour = !!azureReturnContext && !returnContext;
+    // custom-fields (user entity, also handles LDAP/Azure detours)
+    const isAzureDetour = !!azureReturnContext && !returnContext;
+    return (
+      <>
+        {back(isAzureDetour ? handleReturnFromAzureDetour : returnContext ? handleReturnFromDetour : handleBackToSelection)}
+        <FieldDefinitionsManager
+          entityType="user"
+          returnContext={returnContext ?? undefined}
+          azureReturnContext={azureReturnContext ?? undefined}
+          onReturnFromDetour={returnContext ? handleReturnFromDetour : handleReturnFromAzureDetour}
+        />
+      </>
+    );
+  };
+
+  // ── Layout ───────────────────────────────────────────────────────────────
   return (
-    <div className="view-container">
-      <button className="back-button" onClick={
-        isAzureDetour ? handleReturnFromAzureDetour :
-        returnContext ? handleReturnFromDetour : handleBackToSelection
-      }>
-        ← {t('back_btn')}
-      </button>
-      <FieldDefinitionsManager
-        entityType="user"
-        returnContext={returnContext ?? undefined}
-        azureReturnContext={azureReturnContext ?? undefined}
-        onReturnFromDetour={returnContext ? handleReturnFromDetour : handleReturnFromAzureDetour}
-      />
+    <div className="stg-layout">
+      <aside className="stg-nav">
+        {navBtn('overview', t('settings_overview', { defaultValue: 'Overview' }), () => setCurrentView('menu'))}
+
+        {canFields      && navBtn('fields',        t('settings_fields_manager'),                          handleMainMenuClick)}
+        {canUsersGroups && navBtn('users-groups',  t('settings_users_groups_manager'),                   () => setCurrentView('users-groups-hub'))}
+        {canFields      && navBtn('templates',     t('tickets_and_templates'),                            () => setCurrentView('tickets-templates'))}
+        {canAi          && navBtn('ai',            t('settings_ai_manager'),                              () => setCurrentView('ai-manager'))}
+        {canEmail       && navBtn('email',         t('settings_email_manager'),                           () => setCurrentView('email-manager'))}
+        {canNotifications && navBtn('notifications', t('settings_notification_manager', { defaultValue: 'Notifications' }), () => setCurrentView('notification-manager'))}
+
+        {isSuperAdminUser && <div className="stg-nav__divider" />}
+        {isSuperAdminUser && navBtn('setup-guide', t('setup_guide_card_label'),  () => setCurrentView('setup-guide'))}
+        {isSuperAdminUser && navBtn('companies',   t('companies_settings_card'), () => setCurrentView('companies'))}
+      </aside>
+
+      <div className="stg-content">
+        <div className="view-container">
+          {renderContent()}
+        </div>
+      </div>
     </div>
   );
 };
