@@ -209,10 +209,12 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
 
       {/* Table */}
       <div className="up-table-wrap">
-        {/* up-table-sizer is a plain block div — plain divs reliably create horizontal overflow
-            inside overflow-x:auto containers, unlike <table> which has special browser quirks */}
-        <div className="up-table-sizer" style={{ minWidth: tableWidth }}>
-        <table className="up-table" style={{ width: '100%' }}>
+        {/* up-table-vscroll: overflow-x:hidden + overflow-y:auto keeps sticky headers working
+            without triggering the Chrome bug (overflow-x:auto + sticky = broken h-scroll).
+            Its min-width:max-content CSS makes it as wide as the table, overflowing the plain
+            block up-table-wrap (overflow-x:auto) to produce the horizontal scrollbar. */}
+        <div className="up-table-vscroll">
+        <table className="up-table" style={{ width: tableWidth }}>
           <colgroup>
             <col className="col-actions"      style={{ width: CW.actions }} />
             <col className="col-select"       style={{ width: CW.select }} />
@@ -308,13 +310,13 @@ export const UsersPage = ({ currentUser }: UsersPageProps) => {
           </tbody>
         </table>
 
-        {/* Lazy-load sentinel — inside sizer so it scrolls with table content */}
+        {/* Lazy-load sentinel — inside vscroll so IntersectionObserver fires on vertical scroll */}
         {visibleCount < users.length && (
           <div ref={sentinelRef} className="up-lazy-sentinel">
             <div className="up-spinner" />
           </div>
         )}
-        </div>{/* /up-table-sizer */}
+        </div>{/* /up-table-vscroll */}
 
         {users.length === 0 && (
           <div className="up-empty">{t('no_users_found')}</div>

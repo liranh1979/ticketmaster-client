@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'; // 1. Import useTranslation
 import api from './api';
 import { LoginScreen } from './components/Login/LoginScreen';
 import { Home } from './pages/Home';
+import './App.css';
 
 function App() {
   // 2. 'ready' becomes true only after i18next successfully fetches the translation JSON from the backend

@@ -11,6 +11,11 @@
     "header header"
     "sidebar main";
   height: 100vh;
+  min-width: 0; /* sd-shell is a flex child of .App (#root > .App > .sd-shell);
+    without this, the auto min-content size of deeply nested wide content (e.g.
+    a Users table with many columns) forces sd-shell itself past the viewport,
+    and #root's overflow:hidden clips it with no scrollbar — same blowout class
+    as min-height:0 elsewhere in this codebase, just one layer further up. */
   background: var(--sd-bg);
   color: var(--sd-fg);
   font-family: var(--sd-font);

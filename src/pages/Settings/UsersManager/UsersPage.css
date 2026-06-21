@@ -67,21 +67,37 @@
 }
 .up-btn-primary:hover:not(:disabled) { background: var(--sd-brand-hover); }
 
-/* ── Table wrapper ── */
+/* ── Table wrapper — HORIZONTAL scroll only ──
+   Chrome bug: overflow-x:auto + overflow-y:auto on one element breaks horizontal
+   scroll detection when position:sticky is inside. Fix: split axes across two
+   nested containers so sticky elements never live inside the h-scroll container.
+   Plain `display:block` (not flex) — block children reliably force horizontal
+   overflow inside an overflow-x:auto ancestor; flex's auto-sizing of the single
+   child was unreliable and suppressed the scrollbar in some cases. */
 .up-table-wrap {
   flex: 1;
   min-height: 0;
   min-width: 0;
   overflow-x: auto;
-  overflow-y: auto;
+  overflow-y: hidden;
   background: var(--sd-surface);
   border-top: 1px solid var(--sd-border);
 }
 
-/* ── Table sizer — forces horizontal overflow so up-table-wrap scrollbar appears ── */
-.up-table-sizer {
-  display: block;    /* plain block → min-width reliably pushes scroll container */
-  width: 100%;       /* fills wrapper, min-width inline style overrides when needed */
+/* ── Vertical scroll + sticky container ──
+   overflow-x:hidden (not auto) avoids the Chrome sticky+overflow-x:auto bug
+   (the bug only fires on overflow-x:auto when sticky elements are inside).
+   min-width:max-content makes this div as wide as the table, which overflows
+   up-table-wrap and forces the horizontal scrollbar. height:100% gives it a
+   bounded box so overflow-y:auto (and the sticky thead inside) actually works —
+   up-table-wrap resolves to a definite pixel height via flex:1 on .up-page. */
+.up-table-vscroll {
+  display: block;
+  min-width: max-content;
+  height: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* ── Table ── */
