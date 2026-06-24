@@ -182,7 +182,9 @@ export const FieldTranslationGrid = ({
     }
   };
 
-  const showVisibility = entityType === 'ticket';
+  // 'user' fields use this same column to gate self-service editing in Personal Settings:
+  // all -> self-editable, user_view_admin_edit -> shown read-only, admin_only -> hidden.
+  const showVisibility = entityType === 'ticket' || entityType === 'user';
   const colSpan = (isEnglish ? 3 : 4) + (showVisibility ? 1 : 0);
 
   if (fieldDefs.length === 0) {

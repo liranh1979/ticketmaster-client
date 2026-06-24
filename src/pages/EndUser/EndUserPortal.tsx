@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, ClipboardList, Plus, LogOut, CheckSquare } from 'lucide-react';
+import { MessageSquare, ClipboardList, Plus, LogOut, CheckSquare, Settings } from 'lucide-react';
 import api from '../../api';
 import { AiChatPage } from './AiChatPage';
 import { MyTicketsPage } from './MyTicketsPage';
@@ -8,24 +8,26 @@ import { MyWorkflowItemsPage } from '../Workflow/MyWorkflowItemsPage';
 import { CreateTicketPage } from '../Tickets/CreateTicketPage';
 import { TicketEditPage } from '../Tickets/TicketEditPage';
 import { formatRelativeTime } from '../Tickets/ticketTypes';
+import { PersonalSettingsModal } from '../../components/PersonalSettings/PersonalSettingsModal';
 import './EndUserPortal.css';
 
 type PortalView = 'home' | 'ai-chat' | 'my-tickets' | 'create-ticket' | 'view-ticket' | 'my-tasks';
 
 interface RecentTicket { id: number; title: string; status: string; updatedAt: string; }
 
-interface Props { user: any; }
+interface Props { user: any; onUserUpdate?: (partial: Record<string, any>) => void; }
 
 const STATUS_COLORS: Record<string, string> = {
   new: '#6366f1', open: '#3b82f6', in_progress: '#f59e0b',
   waiting: '#8b5cf6', resolved: '#10b981', closed: '#64748b',
 };
 
-export const EndUserPortal = ({ user }: Props) => {
+export const EndUserPortal = ({ user, onUserUpdate }: Props) => {
   const { t } = useTranslation();
   const [view, setView]           = useState<PortalView>('home');
   const [viewTicketId, setViewTicketId] = useState<number | null>(null);
   const [recentTickets, setRecentTickets] = useState<RecentTicket[]>([]);
+  const [showPersonalSettings, setShowPersonalSettings] = useState(false);
 
   useEffect(() => {
     if (view !== 'home') return;
@@ -115,11 +117,21 @@ export const EndUserPortal = ({ user }: Props) => {
         </nav>
         <div className="eu-topbar-right">
           <span className="eu-greeting">👋 {user?.display_name}</span>
+          <button className="eu-logout-btn" onClick={() => setShowPersonalSettings(true)} title="Personal Settings">
+            <Settings size={15} />
+          </button>
           <button className="eu-logout-btn" onClick={handleLogout} title="Logout">
             <LogOut size={15} />
           </button>
         </div>
       </header>
+
+      {showPersonalSettings && (
+        <PersonalSettingsModal
+          onClose={() => setShowPersonalSettings(false)}
+          onUserUpdate={onUserUpdate}
+        />
+      )}
 
       {/* Hero */}
       <main className="eu-main">

@@ -1,15 +1,17 @@
 import { useRef, useState } from 'react';
-import { Search, LogOut } from 'lucide-react';
+import { Search, LogOut, Settings } from 'lucide-react';
 import api from '../../api';
 import { AIStatusIndicator } from './AIStatusIndicator/AIStatusIndicator';
 import { SystemClock } from './SystemClock';
 import { AdminInboxBell } from '../AdminInboxBell/AdminInboxBell';
+import { PersonalSettingsModal } from '../PersonalSettings/PersonalSettingsModal';
 import { isSuperAdmin } from '../../utils/permissions';
 import { useSystemSettings } from '../../contexts/SystemSettingsContext';
 import './Topbar.css';
 
 interface TopbarProps {
   user: any;
+  onUserUpdate?: (partial: Record<string, any>) => void;
   onTicketJump?: (id: number) => void;
 }
 
@@ -19,11 +21,12 @@ function initials(name: string = '') {
   return name.slice(0, 2).toUpperCase() || '?';
 }
 
-export const Topbar = ({ user, onTicketJump }: TopbarProps) => {
+export const Topbar = ({ user, onUserUpdate, onTicketJump }: TopbarProps) => {
   const { logoUrl } = useSystemSettings();
   const [jumpInput, setJumpInput] = useState('');
   const [jumpError, setJumpError] = useState('');
   const [jumping, setJumping] = useState(false);
+  const [showPersonalSettings, setShowPersonalSettings] = useState(false);
   const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showError = (msg: string) => {
@@ -89,12 +92,27 @@ export const Topbar = ({ user, onTicketJump }: TopbarProps) => {
           </div>
         )}
 
+        <button
+          className="tb-personal-settings-btn"
+          onClick={() => setShowPersonalSettings(true)}
+          title="Personal Settings"
+        >
+          <Settings size={16} />
+        </button>
+
         <div className="sd-user" onClick={handleLogout} title="Logout">
           <div className="sd-avatar">{initials(user?.display_name)}</div>
           <span className="sd-user-name">{user?.display_name}</span>
           <LogOut size={13} strokeWidth={1.75} style={{ color: 'var(--sd-fg-subtle)' }} />
         </div>
       </div>
+
+      {showPersonalSettings && (
+        <PersonalSettingsModal
+          onClose={() => setShowPersonalSettings(false)}
+          onUserUpdate={onUserUpdate}
+        />
+      )}
     </header>
   );
 };

@@ -71,6 +71,21 @@
 
 .tb-jump-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.tb-personal-settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: var(--sd-radius-sm);
+  background: transparent;
+  border: 1px solid var(--sd-border);
+  color: var(--sd-fg-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--sd-dur-fast) var(--sd-ease), color var(--sd-dur-fast) var(--sd-ease);
+}
+.tb-personal-settings-btn:hover { background: var(--sd-surface-3); color: var(--sd-brand); }
+
 .tb-jump-err {
   font-size: 10px;
   color: oklch(0.78 0.18 25);

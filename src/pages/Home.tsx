@@ -21,11 +21,12 @@ interface HomeProps {
     is_super_admin?: boolean;
     effective_permissions?: string[];
   } | null;
+  onUserUpdate?: (partial: Record<string, any>) => void;
 }
 
 type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks';
 
-export const Home = ({ user }: HomeProps) => {
+export const Home = ({ user, onUserUpdate }: HomeProps) => {
   const { t } = useTranslation();
   const [currentView, setCurrentView] = useState<HomeView>('welcome');
   const [editTicketId, setEditTicketId] = useState<number | null>(null);
@@ -69,7 +70,7 @@ export const Home = ({ user }: HomeProps) => {
       .catch(() => {});
   }, []);
 
-  if (isEndUserOnly) return <EndUserPortal user={user} />;
+  if (isEndUserOnly) return <EndUserPortal user={user} onUserUpdate={onUserUpdate} />;
 
   return (
     <div className="sd-shell">
@@ -77,6 +78,7 @@ export const Home = ({ user }: HomeProps) => {
 
       <Topbar
         user={user}
+        onUserUpdate={onUserUpdate}
         onTicketJump={canManageTickets ? goToEditTicket : undefined}
       />
 
