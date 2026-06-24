@@ -63,7 +63,11 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
     api.get<{ ai_configured: boolean; template_configured: boolean; email_configured: boolean; users_configured: boolean }>('/setup/status')
       .then(r => {
         const s = r.data;
-        if (!s.ai_configured && !s.template_configured) {
+        // ai_configured is no longer a useful "untouched install" signal — Gemma 4 is
+        // seeded active on every fresh install (see V67__add_gemma_provider.sql), so it's
+        // never false. users_configured (only the seed admin exists) is the fresh-install
+        // signal now.
+        if (!s.users_configured && !s.template_configured) {
           setSettingsInitialView('setup-guide');
           setCurrentView('settings');
         }
