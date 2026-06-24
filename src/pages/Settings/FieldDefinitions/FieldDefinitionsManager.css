@@ -296,6 +296,25 @@
 .fd-ai-btn:hover:not(:disabled) { background: oklch(0.33 0.10 280 / 0.6); }
 .fd-ai-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* ── Bulk-translate progress bar ── */
+.fd-bulk-progress { margin-bottom: 14px; flex-shrink: 0; }
+.fd-bulk-progress-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--sd-surface-3);
+  overflow: hidden;
+}
+.fd-bulk-progress-fill {
+  height: 100%;
+  background: var(--sd-brand);
+  transition: width 0.2s ease;
+}
+.fd-bulk-progress-label {
+  margin-top: 4px;
+  font-size: var(--sd-text-xs);
+  color: var(--sd-fg-muted);
+}
+
 /* ── Table ── */
 .fd-table-container {
   flex: 1;

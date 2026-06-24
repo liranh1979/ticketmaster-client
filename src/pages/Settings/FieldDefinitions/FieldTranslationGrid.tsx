@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { getFieldType } from './fieldTypes';
+import { runBulkTranslate, type BulkTranslateProgress } from '../../../utils/bulkTranslateRunner';
 import api from '../../../api';
 
 interface FieldDef { id: number; fieldKey: string; fieldType: string; fieldOptions?: string[]; isAdminOnly?: boolean; fieldVisibility?: string; isSystem?: boolean; }
@@ -25,6 +26,7 @@ export const FieldTranslationGrid = ({
   const [isDirty,   setIsDirty]   = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [translating, setTranslating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<BulkTranslateProgress | null>(null);
   const isEnglish = targetLang === 'en';
 
   const [visibilityState, setVisibilityState] = useState<Record<number, string>>({});
@@ -106,12 +108,46 @@ export const FieldTranslationGrid = ({
     if (!window.confirm(t('confirm_bulk_translate', { lang: targetLang.toUpperCase() }))) return;
     setTranslating(true);
     try {
-      const res = await api.post('/ai/translate-bulk', { translations: englishSource, targetLanguage: targetLang });
-      if (res.data.success) markDirty({ ...translations, ...res.data.translations });
+      // Only translate keys that don't already have a real translation. A key whose current
+      // value still equals the English source means it's never been translated — it's just
+      // showing the English fallback (see FieldDefinitionsService.getFieldTranslations).
+      const toTranslate: Record<string, string> = {};
+      Object.entries(englishSource).forEach(([key, english]) => {
+        const current = translations[key] ?? '';
+        if (current.trim() === '' || current === english) {
+          toTranslate[key] = english;
+        }
+      });
+
+      if (Object.keys(toTranslate).length === 0) {
+        alert(t('no_missing_translations'));
+        return;
+      }
+
+      setBulkProgress({ done: 0, total: Object.keys(toTranslate).length, currentBatch: 0, totalBatches: 0 });
+      const result = await runBulkTranslate(toTranslate, targetLang, setBulkProgress);
+      const merged = { ...translations, ...result.translations };
+      markDirty(merged);
+
+      if (result.partial) {
+        // Save immediately whatever succeeded so a mid-run failure (rate limit, quota,
+        // network) doesn't throw away translated fields that were never persisted.
+        try {
+          await api.post('/field-definitions/translations/update', { lang: targetLang, translations: merged, type: translationType });
+          setIsDirty(false);
+          onDirtyChange(false);
+          setSaveStatus('success');
+          setTimeout(() => setSaveStatus('idle'), 3000);
+        } catch {
+          setSaveStatus('error');
+        }
+        alert(`Translation stopped early: ${result.error}\n\nSaved ${Object.keys(result.translations).length} of ${Object.keys(toTranslate).length} translated fields.`);
+      }
     } catch (err) {
       console.error('Bulk translate failed', err);
     } finally {
       setTranslating(false);
+      setBulkProgress(null);
     }
   };
 
@@ -177,6 +213,20 @@ export const FieldTranslationGrid = ({
           </button>
         )}
       </div>
+
+      {bulkProgress && bulkProgress.totalBatches > 0 && (
+        <div className="fd-bulk-progress">
+          <div className="fd-bulk-progress-track">
+            <div
+              className="fd-bulk-progress-fill"
+              style={{ width: `${Math.round((bulkProgress.done / Math.max(bulkProgress.total, 1)) * 100)}%` }}
+            />
+          </div>
+          <div className="fd-bulk-progress-label">
+            Batch {bulkProgress.currentBatch} of {bulkProgress.totalBatches} · {bulkProgress.done}/{bulkProgress.total} fields
+          </div>
+        </div>
+      )}
 
       <div className="fd-table-container">
         <table className="fd-table">
