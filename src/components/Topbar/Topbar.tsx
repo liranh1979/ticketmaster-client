@@ -2,8 +2,10 @@ import { useRef, useState } from 'react';
 import { Search, LogOut } from 'lucide-react';
 import api from '../../api';
 import { AIStatusIndicator } from './AIStatusIndicator/AIStatusIndicator';
+import { SystemClock } from './SystemClock';
 import { AdminInboxBell } from '../AdminInboxBell/AdminInboxBell';
 import { isSuperAdmin } from '../../utils/permissions';
+import { useSystemSettings } from '../../contexts/SystemSettingsContext';
 import './Topbar.css';
 
 interface TopbarProps {
@@ -18,6 +20,7 @@ function initials(name: string = '') {
 }
 
 export const Topbar = ({ user, onTicketJump }: TopbarProps) => {
+  const { logoUrl } = useSystemSettings();
   const [jumpInput, setJumpInput] = useState('');
   const [jumpError, setJumpError] = useState('');
   const [jumping, setJumping] = useState(false);
@@ -56,11 +59,12 @@ export const Topbar = ({ user, onTicketJump }: TopbarProps) => {
   return (
     <header className="sd-header">
       <div className="sd-logo">
-        <span className="sd-logo__mark" aria-hidden />
+        <img className="sd-logo__mark" src={logoUrl || '/logo.png'} alt="" aria-hidden />
         <span>TurboTickets</span>
       </div>
 
       <div className="sd-header__right">
+        <SystemClock />
         {isSuperAdmin(user) && <AIStatusIndicator />}
         {onTicketJump && <AdminInboxBell onTicketClick={onTicketJump} />}
 

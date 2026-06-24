@@ -3,6 +3,7 @@ import { PlusCircle, MessageSquare, Maximize2, Send } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
 import { ActivityFullScreenModal } from './ActivityFullScreenModal';
+import { useDateTimeFormatter } from '../../hooks/useDateTimeFormatter';
 import api from '../../api';
 import './ActivityLogControl.css';
 
@@ -67,6 +68,7 @@ export const ActivityLogControl = ({
   refreshSignal,
 }: Props) => {
   const { t } = useTranslation();
+  const { formatDateTime } = useDateTimeFormatter();
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -294,7 +296,7 @@ export const ActivityLogControl = ({
                     <TypeBadge type={entry.activityType} />
                     <span className="alc-entry-sep">·</span>
                     <span className="alc-entry-time">
-                      {new Date(entry.createdAt).toLocaleString()}
+                      {formatDateTime(entry.createdAt)}
                     </span>
                     {isAdmin && entry.activityType === 'ai_solution' && (
                       <button

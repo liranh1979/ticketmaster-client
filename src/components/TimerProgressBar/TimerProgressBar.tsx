@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useDateTimeFormatter } from '../../hooks/useDateTimeFormatter';
 import './TimerProgressBar.css';
 
 interface TimerValue {
@@ -37,6 +38,7 @@ function formatWallClock(seconds: number): string {
 }
 
 export const TimerProgressBar = ({ value, compact = false }: Props) => {
+  const { formatDateTime } = useDateTimeFormatter();
   const info = useMemo(() => {
     if (!value?.started_at || !value?.target_datetime) return null;
     const now    = Date.now();
@@ -95,7 +97,7 @@ export const TimerProgressBar = ({ value, compact = false }: Props) => {
           : `${formatBusinessDuration(info.remainingBusinessMins, info.unit)} remaining`}
       </div>
       <div className="tpb-sublabel">
-        Target: {new Date(value.target_datetime!).toLocaleString()}
+        Target: {formatDateTime(value.target_datetime!)}
       </div>
     </div>
   );

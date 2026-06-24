@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Login } from './Login';
+import { useSystemSettings } from '../../contexts/SystemSettingsContext';
 import api from '../../api';
 import './Login.css';
 import './LoginScreen.css';
@@ -22,6 +23,7 @@ interface LoginScreenProps {
 
 export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
   const { t } = useTranslation();
+  const { logoUrl } = useSystemSettings();
   const [providers, setProviders] = useState<SsoProvider[]>([]);
   const [screen, setScreen] = useState<Screen>('loading');
   const [activeProviderName, setActiveProviderName] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
     return (
       <div className="auth-card">
         <div className="logo-container">
-          <img src="/logo.png" alt="TicketMaster Logo" />
+          <img src={logoUrl || '/logo.png'} alt="TicketMaster Logo" />
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
           <div className="lsc-spinner" />

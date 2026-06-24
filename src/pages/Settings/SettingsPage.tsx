@@ -19,6 +19,7 @@ import { NotificationManager } from './NotificationManager/NotificationManager';
 import { WorkflowFieldsManager } from './WorkflowFieldsManager/WorkflowFieldsManager';
 import { SetupGuidePage } from './SetupGuide/SetupGuidePage';
 import { CompaniesPage } from './CompaniesManager/CompaniesPage';
+import { SystemSettingsPage } from './SystemSettings/SystemSettingsPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -31,6 +32,7 @@ type ViewState =
   | 'menu'
   | 'setup-guide'
   | 'companies'
+  | 'system-settings'
   | 'selection'
   | 'system-fields'
   | 'custom-fields'
@@ -111,6 +113,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'menu') return 'overview';
     if (currentView === 'setup-guide') return 'setup-guide';
     if (currentView === 'companies') return 'companies';
+    if (currentView === 'system-settings') return 'system-settings';
     if (['selection','system-fields','custom-fields','group-custom-fields',
          'ticket-custom-fields','labels-management','workflow-fields'].includes(currentView)) return 'fields';
     if (currentView === 'tickets-templates') return 'templates';
@@ -155,6 +158,13 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
             <div className="settings-card" onClick={() => setCurrentView('companies')}>
               <div className="settings-icon-box"><div className="ai-icon-placeholder">🏢</div></div>
               <span className="settings-text">{t('companies_settings_card')}</span>
+            </div>
+          )}
+
+          {isSuperAdminUser && (
+            <div className="settings-card" onClick={() => setCurrentView('system-settings')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">⚙️</div></div>
+              <span className="settings-text">{t('system_settings_card_label')}</span>
             </div>
           )}
 
@@ -210,6 +220,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
       return <SetupGuidePage onNavigate={(view) => setCurrentView(view as ViewState)} />;
     }
     if (currentView === 'companies') return <CompaniesPage />;
+    if (currentView === 'system-settings') return <SystemSettingsPage />;
     if (currentView === 'tickets-templates') return <TicketsTemplatesPage />;
     if (currentView === 'ai-manager') return <AIManager />;
     if (currentView === 'email-manager') return <EmailManager />;
@@ -305,6 +316,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
         {isSuperAdminUser && <div className="stg-nav__divider" />}
         {isSuperAdminUser && navBtn('setup-guide', t('setup_guide_card_label'),  () => setCurrentView('setup-guide'))}
         {isSuperAdminUser && navBtn('companies',   t('companies_settings_card'), () => setCurrentView('companies'))}
+        {isSuperAdminUser && navBtn('system-settings', t('system_settings_card_label'), () => setCurrentView('system-settings'))}
       </aside>
 
       <div className="stg-content">

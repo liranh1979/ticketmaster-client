@@ -48,8 +48,9 @@
 .sd-logo__mark {
   width: 24px; height: 24px;
   border-radius: var(--sd-radius-sm);
-  background: linear-gradient(135deg, var(--sd-brand), oklch(0.55 0.20 290));
+  background: var(--sd-surface-2);
   box-shadow: 0 0 0 1px oklch(1 0 0 / 0.08) inset;
+  object-fit: contain;
   flex-shrink: 0;
 }
 .sd-search {

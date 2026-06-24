@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
 import { FieldUpdateCard } from './FieldUpdateCard';
 import type { ActivityEntry } from './ActivityLogControl';
+import { useDateTimeFormatter } from '../../hooks/useDateTimeFormatter';
 import api from '../../api';
 import './ActivityFullScreenModal.css';
 
@@ -41,6 +42,7 @@ interface Props {
 
 export const ActivityFullScreenModal = ({ ticketId, ticketTitle, onClose }: Props) => {
   const { t } = useTranslation();
+  const { formatDateTime } = useDateTimeFormatter();
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -198,7 +200,7 @@ export const ActivityFullScreenModal = ({ ticketId, ticketTitle, onClose }: Prop
                           {TYPE_LABELS[entry.activityType] ?? entry.activityType}
                         </span>
                         <span className="afm-entry-time">
-                          {new Date(entry.createdAt).toLocaleString()}
+                          {formatDateTime(entry.createdAt)}
                         </span>
                       </div>
                       <div className={`afm-entry-body${entry.operation === 'FIELD_UPDATE' ? ' afm-entry-body--bare' : ''}`}>
