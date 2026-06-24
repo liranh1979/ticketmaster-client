@@ -8,6 +8,7 @@ interface AISetting {
   provider_name: string;
   model_name: string;
   is_active: boolean;
+  is_system: boolean;
 }
 
 interface ProviderInfo {
@@ -103,8 +104,8 @@ export const AIManager = () => {
     try {
       await api.delete(`/ai/settings/${id}`);
       fetchSettings();
-    } catch {
-      alert(t('error_deleting_provider'));
+    } catch (err: any) {
+      alert(err.response?.data?.message || t('error_deleting_provider'));
     }
   };
 
@@ -165,7 +166,10 @@ export const AIManager = () => {
           <tbody>
             {settings.map((s) => (
               <tr key={s.id} className={s.is_active ? 'row-active' : ''}>
-                <td>{providerLabel(s.provider_name)}</td>
+                <td>
+                  {providerLabel(s.provider_name)}
+                  {s.is_system && <span className="builtin-badge">{t('builtin_provider_badge', { defaultValue: 'Built-in' })}</span>}
+                </td>
                 <td>{s.model_name}</td>
                 <td>
                   {s.is_active ? (
@@ -185,7 +189,9 @@ export const AIManager = () => {
                     >
                       {testResults[s.id] || `🧪 ${t('ai_test_btn')}`}
                     </button>
-                    <button className="delete-icon-btn" onClick={() => handleDelete(s.id)}>🗑️</button>
+                    {!s.is_system && (
+                      <button className="delete-icon-btn" onClick={() => handleDelete(s.id)}>🗑️</button>
+                    )}
                   </div>
                 </td>
               </tr>

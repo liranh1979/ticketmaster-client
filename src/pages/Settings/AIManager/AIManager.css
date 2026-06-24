@@ -56,6 +56,17 @@
 
 .row-active td { background: oklch(0.22 0.06 150 / 0.3); }
 
+.builtin-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px; padding: 0 7px;
+  margin-left: 8px;
+  font: 600 var(--sd-text-xs)/1 var(--sd-font);
+  border-radius: var(--sd-radius-pill);
+  background: var(--sd-surface-3);
+  color: var(--sd-fg-muted);
+}
+
 .status-badge.active {
   display: inline-flex;
   align-items: center;
