@@ -132,6 +132,36 @@
 .ai-form input:focus, .ai-select:focus { border-color: var(--sd-brand); box-shadow: 0 0 0 2px var(--sd-focus-ring); }
 .ai-form input::placeholder { color: var(--sd-fg-subtle); }
 
+.ai-model-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.ai-model-row > select,
+.ai-model-row > input {
+  flex: 1;
+}
+
+.fetch-models-btn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: var(--sd-radius-sm);
+  border: 1px solid var(--sd-border);
+  background: var(--sd-surface-2);
+  color: var(--sd-fg-muted);
+  font: 600 var(--sd-text-sm)/1 var(--sd-font);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--sd-dur-fast) var(--sd-ease), color var(--sd-dur-fast) var(--sd-ease);
+}
+.fetch-models-btn:hover:not(:disabled) { background: var(--sd-surface-3); color: var(--sd-fg); }
+.fetch-models-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.ai-models-error {
+  font-size: var(--sd-text-sm);
+  color: oklch(0.72 0.16 25);
+}
+
 .save-btn {
   background: var(--sd-brand);
   color: var(--sd-brand-fg);

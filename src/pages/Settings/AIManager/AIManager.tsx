@@ -29,6 +29,10 @@ export const AIManager = () => {
     model_name: ''
   });
 
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [fetchingModels, setFetchingModels] = useState(false);
+  const [modelsError, setModelsError] = useState('');
+
   useEffect(() => {
     Promise.all([fetchSettings(), fetchProviders()]).finally(() => setLoading(false));
   }, []);
@@ -60,6 +64,29 @@ export const AIManager = () => {
       provider_name: name,
       model_name: p?.model_hint ?? ''
     }));
+    setAvailableModels([]);
+    setModelsError('');
+  };
+
+  const handleFetchModels = async () => {
+    setFetchingModels(true);
+    setModelsError('');
+    try {
+      const res = await api.post<string[]>('/ai/models', {
+        provider_name: formData.provider_name,
+        api_key: formData.api_key,
+      });
+      if (res.data.length === 0) {
+        setModelsError(t('no_models_found_for_provider'));
+      } else {
+        setAvailableModels(res.data);
+        setFormData(prev => ({ ...prev, model_name: res.data[0] }));
+      }
+    } catch (err: any) {
+      setModelsError(err.response?.data?.message || t('fetch_models_error'));
+    } finally {
+      setFetchingModels(false);
+    }
   };
 
   const handleActivate = async (id: number) => {
@@ -183,19 +210,41 @@ export const AIManager = () => {
           </select>
 
           <input
-            placeholder={selectedProvider ? selectedProvider.model_hint : t('model_placeholder')}
-            value={formData.model_name}
-            onChange={e => setFormData({ ...formData, model_name: e.target.value })}
-            required
-          />
-
-          <input
             placeholder={t('api_key_placeholder')}
             type="password"
             value={formData.api_key}
-            onChange={e => setFormData({ ...formData, api_key: e.target.value })}
+            onChange={e => { setFormData({ ...formData, api_key: e.target.value }); setAvailableModels([]); setModelsError(''); }}
             required
           />
+
+          <div className="ai-model-row">
+            {availableModels.length > 0 ? (
+              <select
+                className="ai-select"
+                value={formData.model_name}
+                onChange={e => setFormData({ ...formData, model_name: e.target.value })}
+                required
+              >
+                {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            ) : (
+              <input
+                placeholder={selectedProvider ? selectedProvider.model_hint : t('model_placeholder')}
+                value={formData.model_name}
+                onChange={e => setFormData({ ...formData, model_name: e.target.value })}
+                required
+              />
+            )}
+            <button
+              type="button"
+              className="fetch-models-btn"
+              onClick={handleFetchModels}
+              disabled={!formData.provider_name || !formData.api_key || fetchingModels}
+            >
+              {fetchingModels ? t('fetching_models') : t('fetch_models_btn')}
+            </button>
+          </div>
+          {modelsError && <span className="ai-models-error">{modelsError}</span>}
 
           <button type="submit" className="save-btn">{t('save_provider')}</button>
         </form>
