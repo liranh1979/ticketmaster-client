@@ -11,6 +11,7 @@ import { EndUserPortal } from './EndUser/EndUserPortal';
 import { MyTicketsPage } from './EndUser/MyTicketsPage';
 import { MyWorkflowItemsPage } from './Workflow/MyWorkflowItemsPage';
 import { hasPermission, isSuperAdmin, PERMISSIONS } from '../utils/permissions';
+import { TicketsDashboard } from './Dashboards/TicketsDashboard/TicketsDashboard';
 import api from '../api';
 
 interface HomeProps {
@@ -95,18 +96,17 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
 
       <div className="sd-app-content">
         {currentView === 'welcome' && (
-          <div className="welcome-screen">
-            <div className="welcome-content">
-              <div className="welcome-icon">🎫</div>
-              <h1 className="welcome-title">{t('welcome_hello')}, {user?.display_name}!</h1>
-              <p className="welcome-sub">{t('home_subtitle')}</p>
-              {canManageTickets && (
-                <button className="welcome-cta" onClick={goToTicketList}>
-                  {t('all_tickets')} →
-                </button>
-              )}
+          canManageTickets ? (
+            <TicketsDashboard />
+          ) : (
+            <div className="welcome-screen">
+              <div className="welcome-content">
+                <div className="welcome-icon">🎫</div>
+                <h1 className="welcome-title">{t('welcome_hello')}, {user?.display_name}!</h1>
+                <p className="welcome-sub">{t('home_subtitle')}</p>
+              </div>
             </div>
-          </div>
+          )
         )}
 
         {currentView === 'ticket-list' && (

@@ -1,0 +1,276 @@
+<!-- mock data only, no backend calls — static visual reference for the Tickets Dashboard feature -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tickets Dashboard — Mock</title>
+<style>
+  :root {
+    --sd-bg:            oklch(0.16 0.01 250);
+    --sd-surface:       oklch(0.19 0.012 250);
+    --sd-surface-2:     oklch(0.22 0.014 250);
+    --sd-surface-3:     oklch(0.26 0.016 250);
+    --sd-border:        oklch(0.30 0.015 250 / 0.6);
+    --sd-border-strong: oklch(0.40 0.018 250 / 0.9);
+
+    --sd-fg:            oklch(0.96 0.005 250);
+    --sd-fg-muted:      oklch(0.72 0.01 250);
+    --sd-fg-subtle:     oklch(0.55 0.01 250);
+
+    --sd-brand:         oklch(0.65 0.18 255);
+    --sd-brand-hover:   oklch(0.70 0.18 255);
+    --sd-brand-fg:      oklch(0.99 0 0);
+
+    --status-new-bg:        oklch(0.30 0.04 250);
+    --status-new-fg:        oklch(0.92 0.04 250);
+    --status-new-dot:       oklch(0.72 0.12 250);
+
+    --status-open-bg:       oklch(0.32 0.10 200);
+    --status-open-fg:       oklch(0.94 0.05 200);
+    --status-open-dot:      oklch(0.75 0.14 200);
+
+    --status-in-progress-bg:  oklch(0.34 0.10 75);
+    --status-in-progress-fg:  oklch(0.94 0.07 90);
+    --status-in-progress-dot: oklch(0.80 0.15 80);
+
+    --status-waiting-bg:      oklch(0.30 0.10 295);
+    --status-waiting-fg:      oklch(0.94 0.05 295);
+    --status-waiting-dot:     oklch(0.75 0.18 295);
+
+    --status-resolved-bg:     oklch(0.30 0.07 150);
+    --status-resolved-fg:     oklch(0.94 0.07 150);
+    --status-resolved-dot:    oklch(0.75 0.15 150);
+
+    --status-closed-bg:     oklch(0.30 0.04 150);
+    --status-closed-fg:     oklch(0.94 0.07 150);
+    --status-closed-dot:    oklch(0.75 0.15 150);
+
+    --sd-space-1: 4px; --sd-space-2: 8px; --sd-space-3: 12px;
+    --sd-space-4: 16px; --sd-space-5: 24px; --sd-space-6: 32px;
+
+    --sd-radius-sm: 6px; --sd-radius: 10px; --sd-radius-lg: 14px; --sd-radius-pill: 999px;
+
+    --sd-shadow-1: 0 1px 0 0 oklch(1 0 0 / 0.04) inset, 0 1px 2px oklch(0 0 0 / 0.35);
+    --sd-shadow-2: 0 8px 24px -8px oklch(0 0 0 / 0.55);
+
+    --sd-font: ui-sans-serif, "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --sd-text-xs: 11px; --sd-text-sm: 12px; --sd-text: 13px; --sd-text-md: 14px; --sd-text-lg: 16px; --sd-text-xl: 20px;
+
+    --sd-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+    --sd-dur-fast: 120ms; --sd-dur: 180ms;
+    --sd-header-h: 56px;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--sd-bg);
+    color: var(--sd-fg);
+    font-family: var(--sd-font);
+    font-size: var(--sd-text-md);
+  }
+
+  .dash-header {
+    height: var(--sd-header-h);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 var(--sd-space-5);
+    border-bottom: 1px solid var(--sd-border);
+    background: var(--sd-surface);
+  }
+  .dash-header h1 { font-size: var(--sd-text-lg); font-weight: 700; margin: 0; }
+  .dash-header-right { display: flex; align-items: center; gap: var(--sd-space-3); }
+  .dash-updated { font-size: var(--sd-text-sm); color: var(--sd-fg-subtle); }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: var(--sd-radius-pill);
+    font-size: var(--sd-text-xs); font-weight: 600;
+  }
+  .pill-cached     { background: var(--status-closed-bg); color: var(--status-closed-fg); }
+  .pill-fresh      { background: var(--status-resolved-bg); color: var(--status-resolved-fg); }
+  .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .dash-main {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: var(--sd-space-6) var(--sd-space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sd-space-5);
+  }
+
+  .card {
+    background: var(--sd-surface);
+    border: 1px solid var(--sd-border);
+    border-radius: var(--sd-radius-lg);
+    box-shadow: var(--sd-shadow-1);
+    padding: var(--sd-space-5);
+  }
+
+  .card-title-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: var(--sd-space-4);
+  }
+  .card-title { font-size: var(--sd-text-lg); font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px; }
+
+  .ai-summary { color: var(--sd-fg-muted); line-height: 1.6; margin: 0 0 var(--sd-space-5) 0; font-size: var(--sd-text); }
+
+  .problems-title { font-size: var(--sd-text-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sd-fg-subtle); margin: 0 0 var(--sd-space-3) 0; }
+
+  .problem-list { display: flex; flex-direction: column; gap: var(--sd-space-3); }
+  .problem-item {
+    background: var(--sd-surface-2);
+    border: 1px solid var(--sd-border);
+    border-radius: var(--sd-radius);
+    padding: var(--sd-space-4);
+  }
+  .problem-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sd-space-3); }
+  .problem-desc { font-size: var(--sd-text); font-weight: 600; line-height: 1.5; flex: 1; }
+
+  .confidence-badge { white-space: nowrap; flex-shrink: 0; }
+  .confidence-high   { background: var(--status-resolved-bg); color: var(--status-resolved-fg); }
+  .confidence-low    { background: var(--status-waiting-bg);  color: var(--status-waiting-fg); }
+
+  .fix-block {
+    margin-top: var(--sd-space-3);
+    padding-top: var(--sd-space-3);
+    border-top: 1px solid var(--sd-border);
+    font-size: var(--sd-text-sm);
+    color: var(--sd-fg);
+  }
+  .fix-label { font-weight: 700; color: var(--status-resolved-dot); margin-right: 6px; }
+
+  .flag-block {
+    margin-top: var(--sd-space-3);
+    padding-top: var(--sd-space-3);
+    border-top: 1px solid var(--sd-border);
+    font-size: var(--sd-text-sm);
+    color: var(--sd-fg-subtle);
+    font-style: italic;
+  }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sd-space-5);
+  }
+  @media (max-width: 900px) {
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+
+  .tab-row { display: flex; gap: 6px; background: var(--sd-surface-2); border-radius: var(--sd-radius-pill); padding: 3px; width: fit-content; }
+  .tab-btn {
+    border: none; background: transparent; color: var(--sd-fg-muted);
+    font-size: var(--sd-text-sm); font-weight: 600;
+    padding: 5px 14px; border-radius: var(--sd-radius-pill);
+    cursor: pointer; transition: background var(--sd-dur-fast) var(--sd-ease), color var(--sd-dur-fast) var(--sd-ease);
+  }
+  .tab-btn.active { background: var(--sd-brand); color: var(--sd-brand-fg); }
+
+  .chart-area { margin-top: var(--sd-space-4); display: flex; align-items: flex-end; gap: 6px; height: 160px; padding: 0 4px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar { width: 100%; max-width: 28px; border-radius: 4px 4px 0 0; }
+  .bar-label { font-size: 10px; color: var(--sd-fg-subtle); }
+  .bar-value { font-size: 10px; color: var(--sd-fg-muted); font-weight: 600; }
+</style>
+</head>
+<body>
+
+  <header class="dash-header">
+    <h1>🎫 Tickets Dashboard</h1>
+    <div class="dash-header-right">
+      <span class="dash-updated">Last updated: Today, 09:42</span>
+      <span class="pill pill-cached"><span class="pill-dot"></span>Cached</span>
+    </div>
+  </header>
+
+  <main class="dash-main">
+
+    <!-- AI Insights card -->
+    <section class="card">
+      <div class="card-title-row">
+        <h2 class="card-title">🤖 AI Insights</h2>
+        <span class="pill pill-fresh"><span class="pill-dot"></span>Freshly generated</span>
+      </div>
+
+      <p class="ai-summary">
+        Ticket volume is up 18% week-over-week, driven mostly by "Open" and "Waiting" statuses.
+        Action items are clearing at a steady pace, but two patterns stand out below. Overall the
+        team is keeping up with demand, though the password-reset pattern is worth a closer look.
+      </p>
+
+      <h3 class="problems-title">Recurring Problems</h3>
+      <div class="problem-list">
+
+        <div class="problem-item">
+          <div class="problem-head">
+            <div class="problem-desc">23 tickets in the last 7 days are password-reset requests for the VPN portal, all submitted between 8–9am.</div>
+            <span class="pill confidence-badge confidence-high">82% confidence</span>
+          </div>
+          <div class="fix-block">
+            <span class="fix-label">Suggested fix:</span>
+            The VPN portal's session timeout (currently 8h) is shorter than a typical overnight gap — most resets happen right after the morning login wave. Extending the timeout to 16h or enabling "remember this device" would likely eliminate most of these tickets.
+          </div>
+        </div>
+
+        <div class="problem-item">
+          <div class="problem-head">
+            <div class="problem-desc">A cluster of 9 "Network" tickets mention slow file-share access, mostly from one office location.</div>
+            <span class="pill confidence-badge confidence-low">45% confidence</span>
+          </div>
+          <div class="flag-block">
+            Not enough certainty to suggest a fix — flagged for review.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="charts-grid">
+
+      <div class="card">
+        <div class="card-title-row">
+          <h2 class="card-title">Tickets Created</h2>
+        </div>
+        <div class="tab-row">
+          <button class="tab-btn active">Day</button>
+          <button class="tab-btn">Week</button>
+          <button class="tab-btn">Month</button>
+        </div>
+        <div class="chart-area">
+          <div class="bar-col"><span class="bar-value">2</span><div class="bar" style="height:20%;background:var(--status-open-dot)"></div><span class="bar-label">00h</span></div>
+          <div class="bar-col"><span class="bar-value">1</span><div class="bar" style="height:10%;background:var(--status-open-dot)"></div><span class="bar-label">04h</span></div>
+          <div class="bar-col"><span class="bar-value">5</span><div class="bar" style="height:50%;background:var(--status-open-dot)"></div><span class="bar-label">08h</span></div>
+          <div class="bar-col"><span class="bar-value">9</span><div class="bar" style="height:90%;background:var(--status-new-dot)"></div><span class="bar-label">12h</span></div>
+          <div class="bar-col"><span class="bar-value">6</span><div class="bar" style="height:60%;background:var(--status-open-dot)"></div><span class="bar-label">16h</span></div>
+          <div class="bar-col"><span class="bar-value">3</span><div class="bar" style="height:30%;background:var(--status-open-dot)"></div><span class="bar-label">20h</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title-row">
+          <h2 class="card-title">Action Items Created</h2>
+        </div>
+        <div class="tab-row">
+          <button class="tab-btn active">Day</button>
+          <button class="tab-btn">Week</button>
+          <button class="tab-btn">Month</button>
+        </div>
+        <div class="chart-area">
+          <div class="bar-col"><span class="bar-value">1</span><div class="bar" style="height:14%;background:var(--status-in-progress-dot)"></div><span class="bar-label">00h</span></div>
+          <div class="bar-col"><span class="bar-value">0</span><div class="bar" style="height:3%;background:var(--status-in-progress-dot)"></div><span class="bar-label">04h</span></div>
+          <div class="bar-col"><span class="bar-value">4</span><div class="bar" style="height:45%;background:var(--status-in-progress-dot)"></div><span class="bar-label">08h</span></div>
+          <div class="bar-col"><span class="bar-value">7</span><div class="bar" style="height:80%;background:var(--status-waiting-dot)"></div><span class="bar-label">12h</span></div>
+          <div class="bar-col"><span class="bar-value">5</span><div class="bar" style="height:55%;background:var(--status-in-progress-dot)"></div><span class="bar-label">16h</span></div>
+          <div class="bar-col"><span class="bar-value">2</span><div class="bar" style="height:22%;background:var(--status-in-progress-dot)"></div><span class="bar-label">20h</span></div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+</body>
+</html>
