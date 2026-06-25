@@ -154,6 +154,38 @@
   color: #6ee7b7;
 }
 
+.te-clone-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: rgba(148,163,184,0.12);
+  border: 1px solid rgba(148,163,184,0.35);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.te-clone-btn:hover:not(:disabled) {
+  background: rgba(148,163,184,0.2);
+  border-color: rgba(148,163,184,0.55);
+  color: #e2e8f0;
+}
+
+.te-clone-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.te-clone-error {
+  font-size: 0.75rem;
+  color: #fca5a5;
+}
+
 .te-consult-btn {
   display: flex;
   align-items: center;

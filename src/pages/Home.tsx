@@ -145,6 +145,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
             ticketId={editTicketId}
             user={user}
             onBack={canManageTickets ? goToTicketList : goToMyTickets}
+            onCloned={goToEditTicket}
           />
         )}
 

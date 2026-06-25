@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Sparkles, AlertCircle, RefreshCw, MessageSquare, Link2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, AlertCircle, RefreshCw, MessageSquare, Link2, Copy } from 'lucide-react';
 import api from '../../api';
 import { TicketFormRenderer } from '../../components/TicketFormRenderer/TicketFormRenderer';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
@@ -18,6 +18,7 @@ interface Props {
   ticketId: number;
   user: any;
   onBack: () => void;
+  onCloned?: (newTicketId: number) => void;
 }
 
 interface PresenceUser {
@@ -26,7 +27,7 @@ interface PresenceUser {
   expiresAt: number;
 }
 
-export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
+export const TicketEditPage = ({ ticketId, user, onBack, onCloned }: Props) => {
   const { t } = useTranslation();
 
   const [ticket, setTicket]         = useState<TicketDetail | null>(null);
@@ -44,6 +45,8 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
   const [linkCopied, setLinkCopied]       = useState(false);
   const [solutionSavedCount, setSolutionSavedCount] = useState(0);
   const [saveCount, setSaveCount] = useState(0);
+  const [cloning, setCloning]       = useState(false);
+  const [cloneError, setCloneError] = useState(false);
 
   const autoSaveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presencePinger = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -251,6 +254,21 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
     onBack();
   }, [save, onBack]);
 
+  const handleClone = async () => {
+    setCloning(true);
+    setCloneError(false);
+    try {
+      const suffix = t('ticket_clone_copy_suffix', { defaultValue: '(Copy)' });
+      const title = ticket?.title ? `${ticket.title} ${suffix}` : undefined;
+      const { data } = await api.post(`/tickets/${ticketId}/clone`, { title });
+      onCloned ? onCloned(data.id) : onBack();
+    } catch {
+      setCloneError(true);
+    } finally {
+      setCloning(false);
+    }
+  };
+
   const isAdmin = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
 
   if (loading) {
@@ -302,6 +320,20 @@ export const TicketEditPage = ({ ticketId, user, onBack }: Props) => {
           )}
           {!isDirty && syncedToast && (
             <span className="te-synced-toast">✓ {t('ticket_synced_toast')}</span>
+          )}
+          {/* Clone ticket */}
+          <button
+            className="te-clone-btn"
+            onClick={handleClone}
+            disabled={cloning || isDirty}
+            title={isDirty ? t('ticket_clone_disabled_dirty', { defaultValue: 'Save your changes first' }) : undefined}
+          >
+            <Copy size={14} /> {cloning ? '…' : t('ticket_clone_btn', { defaultValue: 'Clone Ticket' })}
+          </button>
+          {cloneError && (
+            <span className="te-clone-error">
+              {t('ticket_clone_error', { defaultValue: "Couldn't clone this ticket. Try again." })}
+            </span>
           )}
           {/* AI consult button — admins only */}
           {isAdmin && (
