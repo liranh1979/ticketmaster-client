@@ -129,18 +129,21 @@ export const FieldTranslationGrid = ({
       const merged = { ...translations, ...result.translations };
       markDirty(merged);
 
+      // Always persist what was translated — relying on the user noticing they still need to
+      // click Save after a "100% complete" progress bar is what caused translated fields to
+      // silently vanish on the next reload/re-run.
+      try {
+        await api.post('/field-definitions/translations/update', { lang: targetLang, translations: merged, type: translationType });
+        i18n.addResourceBundle(targetLang, 'translation', merged, true, true);
+        setIsDirty(false);
+        onDirtyChange(false);
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      } catch {
+        setSaveStatus('error');
+      }
+
       if (result.partial) {
-        // Save immediately whatever succeeded so a mid-run failure (rate limit, quota,
-        // network) doesn't throw away translated fields that were never persisted.
-        try {
-          await api.post('/field-definitions/translations/update', { lang: targetLang, translations: merged, type: translationType });
-          setIsDirty(false);
-          onDirtyChange(false);
-          setSaveStatus('success');
-          setTimeout(() => setSaveStatus('idle'), 3000);
-        } catch {
-          setSaveStatus('error');
-        }
         alert(`Translation stopped early: ${result.error}\n\nSaved ${Object.keys(result.translations).length} of ${Object.keys(toTranslate).length} translated fields.`);
       }
     } catch (err) {

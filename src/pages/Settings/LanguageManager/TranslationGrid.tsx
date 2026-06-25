@@ -49,10 +49,13 @@ export const TranslationGrid = ({ targetLang }: TranslationGridProps) => {
             const merged = { ...translations, ...result.translations };
             setTranslations(merged);
 
+            // Always persist what was translated — relying on the user noticing they still
+            // need to click Save (below the grid) after a "100% complete" progress bar is what
+            // caused translated fields to silently vanish on the next reload/re-run.
+            await api.post('/languages/update', { lang: targetLang, translations: merged });
+            i18n.addResourceBundle(targetLang, 'translation', merged, true, true);
+
             if (result.partial) {
-                // Save immediately whatever succeeded so a mid-run failure (rate limit, quota,
-                // network) doesn't throw away translated fields that were never persisted.
-                await api.post('/languages/update', { lang: targetLang, translations: merged });
                 alert(`Translation stopped early: ${result.error}\n\nSaved ${Object.keys(result.translations).length} of ${Object.keys(sourceTexts).length} translated fields.`);
             }
         } catch (err) {
