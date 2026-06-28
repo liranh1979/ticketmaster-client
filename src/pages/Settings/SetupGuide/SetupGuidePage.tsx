@@ -10,6 +10,7 @@ interface SetupStatus {
   email_configured:    boolean;
   users_configured:    boolean;
   sso_configured:      boolean;
+  ssl_configured:      boolean;
 }
 
 interface SetupGuidePageProps {
@@ -215,6 +216,25 @@ export const SetupGuidePage = ({ onNavigate }: SetupGuidePageProps) => {
         ]} />
         <div className="sg-btn-row">
           <NavBtn label={t('setup_sso_btn')} onClick={() => onNavigate('users-groups-hub')} />
+        </div>
+      </StepCard>
+
+      {/* ── Step 6: SSL / TLS Certificate (optional) ─────────── */}
+      <StepCard
+        index={6} icon="🔒"
+        title={t('setup_ssl_title')}
+        configured={!!s?.ssl_configured}
+        optional
+        open={openStep === 5}
+        onToggle={() => toggle(5)}
+      >
+        <p className="sg-desc">{t('setup_ssl_desc')}</p>
+        <Steps items={[
+          t('setup_ssl_s1'), t('setup_ssl_s2'),
+          t('setup_ssl_s3'), t('setup_ssl_s4'),
+        ]} />
+        <div className="sg-btn-row">
+          <NavBtn label={t('setup_ssl_btn')} onClick={() => onNavigate('ssl-manager')} />
         </div>
       </StepCard>
 

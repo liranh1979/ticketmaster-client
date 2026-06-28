@@ -20,6 +20,7 @@ import { WorkflowFieldsManager } from './WorkflowFieldsManager/WorkflowFieldsMan
 import { SetupGuidePage } from './SetupGuide/SetupGuidePage';
 import { CompaniesPage } from './CompaniesManager/CompaniesPage';
 import { SystemSettingsPage } from './SystemSettings/SystemSettingsPage';
+import { SslCertPage } from './SslCert/SslCertPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -48,7 +49,8 @@ type ViewState =
   | 'groups'
   | 'ldap'
   | 'azure'
-  | 'workflow-fields';
+  | 'workflow-fields'
+  | 'ssl-manager';
 
 export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: SettingsPageProps) => {
   const { t } = useTranslation();
@@ -114,6 +116,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'setup-guide') return 'setup-guide';
     if (currentView === 'companies') return 'companies';
     if (currentView === 'system-settings') return 'system-settings';
+    if (currentView === 'ssl-manager') return 'ssl-manager';
     if (['selection','system-fields','custom-fields','group-custom-fields',
          'ticket-custom-fields','labels-management','workflow-fields'].includes(currentView)) return 'fields';
     if (currentView === 'tickets-templates') return 'templates';
@@ -165,6 +168,13 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
             <div className="settings-card" onClick={() => setCurrentView('system-settings')}>
               <div className="settings-icon-box"><div className="ai-icon-placeholder">⚙️</div></div>
               <span className="settings-text">{t('system_settings_card_label')}</span>
+            </div>
+          )}
+
+          {isSuperAdminUser && (
+            <div className="settings-card" onClick={() => setCurrentView('ssl-manager')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🔒</div></div>
+              <span className="settings-text">{t('ssl_title')}</span>
             </div>
           )}
 
@@ -221,6 +231,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     }
     if (currentView === 'companies') return <CompaniesPage />;
     if (currentView === 'system-settings') return <SystemSettingsPage />;
+    if (currentView === 'ssl-manager') return <SslCertPage />;
     if (currentView === 'tickets-templates') return <TicketsTemplatesPage />;
     if (currentView === 'ai-manager') return <AIManager />;
     if (currentView === 'email-manager') return <EmailManager />;
@@ -317,6 +328,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
         {isSuperAdminUser && navBtn('setup-guide', t('setup_guide_card_label'),  () => setCurrentView('setup-guide'))}
         {isSuperAdminUser && navBtn('companies',   t('companies_settings_card'), () => setCurrentView('companies'))}
         {isSuperAdminUser && navBtn('system-settings', t('system_settings_card_label'), () => setCurrentView('system-settings'))}
+        {isSuperAdminUser && navBtn('ssl-manager', t('ssl_title'), () => setCurrentView('ssl-manager'))}
       </aside>
 
       <div className="stg-content">
