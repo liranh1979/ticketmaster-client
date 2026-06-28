@@ -12,6 +12,7 @@ import { MyTicketsPage } from './EndUser/MyTicketsPage';
 import { MyWorkflowItemsPage } from './Workflow/MyWorkflowItemsPage';
 import { hasPermission, isSuperAdmin, PERMISSIONS } from '../utils/permissions';
 import { TicketsDashboard } from './Dashboards/TicketsDashboard/TicketsDashboard';
+import { AboutModal } from '../components/AboutModal/AboutModal';
 import api from '../api';
 
 interface HomeProps {
@@ -34,6 +35,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
   const [settingsInitialView, setSettingsInitialView] = useState<string>('menu');
   const [ticketCount, setTicketCount] = useState<number | undefined>(undefined);
   const [hasMoreTickets, setHasMoreTickets] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   const canManageTickets = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
   const isEndUserOnly = !isSuperAdmin(user) && !(user?.effective_permissions?.length);
@@ -94,6 +96,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
         onServiceDesk={goToTicketList}
         onMyTasks={goToMyTasks}
         onSettings={() => setCurrentView('settings')}
+        onAbout={() => setShowAbout(true)}
         ticketCount={ticketCount}
         hasMoreTickets={hasMoreTickets}
       />
@@ -165,6 +168,8 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
           />
         )}
       </div>
+
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
     </div>
   );
 };

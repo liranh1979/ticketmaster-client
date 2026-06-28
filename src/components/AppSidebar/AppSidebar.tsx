@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Inbox, Plus, CheckSquare, Settings } from 'lucide-react';
+import { Inbox, Plus, CheckSquare, Settings, Info } from 'lucide-react';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import './AppSidebar.css';
 
@@ -12,6 +12,7 @@ interface Props {
   onServiceDesk: () => void;
   onMyTasks?: () => void;
   onSettings: () => void;
+  onAbout?: () => void;
   ticketCount?: number;
   hasMoreTickets?: boolean;
 }
@@ -23,6 +24,7 @@ export const AppSidebar = ({
   onServiceDesk,
   onMyTasks,
   onSettings,
+  onAbout,
   ticketCount,
   hasMoreTickets,
 }: Props) => {
@@ -76,6 +78,13 @@ export const AppSidebar = ({
           </button>
         </div>
       )}
+
+      <div className="sd-sidebar__about">
+        <button className="sd-sidebar__about-btn" onClick={onAbout}>
+          <Info size={13} strokeWidth={1.6} />
+          {t('about_btn')}
+        </button>
+      </div>
     </aside>
   );
 };

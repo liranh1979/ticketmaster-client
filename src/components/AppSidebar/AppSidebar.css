@@ -19,3 +19,27 @@
 .sd-new-ticket-btn:hover {
   background: var(--sd-brand-hover);
 }
+
+.sd-sidebar__about {
+  padding: 8px 12px 10px;
+}
+
+.sd-sidebar__about-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--sd-text-muted);
+  font: 400 var(--sd-text-xs)/1 var(--sd-font);
+  cursor: pointer;
+  padding: 5px 6px;
+  border-radius: var(--sd-radius-sm);
+  transition: color var(--sd-dur-fast) var(--sd-ease), background var(--sd-dur-fast) var(--sd-ease);
+}
+
+.sd-sidebar__about-btn:hover {
+  color: var(--sd-text-sub);
+  background: var(--sd-surface-3);
+}
