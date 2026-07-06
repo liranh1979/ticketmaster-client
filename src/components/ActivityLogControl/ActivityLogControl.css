@@ -353,6 +353,25 @@
   border: none;
 }
 
+/* ── Acceleration Rule Card ── */
+.alc-rule-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.alc-rule-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78125rem;
+  color: var(--sd-fg-muted);
+}
+
+.alc-rule-label strong {
+  color: var(--sd-fg);
+}
+
 .fu-card {
   position: relative;
   border-radius: 10px;

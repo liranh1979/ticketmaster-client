@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Search } from 'lucide-react';
+import { X, Search, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
 import { FieldUpdateCard } from './FieldUpdateCard';
@@ -97,6 +97,8 @@ export const ActivityFullScreenModal = ({ ticketId, ticketTitle, onClose }: Prop
       })
     : entries;
 
+  const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
   const getEntryContent = (e: ActivityEntry) => {
     if (e.changes?.body) return e.changes.body as string;
     if (e.changes?.solution) return `<p><strong>AI Solution:</strong> ${e.changes.solution}</p>`;
@@ -110,6 +112,20 @@ export const ActivityFullScreenModal = ({ ticketId, ticketTitle, onClose }: Prop
       return `<p>${names.length === 1 ? '1 file attached' : `${names.length} files attached`}:</p><ul>${items}</ul>`;
     }
     if (e.changes?.message) return `<p>${e.changes.message}</p>`;
+    if (e.operation === 'TICKET_CREATED' && e.activityType === 'system') {
+      const SOURCE_LABELS: Record<string, string> = {
+        admin:    t('activity_created_by_admin',    { defaultValue: 'Created by admin' }),
+        end_user: t('activity_created_by_end_user', { defaultValue: 'Submitted by end user' }),
+        manual:   t('activity_created_manually',    { defaultValue: 'Created manually' }),
+      };
+      const label = SOURCE_LABELS[String(e.changes?.source ?? 'manual')] ?? SOURCE_LABELS.manual;
+      const title = e.changes?.title ? String(e.changes.title) : '';
+      return `<p>${label}${title ? `: <strong>${escapeHtml(title)}</strong>` : ''}</p>`;
+    }
+    if (e.operation === 'TICKET_CLONED') {
+      const sourceId = e.changes?.sourceTicketId;
+      return `<p>${t('activity_cloned_from_ticket', { defaultValue: 'Cloned from ticket' })} <strong>#${sourceId}</strong></p>`;
+    }
     return `<p><em>${e.operation}</em></p>`;
   };
 
@@ -203,11 +219,19 @@ export const ActivityFullScreenModal = ({ ticketId, ticketTitle, onClose }: Prop
                           {formatDateTime(entry.createdAt)}
                         </span>
                       </div>
-                      <div className={`afm-entry-body${entry.operation === 'FIELD_UPDATE' ? ' afm-entry-body--bare' : ''}`}>
-                        {entry.operation === 'FIELD_UPDATE'
-                          ? <FieldUpdateCard changes={entry.changes} />
-                          : <RichTextEditor content={getEntryContent(entry)} editable={false} />
-                        }
+                      <div className={`afm-entry-body${entry.operation === 'FIELD_UPDATE' || entry.operation === 'ACCELERATION_APPLIED' ? ' afm-entry-body--bare' : ''}`}>
+                        {entry.operation === 'FIELD_UPDATE' ? (
+                          <FieldUpdateCard changes={entry.changes} />
+                        ) : entry.operation === 'ACCELERATION_APPLIED' ? (
+                          <div className="alc-rule-card">
+                            <span className="alc-rule-label">
+                              <Zap size={11} /> {t('activity_rule_applied', { defaultValue: 'Rule applied' })}: <strong>{String(entry.metadata?.ruleName ?? `#${entry.metadata?.ruleId}`)}</strong>
+                            </span>
+                            <FieldUpdateCard changes={entry.changes} />
+                          </div>
+                        ) : (
+                          <RichTextEditor content={getEntryContent(entry)} editable={false} />
+                        )}
                       </div>
                     </div>
                   </div>
