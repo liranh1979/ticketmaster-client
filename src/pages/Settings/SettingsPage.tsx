@@ -21,6 +21,7 @@ import { SetupGuidePage } from './SetupGuide/SetupGuidePage';
 import { CompaniesPage } from './CompaniesManager/CompaniesPage';
 import { SystemSettingsPage } from './SystemSettings/SystemSettingsPage';
 import { SslCertPage } from './SslCert/SslCertPage';
+import { AccelerationRulesPage } from './AccelerationRules/AccelerationRulesPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -50,7 +51,8 @@ type ViewState =
   | 'ldap'
   | 'azure'
   | 'workflow-fields'
-  | 'ssl-manager';
+  | 'ssl-manager'
+  | 'acceleration-rules';
 
 export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: SettingsPageProps) => {
   const { t } = useTranslation();
@@ -109,6 +111,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   const canAi             = hasPermission(user, PERMISSIONS.MANAGE_AI);
   const canEmail          = hasPermission(user, PERMISSIONS.MANAGE_EMAIL);
   const canNotifications  = hasPermission(user, PERMISSIONS.MANAGE_NOTIFICATIONS);
+  const canAcceleration   = hasPermission(user, PERMISSIONS.TICKET_MANAGER);
 
   // ── Active sidebar group ─────────────────────────────────────────────────
   const activeGroup = (() => {
@@ -124,6 +127,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'email-manager') return 'email';
     if (currentView === 'notification-manager') return 'notifications';
     if (['users-groups-hub','users','groups','ldap','azure'].includes(currentView)) return 'users-groups';
+    if (currentView === 'acceleration-rules') return 'acceleration-rules';
     return '';
   })();
 
@@ -141,7 +145,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   const renderContent = () => {
     // Settings overview (card grid)
     if (currentView === 'menu') {
-      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications;
+      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications || canAcceleration;
       return (
         <div className="settings-grid">
           {!hasAnyAccess && (
@@ -221,6 +225,13 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
               <span className="settings-text">{t('settings_notification_manager', { defaultValue: 'Notifications' })}</span>
             </div>
           )}
+
+          {canAcceleration && (
+            <div className="settings-card" onClick={() => setCurrentView('acceleration-rules')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">⚡</div></div>
+              <span className="settings-text">{t('acceleration_card_label')}</span>
+            </div>
+          )}
         </div>
       );
     }
@@ -236,6 +247,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'ai-manager') return <AIManager />;
     if (currentView === 'email-manager') return <EmailManager />;
     if (currentView === 'notification-manager') return <NotificationManager />;
+    if (currentView === 'acceleration-rules') return <AccelerationRulesPage />;
     if (currentView === 'selection') return <FieldEntityList onSelectEntity={handleEntitySelection} />;
     if (currentView === 'users-groups-hub') return <UsersGroupsHub user={user} onSelect={(entity) => setCurrentView(entity)} />;
 
@@ -323,6 +335,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
         {canAi          && navBtn('ai',            t('settings_ai_manager'),                              () => setCurrentView('ai-manager'))}
         {canEmail       && navBtn('email',         t('settings_email_manager'),                           () => setCurrentView('email-manager'))}
         {canNotifications && navBtn('notifications', t('settings_notification_manager', { defaultValue: 'Notifications' }), () => setCurrentView('notification-manager'))}
+        {canAcceleration  && navBtn('acceleration-rules', t('acceleration_nav_label'), () => setCurrentView('acceleration-rules'))}
 
         {isSuperAdminUser && <div className="stg-nav__divider" />}
         {isSuperAdminUser && navBtn('setup-guide', t('setup_guide_card_label'),  () => setCurrentView('setup-guide'))}

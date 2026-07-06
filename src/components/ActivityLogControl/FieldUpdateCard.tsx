@@ -10,6 +10,7 @@ const FIELD_LABELS: Record<string, string> = {
   responsibleGroupId:'Resp. Group',
   ticketData:        'Custom Fields',
   labels:            'Labels',
+  acceleration:      'Acceleration',
 };
 
 const STATUS_CFG: Record<string, { bg: string; color: string; dot: string; label: string }> = {

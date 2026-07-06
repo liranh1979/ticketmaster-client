@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PlusCircle, MessageSquare, Maximize2, Send } from 'lucide-react';
+import { PlusCircle, MessageSquare, Maximize2, Send, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
 import { ActivityFullScreenModal } from './ActivityFullScreenModal';
@@ -164,10 +164,13 @@ export const ActivityLogControl = ({
   };
 
   const getAuthorLabel = (e: ActivityEntry) => {
+    if (e.actorId === 0) return t('acceleration_system_actor', { defaultValue: 'System' });
     if (e.actorDisplayName) return e.actorDisplayName;
     if (e.actorId === 1) return 'System';
     return `User #${e.actorId}`;
   };
+
+  const isSystemEntry = (e: ActivityEntry) => e.actorId === 0;
 
   const getEntryContent = (e: ActivityEntry) => {
     if (e.changes?.body) return e.changes.body as string;
@@ -285,8 +288,8 @@ export const ActivityLogControl = ({
             {displayedEntries.map((entry, idx) => (
               <div key={entry.id} className={`alc-entry ${idx === displayedEntries.length - 1 && !hasMore ? 'last' : ''}`}>
                 <div className="alc-entry-left">
-                  <div className="alc-avatar" style={{ background: TYPE_COLORS[entry.activityType] ?? '#3b82f6' }}>
-                    {getAuthorLabel(entry).slice(0, 2).toUpperCase()}
+                  <div className="alc-avatar" style={{ background: isSystemEntry(entry) ? 'var(--sd-brand, oklch(60% 0.22 250))' : (TYPE_COLORS[entry.activityType] ?? '#3b82f6') }}>
+                    {isSystemEntry(entry) ? <Zap size={12} /> : getAuthorLabel(entry).slice(0, 2).toUpperCase()}
                   </div>
                   {(idx < displayedEntries.length - 1 || hasMore) && <div className="alc-connector" />}
                 </div>

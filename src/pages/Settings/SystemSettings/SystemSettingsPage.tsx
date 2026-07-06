@@ -42,6 +42,8 @@ export const SystemSettingsPage = () => {
   const [translating, setTranslating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<BulkTranslateProgress | null>(null);
 
+  const [accelerationInterval, setAccelerationInterval] = useState(5);
+
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -60,6 +62,9 @@ export const SystemSettingsPage = () => {
     setLanguageCode(settings.defaultLanguageCode);
     setTimezone(settings.defaultTimezone);
     setTimeFormat(settings.defaultTimeFormat);
+    if ((settings as any).accelerationCronInterval != null) {
+      setAccelerationInterval((settings as any).accelerationCronInterval);
+    }
   }, [settings.loading, settings.defaultLanguageCode, settings.defaultTimezone, settings.defaultTimeFormat]);
 
   const checkMissing = async (lang: string) => {
@@ -127,6 +132,7 @@ export const SystemSettingsPage = () => {
         defaultLanguageCode: languageCode,
         defaultTimezone: timezone,
         defaultTimeFormat: timeFormat,
+        accelerationCronInterval: accelerationInterval,
       });
       await settings.refresh();
       setSaved(true);
@@ -236,6 +242,19 @@ export const SystemSettingsPage = () => {
             {t('time_format_12h')}
           </button>
         </div>
+      </div>
+
+      <div className="ss-card">
+        <label className="ss-label">{t('acceleration_interval_label')}</label>
+        <input
+          type="number"
+          min="0"
+          className="ss-select"
+          style={{ maxWidth: 100 }}
+          value={accelerationInterval}
+          onChange={e => setAccelerationInterval(Math.max(0, +e.target.value))}
+        />
+        <p className="ss-hint">{t('acceleration_interval_hint')}</p>
       </div>
 
       <div className="ss-card">
