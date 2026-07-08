@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Search, Plus, Trash2, RefreshCw, Tag, UserCheck, ChevronDown, X, SlidersHorizontal, Bell,
@@ -19,7 +20,7 @@ interface Props {
 }
 
 interface TemplateSummary { id: number; name: string; }
-interface UserOption { userId: number; display_name: string; }
+interface UserOption { user_id: number; display_name: string; }
 
 type BulkAction = 'status' | 'responsible' | 'add-label' | 'remove-label' | null;
 type QuickFilter = 'all' | 'mine' | 'unassigned';
@@ -41,6 +42,11 @@ const STATUS_CHIPS: { key: string; label: string }[] = [
   { key: 'closed', label: 'Closed' },
 ];
 
+const PRIORITY_OPTIONS = ['critical', 'high', 'medium', 'low'];
+const PRIORITY_LABELS: Record<string, string> = {
+  critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low',
+};
+
 function initials(name: string = '') {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
@@ -51,6 +57,74 @@ function statusPillClass(status: string) {
   return `sd-pill sd-pill--${status.replace(/_/g, '-')}`;
 }
 
+function priorityPillClass(priority: string) {
+  return `sd-pill sd-pill--${priority}`;
+}
+
+// Toolbar chip + dropdown panel, portaled to <body>.
+//
+// .sd-toolbar has overflow-x:auto for horizontal chip scrolling; per the CSS
+// overflow spec, that forces overflow-y to auto too (a "visible" axis paired
+// with a non-"visible" one is computed as auto), so a plain absolutely-positioned
+// dropdown gets clipped before it can render below the chip row. Portaling to
+// <body> with position:fixed (computed from the trigger's bounding rect) escapes
+// that clipping entirely.
+//
+// The outside-click-to-close check must test both the trigger's ref AND the
+// portaled panel's ref — the panel is a React-tree descendant of this component
+// but NOT a DOM descendant of the trigger, so checking only the trigger ref
+// makes every click inside the panel look "outside" and closes it on mousedown,
+// before the click on an option can register.
+function ToolbarDropdown({ open, onClose, trigger, children }: {
+  open: boolean;
+  onClose: () => void;
+  trigger: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const panelRef  = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const updatePos = () => {
+      const rect = anchorRef.current?.getBoundingClientRect();
+      if (rect) setPos({ top: rect.bottom + 6, left: rect.left });
+    };
+    updatePos();
+    const onDocMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (anchorRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      onClose();
+    };
+    document.addEventListener('mousedown', onDocMouseDown);
+    window.addEventListener('resize', updatePos);
+    window.addEventListener('scroll', updatePos, true);
+    return () => {
+      document.removeEventListener('mousedown', onDocMouseDown);
+      window.removeEventListener('resize', updatePos);
+      window.removeEventListener('scroll', updatePos, true);
+    };
+  }, [open, onClose]);
+
+  return (
+    <div className="sd-toolbar-group" ref={anchorRef}>
+      {trigger}
+      {open && pos && createPortal(
+        <div
+          ref={panelRef}
+          className="sd-toolbar-dropdown"
+          style={{ position: 'fixed', top: pos.top, left: pos.left }}
+        >
+          {children}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 export const ServiceDeskPage = ({
   user,
   onNewTicket,
@@ -59,7 +133,7 @@ export const ServiceDeskPage = ({
 }: Props) => {
   const { t } = useTranslation();
 
-  // ── Data state (identical to TicketListPage) ──────────────────────────
+  // ── Data state ──────────────────────────────────────────────────────
   const [tickets, setTickets]           = useState<TicketListItem[]>([]);
   const [labels, setLabels]             = useState<TicketLabel[]>([]);
   const [templates, setTemplates]       = useState<TemplateSummary[]>([]);
@@ -70,6 +144,8 @@ export const ServiceDeskPage = ({
   const [hasMore, setHasMore]           = useState(true);
   const [search, setSearch]             = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
   const [templateId]                    = useState('');
   const [selected, setSelected]         = useState<Set<number>>(new Set());
   const [bulkAction, setBulkAction]     = useState<BulkAction>(null);
@@ -109,7 +185,7 @@ export const ServiceDeskPage = ({
             const td = r.data;
             setTickets(prev2 => prev2.map(t =>
               t.id === event.ticketId
-                ? { ...t, title: td.title, status: td.status, updatedAt: td.updatedAt,
+                ? { ...t, title: td.title, status: td.status, priority: td.priority, updatedAt: td.updatedAt,
                     labels: td.labels, responsibleUserId: td.responsibleUserId,
                     responsibleUserDisplayName: td.responsibleUserDisplayName, version: td.version }
                 : t
@@ -126,11 +202,12 @@ export const ServiceDeskPage = ({
   const buildQueryParams = useCallback((cursor: number | null) => {
     const params: Record<string, any> = { size: PAGE_SIZE };
     if (cursor)       params.cursor     = cursor;
-    if (search)       params.search     = search;
-    if (statusFilter) params.status     = statusFilter;
-    if (templateId)   params.templateId = templateId;
+    if (search)         params.search     = search;
+    if (statusFilter)   params.status     = statusFilter;
+    if (priorityFilter) params.priority   = priorityFilter;
+    if (templateId)     params.templateId = templateId;
     return params;
-  }, [search, statusFilter, templateId]);
+  }, [search, statusFilter, priorityFilter, templateId]);
 
   const loadTickets = useCallback(async (reset = false) => {
     const cur = reset ? null : cursorRef.current;
@@ -151,7 +228,7 @@ export const ServiceDeskPage = ({
     cursorRef.current = null;
     setHasMore(true);
     loadTickets(true);
-  }, [search, statusFilter, templateId]);
+  }, [search, statusFilter, priorityFilter, templateId]);
 
   const handleTableScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
@@ -201,7 +278,7 @@ export const ServiceDeskPage = ({
       setSelected(new Set(filteredTickets.map(t => t.id)));
   };
 
-  // ── Bulk actions (identical logic to TicketListPage) ──────────────────
+  // ── Bulk actions ────────────────────────────────────────────────────
   const closeBulk = () => setBulkAction(null);
 
   const executeBulk = async (
@@ -302,80 +379,84 @@ export const ServiceDeskPage = ({
             <span className="sd-bulk-count">{selected.size} selected</span>
 
             {/* Assign */}
-            <div className="sd-toolbar-group">
-              <button className={`sd-chip${bulkAction === 'responsible' ? ' sd-chip--active' : ''}`}
-                onClick={() => setBulkAction(bulkAction === 'responsible' ? null : 'responsible')}>
-                <UserCheck size={12} /> Assign… <ChevronDown size={11} />
-              </button>
-              {bulkAction === 'responsible' && (
-                <div className="sd-toolbar-dropdown">
-                  {managers.map(m => (
-                    <button key={m.userId}
-                      onClick={() => executeBulk('responsible', undefined, undefined, m.userId)}>
-                      {m.display_name}
-                    </button>
-                  ))}
-                  {managers.length === 0 && (
-                    <span className="sd-toolbar-dropdown-empty">No managers found</span>
-                  )}
-                </div>
+            <ToolbarDropdown
+              open={bulkAction === 'responsible'}
+              onClose={closeBulk}
+              trigger={
+                <button className={`sd-chip${bulkAction === 'responsible' ? ' sd-chip--active' : ''}`}
+                  onClick={() => setBulkAction(bulkAction === 'responsible' ? null : 'responsible')}>
+                  <UserCheck size={12} /> Assign… <ChevronDown size={11} />
+                </button>
+              }
+            >
+              {managers.map(m => (
+                <button key={m.user_id}
+                  onClick={() => executeBulk('responsible', undefined, undefined, m.user_id)}>
+                  {m.display_name}
+                </button>
+              ))}
+              {managers.length === 0 && (
+                <span key="empty" className="sd-toolbar-dropdown-empty">No managers found</span>
               )}
-            </div>
+            </ToolbarDropdown>
 
             {/* Set status */}
-            <div className="sd-toolbar-group">
-              <button className={`sd-chip${bulkAction === 'status' ? ' sd-chip--active' : ''}`}
-                onClick={() => setBulkAction(bulkAction === 'status' ? null : 'status')}>
-                <RefreshCw size={12} /> Set status <ChevronDown size={11} />
-              </button>
-              {bulkAction === 'status' && (
-                <div className="sd-toolbar-dropdown">
-                  {STATUS_OPTIONS.map(s => (
-                    <button key={s} onClick={() => executeBulk('status', s)}>
-                      <span className={statusPillClass(s)} style={{ height: 18, fontSize: 11, padding: '0 8px' }}>
-                        <span>{STATUS_LABELS[s] ?? s}</span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ToolbarDropdown
+              open={bulkAction === 'status'}
+              onClose={closeBulk}
+              trigger={
+                <button className={`sd-chip${bulkAction === 'status' ? ' sd-chip--active' : ''}`}
+                  onClick={() => setBulkAction(bulkAction === 'status' ? null : 'status')}>
+                  <RefreshCw size={12} /> Set status <ChevronDown size={11} />
+                </button>
+              }
+            >
+              {STATUS_OPTIONS.map(s => (
+                <button key={s} onClick={() => executeBulk('status', s)}>
+                  <span className={statusPillClass(s)} style={{ height: 18, fontSize: 11, padding: '0 8px' }}>
+                    <span>{STATUS_LABELS[s] ?? s}</span>
+                  </span>
+                </button>
+              ))}
+            </ToolbarDropdown>
 
             {/* Add label */}
-            <div className="sd-toolbar-group">
-              <button className={`sd-chip${bulkAction === 'add-label' ? ' sd-chip--active' : ''}`}
-                onClick={() => setBulkAction(bulkAction === 'add-label' ? null : 'add-label')}>
-                <Tag size={12} /> Add label <ChevronDown size={11} />
-              </button>
-              {bulkAction === 'add-label' && (
-                <div className="sd-toolbar-dropdown">
-                  {labels.map(l => (
-                    <button key={l.id} onClick={() => executeBulk('add-label', undefined, l.id)}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, flexShrink: 0 }} />
-                      {l.labelKey}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ToolbarDropdown
+              open={bulkAction === 'add-label'}
+              onClose={closeBulk}
+              trigger={
+                <button className={`sd-chip${bulkAction === 'add-label' ? ' sd-chip--active' : ''}`}
+                  onClick={() => setBulkAction(bulkAction === 'add-label' ? null : 'add-label')}>
+                  <Tag size={12} /> Add label <ChevronDown size={11} />
+                </button>
+              }
+            >
+              {labels.map(l => (
+                <button key={l.id} onClick={() => executeBulk('add-label', undefined, l.id)}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, flexShrink: 0 }} />
+                  {l.labelKey}
+                </button>
+              ))}
+            </ToolbarDropdown>
 
             {/* Remove label */}
-            <div className="sd-toolbar-group">
-              <button className={`sd-chip${bulkAction === 'remove-label' ? ' sd-chip--active' : ''}`}
-                onClick={() => setBulkAction(bulkAction === 'remove-label' ? null : 'remove-label')}>
-                <Tag size={12} /> Remove label <ChevronDown size={11} />
-              </button>
-              {bulkAction === 'remove-label' && (
-                <div className="sd-toolbar-dropdown">
-                  {labels.map(l => (
-                    <button key={l.id} onClick={() => executeBulk('remove-label', undefined, l.id)}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, flexShrink: 0 }} />
-                      {l.labelKey}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ToolbarDropdown
+              open={bulkAction === 'remove-label'}
+              onClose={closeBulk}
+              trigger={
+                <button className={`sd-chip${bulkAction === 'remove-label' ? ' sd-chip--active' : ''}`}
+                  onClick={() => setBulkAction(bulkAction === 'remove-label' ? null : 'remove-label')}>
+                  <Tag size={12} /> Remove label <ChevronDown size={11} />
+                </button>
+              }
+            >
+              {labels.map(l => (
+                <button key={l.id} onClick={() => executeBulk('remove-label', undefined, l.id)}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, flexShrink: 0 }} />
+                  {l.labelKey}
+                </button>
+              ))}
+            </ToolbarDropdown>
 
             {/* Delete */}
             <button className="sd-chip sd-chip--danger" onClick={executeBulkDelete}>
@@ -411,6 +492,30 @@ export const ServiceDeskPage = ({
             >
               Unassigned
             </button>
+            <div className="sd-toolbar__sep" />
+            <ToolbarDropdown
+              open={priorityDropdownOpen}
+              onClose={() => setPriorityDropdownOpen(false)}
+              trigger={
+                <button
+                  className={`sd-chip${priorityFilter ? ' sd-chip--active' : ''}`}
+                  onClick={() => setPriorityDropdownOpen(o => !o)}
+                >
+                  {priorityFilter ? `Priority: ${PRIORITY_LABELS[priorityFilter]}` : 'Priority'} <ChevronDown size={11} />
+                </button>
+              }
+            >
+              <button key="any" onClick={() => { setPriorityFilter(''); setPriorityDropdownOpen(false); }}>
+                Any priority
+              </button>
+              {PRIORITY_OPTIONS.map(p => (
+                <button key={p} onClick={() => { setPriorityFilter(p); setPriorityDropdownOpen(false); }}>
+                  <span className={priorityPillClass(p)} style={{ height: 18, fontSize: 11, padding: '0 8px' }}>
+                    <span>{PRIORITY_LABELS[p]}</span>
+                  </span>
+                </button>
+              ))}
+            </ToolbarDropdown>
             <div className="sd-toolbar__spacer" />
             {templates.length > 0 && (
               <div className="sd-toolbar-group">
@@ -434,6 +539,7 @@ export const ServiceDeskPage = ({
               <colgroup>
                 <col className="sd-col-check" />
                 <col className="sd-col-id" />
+                <col className="sd-col-priority" />
                 <col className="sd-col-title" />
                 <col className="sd-col-status" />
                 <col className="sd-col-labels" />
@@ -452,6 +558,7 @@ export const ServiceDeskPage = ({
                     />
                   </th>
                   <th>ID</th>
+                  <th>Priority</th>
                   <th>Title</th>
                   <th>Status</th>
                   <th>Labels</th>
@@ -465,7 +572,7 @@ export const ServiceDeskPage = ({
               <tbody>
                 {filteredTickets.length === 0 && (
                   <tr>
-                    <td colSpan={7 + timerFields.length}>
+                    <td colSpan={8 + timerFields.length}>
                       <div className="sd-empty">No tickets found</div>
                     </td>
                   </tr>
@@ -490,6 +597,12 @@ export const ServiceDeskPage = ({
 
                     <td>
                       <span className="sd-cell-id">TT-{ticket.id}</span>
+                    </td>
+
+                    <td>
+                      <span className={priorityPillClass(ticket.priority)}>
+                        <span>{PRIORITY_LABELS[ticket.priority] ?? ticket.priority}</span>
+                      </span>
                     </td>
 
                     <td>

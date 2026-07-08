@@ -71,6 +71,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned }: Props) => {
         vals.title       = td.title;
         vals.description = td.description;
         vals.status      = td.status;
+        vals.priority    = td.priority;
         vals.labels      = td.labels.map((l: any) => l.id);
         // Seed request_user from top-level fields if not already in ticketData
         if (!vals.request_user && td.requestUserId) {
@@ -123,6 +124,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned }: Props) => {
               vals.title       = td.title;
               vals.description = td.description;
               vals.status      = td.status;
+              vals.priority    = td.priority;
               vals.labels      = td.labels.map((l: any) => l.id);
               if (!vals.request_user && td.requestUserId) {
                 vals.request_user = String(td.requestUserId);
@@ -203,6 +205,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned }: Props) => {
         title:               values.title,
         description:         values.description,
         status:              values.status,
+        priority:            values.priority,
         requestUserId:       values.request_user ? Number(values.request_user) : undefined,
         responsibleUserId:   values.responsible?.id ?? null,
         responsibleGroupId:  null,
@@ -233,6 +236,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned }: Props) => {
     merged.title       = conflict.title;
     merged.description = conflict.description;
     merged.status      = conflict.status;
+    merged.priority    = conflict.priority;
     merged.labels      = conflict.labels.map((l: any) => l.id);
 
     // Restore user's touched fields

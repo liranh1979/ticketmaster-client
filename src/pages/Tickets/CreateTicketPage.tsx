@@ -119,6 +119,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
         title:               values.title,
         description:         values.description ?? '',
         status:              values.status ?? 'new',
+        priority:            values.priority ?? 'medium',
         templateId:          selectedTemplate.id,
         templateVersionId:   selectedTemplate.currentVersionId,
         requestUserId:       values.request_user ? Number(values.request_user) : user?.red_id,

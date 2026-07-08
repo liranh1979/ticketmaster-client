@@ -59,6 +59,26 @@
   --status-rejected-fg:   oklch(0.95 0.06 25);
   --status-rejected-dot:  oklch(0.72 0.18 25);
 
+  /* Priority — Critical (red) */
+  --priority-critical-bg:  oklch(0.32 0.14 25);
+  --priority-critical-fg:  oklch(0.95 0.07 25);
+  --priority-critical-dot: oklch(0.72 0.19 25);
+
+  /* Priority — High (orange) */
+  --priority-high-bg:  oklch(0.34 0.13 55);
+  --priority-high-fg:  oklch(0.94 0.08 55);
+  --priority-high-dot: oklch(0.78 0.17 55);
+
+  /* Priority — Medium (amber) */
+  --priority-medium-bg:  oklch(0.34 0.11 95);
+  --priority-medium-fg:  oklch(0.94 0.07 95);
+  --priority-medium-dot: oklch(0.80 0.16 95);
+
+  /* Priority — Low (green) */
+  --priority-low-bg:  oklch(0.30 0.09 150);
+  --priority-low-fg:  oklch(0.94 0.07 150);
+  --priority-low-dot: oklch(0.75 0.16 150);
+
   /* Label dots (categorical) */
   --label-hardware:   oklch(0.78 0.14 95);
   --label-software:   oklch(0.72 0.13 200);

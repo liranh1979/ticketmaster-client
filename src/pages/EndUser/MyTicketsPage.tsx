@@ -2,11 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Plus, Search } from 'lucide-react';
 import api from '../../api';
-import { formatRelativeTime } from '../Tickets/ticketTypes';
+import { formatRelativeTime, priorityColor, PRIORITY_ICONS } from '../Tickets/ticketTypes';
 import './MyTicketsPage.css';
 
 interface TicketRow {
-  id: number; title: string; status: string; templateName?: string; updatedAt: string;
+  id: number; title: string; status: string; priority: string; templateName?: string; updatedAt: string;
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
@@ -120,6 +120,7 @@ export const MyTicketsPage = ({ onBack, onNewTicket, onViewTicket }: Props) => {
           <thead>
             <tr>
               <th style={{ width: 80 }}>ID</th>
+              <th style={{ width: 90 }}>Priority</th>
               <th>Title</th>
               <th style={{ width: 130 }}>Status</th>
               <th style={{ width: 120 }}>Updated</th>
@@ -128,9 +129,15 @@ export const MyTicketsPage = ({ onBack, onNewTicket, onViewTicket }: Props) => {
           <tbody>
             {tickets.map(ticket => {
               const sc = statusCol[ticket.status] ?? { bg: 'rgba(100,116,139,0.12)', text: '#94a3b8' };
+              const pc = priorityColor(ticket.priority);
               return (
                 <tr key={ticket.id} className="mtp-row" onClick={() => onViewTicket(ticket.id)}>
                   <td><span className="mtp-id">TT-{ticket.id}</span></td>
+                  <td>
+                    <span className="mtp-status-pill" style={{ background: pc.bg, color: pc.text }}>
+                      {PRIORITY_ICONS[ticket.priority] ?? ''} {ticket.priority?.replace(/^\w/, c => c.toUpperCase())}
+                    </span>
+                  </td>
                   <td>
                     <span className="mtp-ticket-title">{ticket.title}</span>
                     {ticket.templateName && (

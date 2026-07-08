@@ -17,6 +17,7 @@ const FIELD_BAR_COLORS: Record<string, string> = {
   title:        '#3b82f6',
   description:  '#8b5cf6',
   status:       '#f59e0b',
+  priority:     '#ef4444',
   request_user: '#3b82f6',
   responsible:  '#3b82f6',
   labels:       '#06b6d4',
@@ -41,6 +42,7 @@ const FIELD_TYPE_ICONS: Record<string, string> = {
 };
 
 const STATUS_OPTIONS = ['new', 'open', 'in_progress', 'waiting', 'resolved', 'closed'];
+const PRIORITY_OPTIONS = ['critical', 'high', 'medium', 'low'];
 
 interface Props {
   tabs: TemplateTab[];
@@ -227,7 +229,8 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin }: F
       if (field.fieldType === 'combobox') {
         const options = field.fieldOptions?.length
           ? field.fieldOptions
-          : field.fieldKey === 'status' ? STATUS_OPTIONS : [];
+          : field.fieldKey === 'status' ? STATUS_OPTIONS
+          : field.fieldKey === 'priority' ? PRIORITY_OPTIONS : [];
         return (
           <select
             className="tfr-select"
@@ -392,6 +395,13 @@ export const TicketFormRenderer = ({
 
   if (!activeTab) return null;
 
+  // Reuse the existing full/half width metadata to place short metadata fields
+  // (status, priority, assignee, …) in a sidebar rail, and content fields
+  // (title, description, attachments, …) in the main column — instead of
+  // stacking everything one-per-row, which wastes horizontal space on wide screens.
+  const mainFields = activeTab.fields.filter(f => f.width !== 'half');
+  const sideFields  = activeTab.fields.filter(f => f.width === 'half');
+
   return (
     <div className="tfr-root">
       {showTabs && (
@@ -407,17 +417,33 @@ export const TicketFormRenderer = ({
           ))}
         </div>
       )}
-      <div className="tfr-form">
-        <FieldCards
-          fields={activeTab.fields}
-          values={values}
-          onChange={onChange}
-          aiFilledFields={aiFilledFields}
-          readOnly={readOnly}
-          entityId={entityId}
-          isAdmin={isAdmin}
-          t={t}
-        />
+      <div className={`tfr-columns${sideFields.length === 0 ? ' tfr-columns-single' : ''}`}>
+        <div className="tfr-form tfr-main-col">
+          <FieldCards
+            fields={mainFields}
+            values={values}
+            onChange={onChange}
+            aiFilledFields={aiFilledFields}
+            readOnly={readOnly}
+            entityId={entityId}
+            isAdmin={isAdmin}
+            t={t}
+          />
+        </div>
+        {sideFields.length > 0 && (
+          <div className="tfr-form tfr-side-col">
+            <FieldCards
+              fields={sideFields}
+              values={values}
+              onChange={onChange}
+              aiFilledFields={aiFilledFields}
+              readOnly={readOnly}
+              entityId={entityId}
+              isAdmin={isAdmin}
+              t={t}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

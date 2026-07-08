@@ -9,6 +9,7 @@ export interface TicketListItem {
   id: number;
   title: string;
   status: string;
+  priority: string;
   templateId: number;
   templateVersionId: number;
   templateName: string;
@@ -29,6 +30,7 @@ export interface TicketDetail {
   title: string;
   description: string;
   status: string;
+  priority: string;
   templateId: number;
   templateVersionId: number;
   templateName: string;
@@ -125,6 +127,21 @@ export const STATUS_COLORS: Record<string, { bg: string; text: string; border: s
 
 export function statusColor(status: string) {
   return STATUS_COLORS[status] ?? STATUS_COLORS['new'];
+}
+
+export const PRIORITY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  critical: { bg: 'rgba(239,68,68,0.15)',  text: '#f87171', border: 'rgba(239,68,68,0.3)' },
+  high:     { bg: 'rgba(249,115,22,0.15)', text: '#fb923c', border: 'rgba(249,115,22,0.3)' },
+  medium:   { bg: 'rgba(234,179,8,0.15)',  text: '#facc15', border: 'rgba(234,179,8,0.3)' },
+  low:      { bg: 'rgba(34,197,94,0.15)',  text: '#4ade80', border: 'rgba(34,197,94,0.3)' },
+};
+
+export const PRIORITY_ICONS: Record<string, string> = {
+  critical: '🔴', high: '🟠', medium: '🟡', low: '🟢',
+};
+
+export function priorityColor(priority: string) {
+  return PRIORITY_COLORS[priority] ?? PRIORITY_COLORS['medium'];
 }
 
 export function formatRelativeTime(iso: string): string {

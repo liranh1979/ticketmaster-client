@@ -4,6 +4,7 @@ import { Pencil } from 'lucide-react';
 const FIELD_LABELS: Record<string, string> = {
   title:             'Title',
   status:            'Status',
+  priority:          'Priority',
   description:       'Description',
   requestUserId:     'Request User',
   responsibleUserId: 'Responsible',
@@ -22,6 +23,13 @@ const STATUS_CFG: Record<string, { bg: string; color: string; dot: string; label
   closed:      { bg: 'rgba(100,116,139,0.15)', color: '#94a3b8', dot: '#64748b', label: 'Closed' },
 };
 
+const PRIORITY_CFG: Record<string, { bg: string; color: string; dot: string; label: string }> = {
+  critical: { bg: 'rgba(239,68,68,0.15)',  color: '#f87171', dot: '#ef4444', label: 'Critical' },
+  high:     { bg: 'rgba(249,115,22,0.15)', color: '#fb923c', dot: '#f97316', label: 'High' },
+  medium:   { bg: 'rgba(234,179,8,0.15)',  color: '#facc15', dot: '#eab308', label: 'Medium' },
+  low:      { bg: 'rgba(34,197,94,0.15)',  color: '#4ade80', dot: '#22c55e', label: 'Low' },
+};
+
 const renderValue = (key: string, val: any, side: 'old' | 'new'): ReactNode => {
   if (val === null || val === undefined || val === '') {
     return <span className="fu-empty">none</span>;
@@ -30,6 +38,19 @@ const renderValue = (key: string, val: any, side: 'old' | 'new'): ReactNode => {
 
   if (key === 'status') {
     const cfg = STATUS_CFG[s] ?? { bg: 'rgba(100,116,139,0.15)', color: '#94a3b8', dot: '#64748b', label: s };
+    return (
+      <span
+        className={`fu-status${side === 'old' ? ' fu-status--old' : ''}`}
+        style={{ background: cfg.bg, color: cfg.color }}
+      >
+        <span className="fu-status-dot" style={{ background: cfg.dot }} />
+        {cfg.label}
+      </span>
+    );
+  }
+
+  if (key === 'priority') {
+    const cfg = PRIORITY_CFG[s] ?? { bg: 'rgba(100,116,139,0.15)', color: '#94a3b8', dot: '#64748b', label: s };
     return (
       <span
         className={`fu-status${side === 'old' ? ' fu-status--old' : ''}`}

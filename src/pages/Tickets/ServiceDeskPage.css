@@ -377,6 +377,7 @@
 /* Column widths */
 .sd-col-check    { width: 36px; }
 .sd-col-id       { width: 84px; }
+.sd-col-priority { width: 104px; }
 .sd-col-title    { width: auto; }
 .sd-col-status   { width: 128px; }
 .sd-col-labels   { width: 220px; }
@@ -439,6 +440,11 @@
 .sd-pill--resolved    { background: var(--status-resolved-bg);    color: var(--status-resolved-dot); }
 .sd-pill--closed      { background: var(--status-closed-bg);      color: var(--status-closed-dot); }
 .sd-pill--rejected    { background: var(--status-rejected-bg);    color: var(--status-rejected-dot); }
+
+.sd-pill--critical { background: var(--priority-critical-bg); color: var(--priority-critical-dot); }
+.sd-pill--high      { background: var(--priority-high-bg);     color: var(--priority-high-dot); }
+.sd-pill--medium    { background: var(--priority-medium-bg);   color: var(--priority-medium-dot); }
+.sd-pill--low        { background: var(--priority-low-bg);      color: var(--priority-low-dot); }
 
 /* Labels */
 .sd-labels { display: flex; gap: 5px; flex-wrap: nowrap; overflow: hidden; align-items: center; }
