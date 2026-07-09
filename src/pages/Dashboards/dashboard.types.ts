@@ -23,10 +23,40 @@ export interface DashboardAiReport {
   generatedAt: string;
 }
 
+export interface CsatImprovementPoint {
+  point: string;
+  evidence: string;
+}
+
+export interface CsatAiAnalysis {
+  summary: string;
+  improvementPoints: CsatImprovementPoint[];
+  cached: boolean;
+  generatedAt: string;
+}
+
+export interface CsatLowScoreTicket {
+  ticketId: number;
+  title: string;
+  agent: string;
+  score: number;
+  comment: string;
+}
+
+export interface CsatDashboard {
+  avgScore: number;
+  responseRate: number;
+  lowScorePercent: number;
+  distribution: Record<string, number>;
+  lowScoreTickets: CsatLowScoreTicket[];
+  aiAnalysis: CsatAiAnalysis;
+}
+
 export interface TicketsDashboardResponse {
   tickets: DashboardSeries;
   actionItems: DashboardSeries;
   aiReport: DashboardAiReport;
+  csat: CsatDashboard;
 }
 
 export type DashboardRange = 'day' | 'week' | 'month';

@@ -297,6 +297,11 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned }: Props) => {
             {linkCopied ? '✓ Copied!' : 'Copy link'}
           </button>
           <span className="te-template-name">{ticket?.templateName}</span>
+          {ticket?.csatScore != null && (
+            <span className="te-csat-badge" title={ticket.csatComment ?? undefined}>
+              {'⭐'.repeat(ticket.csatScore)} {ticket.csatScore}/5
+            </span>
+          )}
           <span className="te-updated">{ticket?.updatedAt ? formatRelativeTime(ticket.updatedAt) : ''}</span>
         </div>
         <div className="te-header-right">

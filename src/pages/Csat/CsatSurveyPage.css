@@ -1,0 +1,144 @@
+.csp-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0f1a;
+  padding: 24px;
+}
+
+.csp-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #1e293b;
+  border-top-color: #eab308;
+  border-radius: 50%;
+  animation: csp-spin 0.8s linear infinite;
+}
+
+@keyframes csp-spin { to { transform: rotate(360deg); } }
+
+.csp-card {
+  width: 100%;
+  max-width: 480px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.csp-header {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 16px;
+}
+
+.csp-ticket-context {
+  background: #0b1228;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.csp-ticket-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.csp-ticket-meta {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.csp-question {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  margin: 0 0 16px;
+}
+
+.csp-stars {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.csp-star-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.csp-star-btn:hover { transform: scale(1.15); }
+
+.csp-stars-readonly {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.csp-comment-label {
+  display: block;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.csp-comment-input {
+  width: 100%;
+  background: #0b1228;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #e2e8f0;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+  margin-bottom: 20px;
+}
+
+.csp-comment-input:focus { border-color: #eab308; }
+
+.csp-submit-btn {
+  width: 100%;
+  padding: 12px;
+  background: #eab308;
+  color: #1a202c;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.csp-submit-btn:hover:not(:disabled) { background: #ca9a06; }
+.csp-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.csp-message {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  text-align: center;
+  margin: 12px 0 0;
+}
+
+.csp-thanks {
+  text-align: center;
+  padding: 12px 0;
+}
+
+.csp-error {
+  color: #f87171;
+  font-size: 0.82rem;
+  margin: 0 0 12px;
+}

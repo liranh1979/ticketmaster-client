@@ -9,6 +9,7 @@ import { CreateTicketPage } from '../Tickets/CreateTicketPage';
 import { TicketEditPage } from '../Tickets/TicketEditPage';
 import { formatRelativeTime } from '../Tickets/ticketTypes';
 import { PersonalSettingsModal } from '../../components/PersonalSettings/PersonalSettingsModal';
+import { UserNotificationBell } from '../../components/UserNotificationBell/UserNotificationBell';
 import './EndUserPortal.css';
 
 type PortalView = 'home' | 'ai-chat' | 'my-tickets' | 'create-ticket' | 'view-ticket' | 'my-tasks';
@@ -53,87 +54,54 @@ export const EndUserPortal = ({ user, onUserUpdate }: Props) => {
     window.location.reload();
   };
 
-  if (view === 'ai-chat') {
-    return <AiChatPage user={user} onBack={() => setView('home')} onTicketCreated={openTicket} />;
-  }
+  // Topbar (notification bell, nav, settings, logout) is always visible — previously each
+  // view below returned its own page directly, bypassing it entirely once you left "home".
+  const renderBody = () => {
+    if (view === 'ai-chat') {
+      return <AiChatPage user={user} onBack={() => setView('home')} onTicketCreated={openTicket} />;
+    }
 
-  if (view === 'my-tickets') {
-    return (
-      <MyTicketsPage
-        user={user}
-        onBack={() => setView('home')}
-        onNewTicket={() => setView('create-ticket')}
-        onViewTicket={openTicket}
-      />
-    );
-  }
-
-  if (view === 'create-ticket') {
-    return (
-      <CreateTicketPage
-        user={user}
-        onBack={() => setView('home')}
-        onCreated={() => setView('my-tickets')}
-      />
-    );
-  }
-
-  if (view === 'my-tasks') {
-    return (
-      <MyWorkflowItemsPage
-        onBack={() => setView('home')}
-        onViewTicket={openTicket}
-      />
-    );
-  }
-
-  if (view === 'view-ticket' && viewTicketId !== null) {
-    return (
-      <TicketEditPage
-        ticketId={viewTicketId}
-        user={user}
-        onBack={() => setView('my-tickets')}
-      />
-    );
-  }
-
-  return (
-    <div className="eu-root">
-      {/* Topbar */}
-      <header className="eu-topbar">
-        <div className="eu-topbar-logo">
-          <img src="/logo.png" alt="Logo" className="eu-logo-img" />
-        </div>
-        <nav className="eu-topbar-nav">
-          <button className="eu-nav-btn" onClick={() => setView('ai-chat')}>
-            <MessageSquare size={16} /> {t('eu_chat_btn', { defaultValue: 'Chat with AI' })}
-          </button>
-          <button className="eu-nav-btn" onClick={() => setView('my-tickets')}>
-            <ClipboardList size={16} /> {t('eu_my_tickets_btn', { defaultValue: 'My Tickets' })}
-          </button>
-          <button className="eu-nav-btn" onClick={() => setView('my-tasks')}>
-            <CheckSquare size={16} /> My Tasks
-          </button>
-        </nav>
-        <div className="eu-topbar-right">
-          <span className="eu-greeting">👋 {user?.display_name}</span>
-          <button className="eu-logout-btn" onClick={() => setShowPersonalSettings(true)} title="Personal Settings">
-            <Settings size={15} />
-          </button>
-          <button className="eu-logout-btn" onClick={handleLogout} title="Logout">
-            <LogOut size={15} />
-          </button>
-        </div>
-      </header>
-
-      {showPersonalSettings && (
-        <PersonalSettingsModal
-          onClose={() => setShowPersonalSettings(false)}
-          onUserUpdate={onUserUpdate}
+    if (view === 'my-tickets') {
+      return (
+        <MyTicketsPage
+          user={user}
+          onBack={() => setView('home')}
+          onNewTicket={() => setView('create-ticket')}
+          onViewTicket={openTicket}
         />
-      )}
+      );
+    }
 
-      {/* Hero */}
+    if (view === 'create-ticket') {
+      return (
+        <CreateTicketPage
+          user={user}
+          onBack={() => setView('home')}
+          onCreated={() => setView('my-tickets')}
+        />
+      );
+    }
+
+    if (view === 'my-tasks') {
+      return (
+        <MyWorkflowItemsPage
+          onBack={() => setView('home')}
+          onViewTicket={openTicket}
+        />
+      );
+    }
+
+    if (view === 'view-ticket' && viewTicketId !== null) {
+      return (
+        <TicketEditPage
+          ticketId={viewTicketId}
+          user={user}
+          onBack={() => setView('my-tickets')}
+        />
+      );
+    }
+
+    return (
       <main className="eu-main">
         <div className="eu-hero">
           <div className="eu-hero-glow" />
@@ -194,6 +162,49 @@ export const EndUserPortal = ({ user, onUserUpdate }: Props) => {
           </section>
         )}
       </main>
+    );
+  };
+
+  return (
+    <div className="eu-root">
+      {/* Topbar */}
+      <header className="eu-topbar">
+        <div className="eu-topbar-logo">
+          <img src="/logo.png" alt="Logo" className="eu-logo-img" />
+        </div>
+        <nav className="eu-topbar-nav">
+          <button className="eu-nav-btn" onClick={() => setView('ai-chat')}>
+            <MessageSquare size={16} /> {t('eu_chat_btn', { defaultValue: 'Chat with AI' })}
+          </button>
+          <button className="eu-nav-btn" onClick={() => setView('my-tickets')}>
+            <ClipboardList size={16} /> {t('eu_my_tickets_btn', { defaultValue: 'My Tickets' })}
+          </button>
+          <button className="eu-nav-btn" onClick={() => setView('my-tasks')}>
+            <CheckSquare size={16} /> My Tasks
+          </button>
+        </nav>
+        <div className="eu-topbar-right">
+          <UserNotificationBell />
+          <span className="eu-greeting">👋 {user?.display_name}</span>
+          <button className="eu-logout-btn" onClick={() => setShowPersonalSettings(true)} title="Personal Settings">
+            <Settings size={15} />
+          </button>
+          <button className="eu-logout-btn" onClick={handleLogout} title="Logout">
+            <LogOut size={15} />
+          </button>
+        </div>
+      </header>
+
+      {showPersonalSettings && (
+        <PersonalSettingsModal
+          onClose={() => setShowPersonalSettings(false)}
+          onUserUpdate={onUserUpdate}
+        />
+      )}
+
+      <div className="eu-body">
+        {renderBody()}
+      </div>
     </div>
   );
 };

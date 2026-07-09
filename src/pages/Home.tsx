@@ -104,7 +104,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
       <div className="sd-app-content">
         {currentView === 'welcome' && (
           canManageTickets ? (
-            <TicketsDashboard />
+            <TicketsDashboard onEditTicket={goToEditTicket} />
           ) : (
             <div className="welcome-screen">
               <div className="welcome-content">

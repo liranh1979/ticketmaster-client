@@ -5,7 +5,13 @@ import i18n from './i18n';
 import { useSystemSettings } from './contexts/SystemSettingsContext';
 import { LoginScreen } from './components/Login/LoginScreen';
 import { Home } from './pages/Home';
+import { CsatSurveyPage } from './pages/Csat/CsatSurveyPage';
 import './App.css';
+
+// CSAT survey links (?csat=<token>) must work for a logged-out requester and must
+// never touch session/auth machinery — checked once, outside the component, so it's
+// a plain value (not a hook) and stays stable for the component's whole lifetime.
+const csatToken = new URLSearchParams(window.location.search).get('csat');
 
 function App() {
   // 2. 'ready' becomes true only after i18next successfully fetches the translation JSON from the backend
@@ -18,6 +24,11 @@ function App() {
     setUser((u: any) => ({ ...u, ...partial }));
 
   useEffect(() => {
+    // On a CSAT survey link, skip the session check entirely — calling /auth/me while
+    // logged out would 401, and api.ts's global interceptor reloads the page on any
+    // 401, which would loop forever on this route.
+    if (csatToken) { setLoading(false); return; }
+
     /**
      * Check if a valid session cookie exists on the backend
      */
@@ -42,6 +53,10 @@ function App() {
       i18n.changeLanguage(user.preferred_language);
     }
   }, [user?.preferred_language, systemSettings.defaultLanguageCode]);
+
+  if (csatToken) {
+    return <CsatSurveyPage token={csatToken} />;
+  }
 
   /**
    * IMPORTANT: Wait for BOTH session check AND translation files to be ready.

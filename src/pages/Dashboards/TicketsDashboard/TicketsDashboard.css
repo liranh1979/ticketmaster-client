@@ -108,3 +108,82 @@
 
 .dc-chart-area { margin-top: var(--sd-space-4); }
 .dc-empty { margin-top: var(--sd-space-4); font-size: var(--sd-text-sm); color: var(--sd-fg-subtle); padding: var(--sd-space-4) 0; text-align: center; }
+
+/* CSAT section */
+.td-csat-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sd-space-5);
+  padding-top: var(--sd-space-4);
+  border-top: 1px solid var(--sd-border);
+}
+
+.td-section-title {
+  font-size: var(--sd-text-lg);
+  font-weight: 700;
+  margin: 0;
+  color: var(--sd-fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.csm-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sd-space-4);
+}
+@media (max-width: 700px) {
+  .csm-row { grid-template-columns: 1fr; }
+}
+
+.csm-tile {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-lg);
+  box-shadow: var(--sd-shadow-1);
+  padding: var(--sd-space-4) var(--sd-space-5);
+  text-align: center;
+}
+.csm-tile-warn { border-color: rgba(234,179,8,0.35); }
+
+.csm-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--sd-fg);
+}
+.csm-tile-warn .csm-value { color: #eab308; }
+
+.csm-label {
+  font-size: var(--sd-text-sm);
+  color: var(--sd-fg-subtle);
+  margin-top: 4px;
+}
+
+/* Low-score table */
+.cst-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--sd-space-3);
+  font-size: var(--sd-text-sm);
+}
+.cst-table th {
+  text-align: left;
+  font-size: var(--sd-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sd-fg-subtle);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--sd-border);
+}
+.cst-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--sd-border);
+  color: var(--sd-fg);
+  vertical-align: top;
+}
+.cst-table tbody tr { cursor: pointer; transition: background var(--sd-dur-fast) var(--sd-ease); }
+.cst-table tbody tr:hover { background: var(--sd-surface-2); }
+
+.cst-ticket-cell { font-weight: 600; white-space: nowrap; }
+.cst-comment-cell { color: var(--sd-fg-muted); font-style: italic; }

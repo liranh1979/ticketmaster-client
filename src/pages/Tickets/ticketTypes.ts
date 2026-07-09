@@ -44,6 +44,8 @@ export interface TicketDetail {
   createdAt: string;
   updatedAt: string;
   version: number;
+  csatScore: number | null;
+  csatComment: string | null;
 }
 
 export type FieldVisibility = 'admin_only' | 'all' | 'user_view_admin_edit';
@@ -68,6 +70,16 @@ export interface AdminNotification {
   fieldKey: string;
   notificationType: string;
   message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface UserNotification {
+  id: number;
+  ticketId: number | null;
+  notificationType: string;
+  message: string;
+  linkUrl: string | null;
   isRead: boolean;
   createdAt: string;
 }
