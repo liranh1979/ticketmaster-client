@@ -40,6 +40,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
   const canManageTickets = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
   const isEndUserOnly = !isSuperAdmin(user) && !(user?.effective_permissions?.length);
 
+  const goToDashboard    = () => setCurrentView('welcome');
   const goToTicketList   = () => setCurrentView('ticket-list');
   const goToMyTickets    = () => setCurrentView('my-tickets');
   const goToMyTasks      = () => setCurrentView('my-tasks');
@@ -93,6 +94,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
         user={user}
         currentView={currentView}
         onNewTicket={goToCreateTicket}
+        onDashboard={goToDashboard}
         onServiceDesk={goToTicketList}
         onMyTasks={goToMyTasks}
         onSettings={() => setCurrentView('settings')}

@@ -7,7 +7,7 @@
   margin: 0 0 24px;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--sd-fg);
   text-align: center;
 }
 
@@ -24,19 +24,19 @@
   gap: 12px;
   width: 100%;
   padding: 12px 18px;
-  background: #ffffff;
-  border: 1.5px solid #e2e8f0;
+  background: var(--sd-surface-2);
+  border: 1.5px solid var(--sd-border);
   border-radius: 10px;
   cursor: pointer;
   font-size: 0.925rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--sd-fg);
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
   text-align: left;
 }
 
 .lsc-provider-btn:hover {
-  border-color: #6366f1;
+  border-color: var(--sd-brand);
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.18);
   transform: translateY(-1px);
 }
@@ -56,7 +56,7 @@
   gap: 12px;
   width: 100%;
   margin: 18px 0 6px;
-  color: #94a3b8;
+  color: var(--sd-fg-subtle);
   font-size: 0.8rem;
 }
 
@@ -65,7 +65,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: #e2e8f0;
+  background: var(--sd-border);
 }
 
 .lsc-manual-btn {
@@ -111,14 +111,14 @@
   margin-bottom: 4px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--sd-fg-muted);
 }
 
 .lsc-spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #6366f1;
+  border: 3px solid var(--sd-border);
+  border-top-color: var(--sd-brand);
   border-radius: 50%;
   animation: lsc-spin 0.7s linear infinite;
 }

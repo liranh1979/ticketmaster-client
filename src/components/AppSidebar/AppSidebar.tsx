@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Inbox, Plus, CheckSquare, Settings, Info } from 'lucide-react';
+import { LayoutDashboard, Inbox, Plus, CheckSquare, Settings, Info } from 'lucide-react';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import './AppSidebar.css';
 
@@ -9,6 +9,7 @@ interface Props {
   user: any;
   currentView: HomeView;
   onNewTicket: () => void;
+  onDashboard: () => void;
   onServiceDesk: () => void;
   onMyTasks?: () => void;
   onSettings: () => void;
@@ -21,6 +22,7 @@ export const AppSidebar = ({
   user,
   currentView,
   onNewTicket,
+  onDashboard,
   onServiceDesk,
   onMyTasks,
   onSettings,
@@ -37,6 +39,16 @@ export const AppSidebar = ({
     <aside className="sd-sidebar">
       <nav>
         <div className="sd-nav__label">Workspace</div>
+
+        {canTickets && (
+          <button
+            className={`sd-nav__item${currentView === 'welcome' ? ' sd-nav__item--active' : ''}`}
+            onClick={onDashboard}
+          >
+            <LayoutDashboard size={15} strokeWidth={1.75} />
+            {t('dashboard_nav_item', { defaultValue: 'Dashboard' })}
+          </button>
+        )}
 
         {canTickets && (
           <button

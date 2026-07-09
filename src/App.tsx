@@ -74,7 +74,9 @@ function App() {
   return (
     <div className="App">
       {!user ? (
-        <LoginScreen onLoginSuccess={(userData: any) => setUser(userData)} />
+        <div className="login-page-wrapper">
+          <LoginScreen onLoginSuccess={(userData: any) => setUser(userData)} />
+        </div>
       ) : (
         <Home user={user} onUserUpdate={onUserUpdate} />
       )}

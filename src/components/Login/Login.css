@@ -1,31 +1,33 @@
-/* Container for the whole login page */
+/* Centers the login card on screen — previously defined but never applied in
+   any component, so the card rendered unstyled at the top-left with no centering. */
 .login-page-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  width: 100vw;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100%;
+  flex: 1;
+  background: var(--sd-bg);
 }
 
 /* The actual Login Card */
 .auth-card {
-  background: #ffffff;
+  background: var(--sd-surface);
   padding: 40px;
   border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--sd-shadow-2);
   width: 100%;
   max-width: 380px;
   text-align: center;
-  border: 1px solid #eef2f7;
+  border: 1px solid var(--sd-border);
 }
 
-/* Logo positioning */
-.login-logo-container {
+/* Logo positioning — className is "logo-container" in the JSX; the img itself is
+   unclassed, so both selectors must match the actual markup, not the old names. */
+.logo-container {
   margin-bottom: 30px;
 }
 
-.login-logo {
+.logo-container img {
   height: 40px; /* Slightly bigger than topbar logo for brand presence */
   width: auto;
 }
@@ -40,14 +42,16 @@
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: #4a5568;
+  color: var(--sd-fg-muted);
   margin-bottom: 8px;
 }
 
 .input-group input {
   width: 100%;
   padding: 12px;
-  border: 1px solid #e2e8f0;
+  background: var(--sd-surface-2);
+  color: var(--sd-fg);
+  border: 1px solid var(--sd-border);
   border-radius: 8px;
   font-size: 15px;
   transition: all 0.2s ease;
@@ -56,16 +60,16 @@
 
 .input-group input:focus {
   outline: none;
-  border-color: #3182ce;
-  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+  border-color: var(--sd-brand);
+  box-shadow: 0 0 0 3px var(--sd-focus-ring);
 }
 
 /* Button Styles */
 .btn-primary {
   width: 100%;
   padding: 12px;
-  background-color: #3182ce;
-  color: white;
+  background-color: var(--sd-brand);
+  color: var(--sd-brand-fg);
   border: none;
   border-radius: 8px;
   font-size: 15px;
@@ -76,10 +80,11 @@
 }
 
 .btn-primary:hover {
-  background-color: #2b6cb0;
+  background-color: var(--sd-brand-hover);
 }
 
 .btn-primary:disabled {
-  background-color: #a0aec0;
+  background-color: var(--sd-surface-3);
+  color: var(--sd-fg-subtle);
   cursor: not-allowed;
 }
