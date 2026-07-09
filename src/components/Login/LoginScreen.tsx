@@ -37,72 +37,74 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
       .catch(() => setScreen('form'));
   }, []);
 
-  if (screen === 'loading') {
-    return (
-      <div className="auth-card">
-        <div className="logo-container">
-          <img src={logoUrl || '/logo.png'} alt="TicketMaster Logo" />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
-          <div className="lsc-spinner" />
-        </div>
-      </div>
-    );
-  }
+  return (
+    <div className="login-split">
+      <div
+        className="login-split-brand"
+        style={{ backgroundImage: `url(${logoUrl || '/logo.png'})` }}
+      />
 
-  if (screen === 'form') {
-    return (
-      <div>
-        {providers.length > 0 && (
-          <div className="lsc-back-wrap">
-            <button className="lsc-back-btn" onClick={() => { setScreen('selection'); setActiveProviderName(null); }}>
-              {t('login_back_to_providers')}
+      <div className="login-split-form">
+        <img className="login-mobile-logo" src={logoUrl || '/logo.png'} alt="TicketMaster Logo" />
+
+        {screen === 'loading' && (
+          <div className="auth-card">
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
+              <div className="lsc-spinner" />
+            </div>
+          </div>
+        )}
+
+        {screen === 'form' && (
+          <div className="login-form-slot">
+            {providers.length > 0 && (
+              <div className="lsc-back-wrap">
+                <button className="lsc-back-btn" onClick={() => { setScreen('selection'); setActiveProviderName(null); }}>
+                  {t('login_back_to_providers')}
+                </button>
+              </div>
+            )}
+            {activeProviderName && (
+              <div className="lsc-provider-header">
+                {t('login_with_provider', { name: activeProviderName })}
+              </div>
+            )}
+            <Login onLoginSuccess={onLoginSuccess} />
+          </div>
+        )}
+
+        {screen === 'selection' && (
+          <div className="auth-card lsc-selection-card">
+            <h2 className="lsc-title">{t('login_choose_provider')}</h2>
+
+            <div className="lsc-providers">
+              {providers.map(p => (
+                <button
+                  key={p.id}
+                  className="lsc-provider-btn"
+                  onClick={() => {
+                    window.location.href = `${API_BASE}/saml2/login/${p.id}`;
+                  }}
+                >
+                  <span className="lsc-provider-icon">☁️</span>
+                  <span className="lsc-provider-name">{p.sso_display_name || p.display_name}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="lsc-divider">
+              <span>{t('or_label')}</span>
+            </div>
+
+            <button
+              className="lsc-manual-btn"
+              onClick={() => { setActiveProviderName(null); setScreen('form'); }}
+            >
+              {t('login_manual_btn')}
             </button>
           </div>
         )}
-        {activeProviderName && (
-          <div className="lsc-provider-header">
-            {t('login_with_provider', { name: activeProviderName })}
-          </div>
-        )}
-        <Login onLoginSuccess={onLoginSuccess} />
       </div>
-    );
-  }
-
-  // selection screen
-  return (
-    <div className="auth-card lsc-selection-card">
-      <div className="logo-container">
-        <img src="/logo.png" alt="TicketMaster Logo" />
-      </div>
-      <h2 className="lsc-title">{t('login_choose_provider')}</h2>
-
-      <div className="lsc-providers">
-        {providers.map(p => (
-          <button
-            key={p.id}
-            className="lsc-provider-btn"
-            onClick={() => {
-              window.location.href = `${API_BASE}/saml2/login/${p.id}`;
-            }}
-          >
-            <span className="lsc-provider-icon">☁️</span>
-            <span className="lsc-provider-name">{p.sso_display_name || p.display_name}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="lsc-divider">
-        <span>{t('or_label')}</span>
-      </div>
-
-      <button
-        className="lsc-manual-btn"
-        onClick={() => { setActiveProviderName(null); setScreen('form'); }}
-      >
-        {t('login_manual_btn')}
-      </button>
     </div>
   );
 };

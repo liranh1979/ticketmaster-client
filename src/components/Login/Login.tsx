@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import api from '../../api'; // Custom axios instance with baseURL and credentials
-import { useSystemSettings } from '../../contexts/SystemSettingsContext';
-
 
 interface LoginProps {
   onLoginSuccess: (data: any) => void;
@@ -10,7 +8,6 @@ interface LoginProps {
 
 export const Login = ({ onLoginSuccess }: LoginProps) => {
   const { t } = useTranslation();
-  const { logoUrl } = useSystemSettings();
   const [form, setForm] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
 
@@ -38,11 +35,9 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
 
   return (
     <div className="auth-card">
-      <div className="logo-container">
-        {/* Falls back to the bundled default until a custom logo is uploaded in System Settings */}
-        <img src={logoUrl || '/logo.png'} alt="TicketMaster Logo" />
-      </div>
-      
+      <h1 className="login-heading">{t('login_heading', { defaultValue: 'Welcome back' })}</h1>
+      <p className="login-subheading">{t('login_subheading', { defaultValue: 'Sign in to your account to continue' })}</p>
+
       <form onSubmit={handleLogin}>
         <div className="input-group">
           <label>{t('login_username')}</label>

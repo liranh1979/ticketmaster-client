@@ -1,35 +1,95 @@
-/* Centers the login card on screen — previously defined but never applied in
-   any component, so the card rendered unstyled at the top-left with no centering. */
+/* Full-bleed flex passthrough — the actual split layout lives in .login-split below. */
 .login-page-wrapper {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100%;
   flex: 1;
+  min-height: 0;
   background: var(--sd-bg);
+}
+
+/* ── Split-screen layout ──
+   Left: full-bleed brand panel showing the logo large. Right: dark panel (matches
+   the rest of the app) holding the actual form, vertically centered — which, since
+   it's the right half of the screen, reads as "center-right" overall. */
+.login-split {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.login-split-brand {
+  flex: 0 0 44%;
+  max-width: 640px;
+  min-width: 340px;
+  /* Sampled from the logo artwork's own corner pixels so the letterboxing from
+     background-size: contain blends seamlessly into the panel with no visible seam. */
+  background-color: #eef4fd;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 16px 0 40px -16px oklch(0 0 0 / 0.5);
+  position: relative;
+}
+
+.login-split-form {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 8%;
+  background: var(--sd-bg);
+  overflow-y: auto;
+}
+
+/* Small brand mark shown only when the big left panel is hidden (see media query below). */
+.login-mobile-logo {
+  display: none;
+  height: 36px;
+  width: auto;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 860px) {
+  .login-split-brand {
+    display: none;
+  }
+  .login-mobile-logo {
+    display: block;
+  }
 }
 
 /* The actual Login Card */
 .auth-card {
   background: var(--sd-surface);
-  padding: 40px;
+  padding: 44px 40px;
   border-radius: 16px;
   box-shadow: var(--sd-shadow-2);
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
+  box-sizing: border-box;
   text-align: center;
   border: 1px solid var(--sd-border);
 }
 
-/* Logo positioning — className is "logo-container" in the JSX; the img itself is
-   unclassed, so both selectors must match the actual markup, not the old names. */
-.logo-container {
-  margin-bottom: 30px;
+.login-form-slot {
+  width: 100%;
+  max-width: 400px;
 }
 
-.logo-container img {
-  height: 40px; /* Slightly bigger than topbar logo for brand presence */
-  width: auto;
+.login-heading {
+  margin: 0 0 6px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--sd-fg);
+  letter-spacing: -0.02em;
+}
+
+.login-subheading {
+  margin: 0 0 32px;
+  font-size: 0.9rem;
+  color: var(--sd-fg-muted);
 }
 
 /* Form Styles */
