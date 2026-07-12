@@ -9,6 +9,8 @@ import { LabelPickerControl } from '../LabelPickerControl/LabelPickerControl';
 import { AttachmentsControl } from '../AttachmentsControl/AttachmentsControl';
 import { ActivityLogControl } from '../ActivityLogControl/ActivityLogControl';
 import { TimerFieldControl } from '../TimerFieldControl/TimerFieldControl';
+import { TicketRelationsPanel } from '../TicketRelationsPanel/TicketRelationsPanel';
+import '../TicketRelationsPanel/TicketRelationsPanel.css';
 import type { TemplateLayoutField, TemplateTab, FieldVisibility } from '../../pages/Tickets/ticketTypes';
 import './TicketFormRenderer.css';
 import '../TimerFieldControl/TimerFieldControl.css';
@@ -25,6 +27,7 @@ const FIELD_BAR_COLORS: Record<string, string> = {
   activity_log: '#10b981',
   emails:       '#ec4899',
   approval_flow:'#4f46e5',
+  ticket_relations: '#8b5cf6',
 };
 
 const FIELD_TYPE_ICONS: Record<string, string> = {
@@ -39,6 +42,7 @@ const FIELD_TYPE_ICONS: Record<string, string> = {
   activity_log: '📋',
   nodelist:     '≡',
   workflow:     '⚙',
+  ticket_relations: '🔗',
 };
 
 const STATUS_OPTIONS = ['new', 'open', 'in_progress', 'waiting', 'resolved', 'closed'];
@@ -52,6 +56,7 @@ interface Props {
   aiFilledFields?: string[];
   readOnly?: boolean;
   entityId?: number;
+  onNavigateTicket?: (id: number) => void;
 }
 
 interface FieldControlProps {
@@ -61,6 +66,7 @@ interface FieldControlProps {
   readOnly: boolean;
   entityId?: number;
   isAdmin?: boolean;
+  onNavigateTicket?: (id: number) => void;
 }
 
 const WorkflowFieldButton = ({ entityId, isAdmin }: { entityId?: number; isAdmin?: boolean }) => {
@@ -142,11 +148,24 @@ const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: 
 };
 
 // Proper React component — hooks are allowed here
-const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin }: FieldControlProps) => {
+const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onNavigateTicket }: FieldControlProps) => {
   const { t } = useTranslation();
 
   if (field.fieldType === 'workflow') {
     return <WorkflowFieldButton entityId={entityId} isAdmin={isAdmin} />;
+  }
+
+  if (field.fieldType === 'ticket_relations') {
+    return entityId != null ? (
+      <TicketRelationsPanel
+        ticketId={entityId}
+        isAdmin={isAdmin ?? false}
+        onNavigateTicket={onNavigateTicket}
+        onMerged={(targetId) => onNavigateTicket?.(targetId)}
+      />
+    ) : (
+      <div className="tfr-activity-placeholder">Related tickets available after ticket is saved.</div>
+    );
   }
 
   if (field.fieldType === 'timer') {
@@ -294,7 +313,7 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin }: F
 };
 
 const FieldCards = ({
-  fields, values, onChange, aiFilledFields, readOnly, entityId, isAdmin, t,
+  fields, values, onChange, aiFilledFields, readOnly, entityId, isAdmin, onNavigateTicket, t,
 }: {
   fields: TemplateLayoutField[];
   values: Record<string, any>;
@@ -303,6 +322,7 @@ const FieldCards = ({
   readOnly: boolean;
   entityId?: number;
   isAdmin?: boolean;
+  onNavigateTicket?: (id: number) => void;
   t: (key: string, opts?: any) => string;
 }) => (
   <>
@@ -356,6 +376,7 @@ const FieldCards = ({
               readOnly={(field as any)._effectiveReadOnly ?? readOnly}
               entityId={entityId}
               isAdmin={isAdmin}
+              onNavigateTicket={onNavigateTicket}
             />
           </div>
         </div>
@@ -372,6 +393,7 @@ export const TicketFormRenderer = ({
   aiFilledFields = [],
   readOnly = false,
   entityId,
+  onNavigateTicket,
 }: Props) => {
   const { t } = useTranslation();
   const [activeTabKey, setActiveTabKey] = useState<string>(() => tabs[0]?.tabKey ?? '');
@@ -427,6 +449,7 @@ export const TicketFormRenderer = ({
             readOnly={readOnly}
             entityId={entityId}
             isAdmin={isAdmin}
+            onNavigateTicket={onNavigateTicket}
             t={t}
           />
         </div>
@@ -440,6 +463,7 @@ export const TicketFormRenderer = ({
               readOnly={readOnly}
               entityId={entityId}
               isAdmin={isAdmin}
+              onNavigateTicket={onNavigateTicket}
               t={t}
             />
           </div>

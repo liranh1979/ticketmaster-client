@@ -201,6 +201,27 @@ export const ActivityLogControl = ({
       const sourceId = e.changes?.sourceTicketId;
       return `<p>${t('activity_cloned_from_ticket', { defaultValue: 'Cloned from ticket' })} <strong>#${sourceId}</strong></p>`;
     }
+    if (e.operation === 'TICKET_LINKED') {
+      const relType = t(`ticket_rel_type_${e.changes?.relationshipType}`, { defaultValue: e.changes?.relationshipType });
+      return `<p>${t('activity_ticket_linked', { defaultValue: `Linked as "${relType}" to TT-${e.changes?.otherTicketId}`, relType, otherId: `TT-${e.changes?.otherTicketId}` })}</p>`;
+    }
+    if (e.operation === 'TICKET_UNLINKED') {
+      return `<p>${t('activity_ticket_unlinked', { defaultValue: `Removed link to TT-${e.changes?.otherTicketId}`, otherId: `TT-${e.changes?.otherTicketId}` })}</p>`;
+    }
+    if (e.operation === 'TICKET_MERGED') {
+      return `<p>${t('activity_ticket_merged', { defaultValue: `This ticket was merged into TT-${e.changes?.mergedIntoTicketId}`, targetId: `TT-${e.changes?.mergedIntoTicketId}` })}</p>`;
+    }
+    if (e.operation === 'TICKET_MERGED_FROM') {
+      return `<p>${t('activity_ticket_merged_from', {
+        defaultValue: `Merged TT-${e.changes?.mergedFromTicketId} into this ticket (${e.changes?.attachmentsMoved} attachments, ${e.changes?.activityRowsCopied} activity entries copied)`,
+        sourceId: `TT-${e.changes?.mergedFromTicketId}`,
+        attachmentsMoved: e.changes?.attachmentsMoved,
+        activityRowsCopied: e.changes?.activityRowsCopied,
+      })}</p>`;
+    }
+    if (e.operation === 'TICKET_MERGE_NOTE') {
+      return `<p>${t('activity_ticket_merge_note', { defaultValue: `This ticket was merged with TT-${e.changes?.otherTicketId}`, otherId: `TT-${e.changes?.otherTicketId}` })}</p>`;
+    }
     return `<p><em>${e.operation}</em></p>`;
   };
 

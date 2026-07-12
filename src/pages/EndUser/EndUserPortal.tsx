@@ -97,6 +97,7 @@ export const EndUserPortal = ({ user, onUserUpdate }: Props) => {
           ticketId={viewTicketId}
           user={user}
           onBack={() => setView('my-tickets')}
+          onNavigateTicket={openTicket}
         />
       );
     }

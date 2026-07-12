@@ -25,6 +25,21 @@ export interface TicketListItem {
   ticketData?: Record<string, any>;
 }
 
+export interface TicketRelationship {
+  id: number;
+  relationshipType: string;
+  otherTicketId: number;
+  otherTicketTitle: string | null;
+  otherTicketStatus: string | null;
+  createdAt: string;
+}
+
+export interface TicketPickerItem {
+  id: number;
+  title: string;
+  status: string;
+}
+
 export interface TicketDetail {
   id: number;
   title: string;
@@ -46,6 +61,7 @@ export interface TicketDetail {
   version: number;
   csatScore: number | null;
   csatComment: string | null;
+  relationships: TicketRelationship[];
 }
 
 export type FieldVisibility = 'admin_only' | 'all' | 'user_view_admin_edit';

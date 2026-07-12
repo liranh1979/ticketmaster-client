@@ -6,6 +6,8 @@ import { TicketFormRenderer } from '../../components/TicketFormRenderer/TicketFo
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import { ActivityLogControl } from '../../components/ActivityLogControl/ActivityLogControl';
 import { AiTicketConsultPanel } from '../../components/AiTicketConsultPanel/AiTicketConsultPanel';
+import { ParentIncidentBanner } from '../../components/TicketRelationsPanel/ParentIncidentBanner';
+import { useTicketRelationships } from '../../hooks/useTicketRelationships';
 import type {
   TicketDetail,
   TemplateTab,
@@ -19,6 +21,7 @@ interface Props {
   user: any;
   onBack: () => void;
   onCloned?: (newTicketId: number) => void;
+  onNavigateTicket?: (ticketId: number) => void;
 }
 
 interface PresenceUser {
@@ -27,7 +30,7 @@ interface PresenceUser {
   expiresAt: number;
 }
 
-export const TicketEditPage = ({ ticketId, user, onBack, onCloned }: Props) => {
+export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTicket }: Props) => {
   const { t } = useTranslation();
 
   const [ticket, setTicket]         = useState<TicketDetail | null>(null);
@@ -275,6 +278,8 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned }: Props) => {
 
   const isAdmin = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
 
+  const { relationships } = useTicketRelationships(ticketId, solutionSavedCount + saveCount);
+
   if (loading) {
     return (
       <div className="te-page">
@@ -401,6 +406,8 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned }: Props) => {
 
       {/* Form body */}
       <div className="te-body">
+        <ParentIncidentBanner relationships={relationships} onNavigateTicket={onNavigateTicket} />
+
         {layoutTabs.length > 0 && (
           <TicketFormRenderer
             tabs={layoutTabs}
@@ -408,6 +415,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned }: Props) => {
             onChange={handleChange}
             isAdmin={isAdmin}
             entityId={ticketId}
+            onNavigateTicket={onNavigateTicket}
           />
         )}
 

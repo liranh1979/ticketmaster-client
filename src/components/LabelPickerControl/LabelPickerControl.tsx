@@ -23,7 +23,14 @@ const SAMPLE: Label[] = [
   { id: -3, labelKey: 'security', color: '#8b5cf6', name: 'Security' },
 ];
 
-export const LabelPickerControl = ({ previewMode = false, value = [], onChange, readonly = false }: Props) => {
+// Stable reference for the "no value passed" case — a `value = []` default
+// parameter creates a brand-new array every render, which as a useEffect
+// dependency below re-triggers that effect (and its setState) every render,
+// causing an infinite update loop whenever this component is used without
+// an explicit `value` (e.g. PreviewField's read-only labels preview).
+const EMPTY_VALUE: number[] = [];
+
+export const LabelPickerControl = ({ previewMode = false, value = EMPTY_VALUE, onChange, readonly = false }: Props) => {
   const [labels, setLabels]       = useState<Label[]>([]);
   const [open, setOpen]           = useState(false);
   const [selected, setSelected]   = useState<Set<number>>(new Set(value));

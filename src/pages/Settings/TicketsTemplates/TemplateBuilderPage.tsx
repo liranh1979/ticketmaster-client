@@ -18,7 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   GripVertical, Lock, X, Plus, Sparkles, Save, Check, Columns, AlignJustify,
   Type, FileText, List, Calendar, Paperclip, MessageSquare, Mail, Tag, User,
-  ChevronRight, ArrowLeft, GitBranch,
+  ChevronRight, ArrowLeft, GitBranch, Link2,
 } from 'lucide-react';
 import { WorkflowDesignerModal, type WorkflowFieldConfig } from './WorkflowDesignerModal';
 import api from '../../../api';
@@ -86,6 +86,7 @@ const FIELD_TYPE_CONFIG: Record<string, FieldConfig> = {
   emails:       { icon: Mail,          color: '#06b6d4', label: 'Email'        },
   labels:       { icon: Tag,           color: '#3b82f6', label: 'Labels'       },
   workflow:     { icon: GitBranch,     color: '#4f46e5', label: 'Workflow'     },
+  ticket_relations: { icon: Link2,     color: '#8b5cf6', label: 'Related Tickets' },
 };
 
 const FIELD_KEY_CONFIG: Record<string, FieldConfig> = {
@@ -171,6 +172,14 @@ function SortableFieldCard({
         <div className="tb-field-sys-note">
           <Tag size={12} />
           Labels are selected from your label library — manage them in Settings → Labels
+        </div>
+      );
+    }
+    if (field.fieldType === 'ticket_relations') {
+      return (
+        <div className="tb-field-sys-note">
+          <Link2 size={12} />
+          Ticket links are managed from the ticket edit page
         </div>
       );
     }
@@ -432,6 +441,11 @@ function PreviewField({
     /* Labels */
     if (field.fieldKey === 'labels' || field.fieldType === 'labels') {
       return <LabelPickerControl previewMode readonly />;
+    }
+
+    /* Related tickets — no ticket context exists in preview mode */
+    if (field.fieldType === 'ticket_relations') {
+      return <div className="tb-preview-placeholder">No related tickets in preview</div>;
     }
 
     switch (field.fieldType) {
