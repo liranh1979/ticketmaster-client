@@ -101,27 +101,23 @@
 .tb-ai-purpose-textarea:focus { border-color: var(--sd-border-strong); color: var(--sd-fg-muted); }
 .tb-ai-purpose-textarea::placeholder { color: var(--sd-border-strong); font-style: italic; }
 
-/* ── Tab bar ── */
+/* ── Tab bar (flat underline tabs — matches the real ticket page's
+   .tfr-tab-bar/.tfr-tab-btn in TicketFormRenderer.css exactly) ── */
 .tb-tab-bar {
-  display: flex; align-items: center; gap: 3px;
-  border-bottom: 1px solid var(--sd-border); flex-wrap: wrap; padding-bottom: 0;
+  display: flex; align-items: center; gap: 2px;
+  border-bottom: 1px solid var(--sd-border); flex-wrap: wrap;
 }
 
 .tb-tab {
-  display: flex; align-items: center; gap: 5px;
-  padding: 7px 14px;
-  border: 1px solid var(--sd-border); border-bottom: none;
-  border-radius: var(--sd-radius-sm) var(--sd-radius-sm) 0 0;
-  background: var(--sd-bg); color: var(--sd-fg-subtle);
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px;
+  border: none; border-bottom: 2px solid transparent;
+  background: transparent; color: var(--sd-fg-subtle);
   font: 500 var(--sd-text-xs)/1 var(--sd-font); cursor: pointer;
-  transition: all var(--sd-dur-fast) var(--sd-ease);
-  position: relative; bottom: -1px; user-select: none;
+  transition: all var(--sd-dur-fast) var(--sd-ease); user-select: none;
 }
-.tb-tab:hover { background: var(--sd-surface-2); color: var(--sd-fg-muted); border-color: var(--sd-border-strong); }
-.tb-tab.active {
-  background: var(--sd-surface); color: var(--sd-fg);
-  border-color: var(--sd-brand); border-bottom-color: var(--sd-surface);
-}
+.tb-tab:hover { color: var(--sd-fg-muted); }
+.tb-tab.active { color: var(--sd-brand); border-bottom-color: var(--sd-brand); font-weight: 600; }
 .tb-tab-label { white-space: nowrap; }
 
 .tb-tab-edit-input {
@@ -141,14 +137,12 @@
 
 .tb-add-tab-btn {
   display: flex; align-items: center; gap: 4px;
-  padding: 6px 11px; border: 1px dashed var(--sd-border-strong); border-bottom: none;
-  border-radius: var(--sd-radius-sm) var(--sd-radius-sm) 0 0;
+  padding: 8px 14px; border: none; border-bottom: 2px solid transparent;
   background: transparent; color: var(--sd-border-strong);
   font: var(--sd-text-xs)/1 var(--sd-font); cursor: pointer;
   transition: all var(--sd-dur-fast) var(--sd-ease);
-  position: relative; bottom: -1px;
 }
-.tb-add-tab-btn:hover { color: var(--sd-brand); border-color: var(--sd-brand); }
+.tb-add-tab-btn:hover { color: var(--sd-brand); border-bottom-color: var(--sd-brand); }
 
 /* ── Edit layout ── */
 .tb-edit-layout { display: flex; gap: 16px; align-items: flex-start; flex: 1; }
@@ -218,8 +212,38 @@
 }
 .tb-canvas-empty-icon { color: var(--sd-border); }
 
+/* Same main-column/sidebar-rail split the real ticket page uses, so arranging
+   fields here predicts their final position. The sidebar is wider than the
+   real page's fixed 300px (.tfr-side-col) because the builder's cards carry
+   extra editing chrome (visibility select, width toggle, lock/remove) that
+   the real read-only ticket card doesn't — Preview mode still matches the
+   real page's 300px exactly, since PreviewField has no such chrome. */
+.tb-canvas-columns {
+  display: grid; grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 20px; align-items: start;
+}
+@media (max-width: 900px) {
+  .tb-canvas-columns { grid-template-columns: minmax(0, 1fr); }
+}
+
+.tb-canvas-main, .tb-canvas-side {
+  display: flex; flex-direction: column; gap: 8px;
+  min-height: 64px; border-radius: var(--sd-radius);
+  transition: background var(--sd-dur-fast) var(--sd-ease), outline-color var(--sd-dur-fast) var(--sd-ease);
+  outline: 2px dashed transparent; outline-offset: 4px;
+}
+.tb-canvas-main.drag-over, .tb-canvas-side.drag-over {
+  background: oklch(0.60 0.20 260 / 0.06);
+  outline-color: var(--sd-brand);
+}
+
+.tb-canvas-col-empty {
+  padding: 20px; text-align: center;
+  border: 2px dashed var(--sd-border); border-radius: var(--sd-radius-sm);
+  font: var(--sd-text-xs)/1 var(--sd-font); color: var(--sd-border-strong);
+}
+
 /* ── Field cards ── */
-.tb-field-list { display: flex; flex-direction: column; gap: 8px; }
 
 .tb-field-card {
   background: var(--sd-surface);
@@ -228,6 +252,12 @@
 }
 .tb-field-card:hover { border-color: var(--sd-border-strong); box-shadow: 0 2px 10px oklch(0 0 0 / 0.25); }
 .tb-field-card.dragging { border-color: var(--sd-brand) !important; box-shadow: 0 8px 28px oklch(0.60 0.20 260 / 0.25); }
+
+.tb-field-card-overlay {
+  border-color: var(--sd-brand); cursor: grabbing;
+  box-shadow: 0 12px 32px oklch(0.60 0.20 260 / 0.35);
+  transform: rotate(1deg);
+}
 
 .tb-field-header {
   display: flex; align-items: center; gap: 10px;
@@ -408,7 +438,7 @@
 .tb-preview-layout { display: flex; justify-content: center; padding-bottom: 40px; }
 
 .tb-preview-form-wrapper {
-  width: 100%; max-width: 860px;
+  width: 100%; max-width: 1100px;
   background: var(--sd-surface); border: 1px solid var(--sd-border);
   border-radius: var(--sd-radius); overflow: hidden;
   display: flex; flex-direction: column; gap: 0;
@@ -438,10 +468,17 @@
 .tb-preview-tab:hover { color: var(--sd-fg-muted); }
 .tb-preview-tab.active { color: var(--sd-brand); border-bottom-color: var(--sd-brand); }
 
-.tb-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; padding: 24px 28px; }
+/* Same main-column + sidebar-rail split as the real ticket page's .tfr-columns */
+.tb-preview-columns {
+  display: grid; grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 24px; padding: 24px 28px; align-items: start;
+}
+@media (max-width: 900px) {
+  .tb-preview-columns { grid-template-columns: minmax(0, 1fr); }
+}
+.tb-preview-main, .tb-preview-side { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
 .tb-preview-field { display: flex; flex-direction: column; gap: 7px; }
-.tb-preview-field.full { grid-column: 1 / -1; }
-.tb-preview-field.half { grid-column: span 1; }
 
 .tb-preview-label {
   font: 700 11px/1 var(--sd-font); text-transform: uppercase;

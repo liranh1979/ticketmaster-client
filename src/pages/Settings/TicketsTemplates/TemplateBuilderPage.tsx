@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import {
   SortableContext,
   useSortable,
@@ -106,6 +109,14 @@ const getFieldConfig = (fieldKey: string, fieldType: string): FieldConfig =>
   FIELD_TYPE_CONFIG[fieldType] ??
   FIELD_TYPE_CONFIG.text;
 
+// Same grouping TicketFormRenderer uses to build the real ticket page's main
+// column + sidebar rail — shared here so Edit mode, Preview mode, and the
+// real ticket always agree on which fields land in which column.
+const splitByWidth = <T extends { width: 'full' | 'half' }>(fields: T[]) => ({
+  mainFields: fields.filter(f => f.width !== 'half'),
+  sideFields: fields.filter(f => f.width === 'half'),
+});
+
 /* ── Status badge config ── */
 const STATUS_STYLE: Record<string, { bg: string; text: string; border: string; dot: string }> = {
   new:       { bg: '#1e3a5f', text: '#60a5fa', border: '#1d4ed8', dot: '#3b82f6' },
@@ -116,6 +127,42 @@ const STATUS_STYLE: Record<string, { bg: string; text: string; border: string; d
   pending:   { bg: '#451a03', text: '#fb923c', border: '#c2410c', dot: '#f97316' },
   blocked:   { bg: '#431407', text: '#fca5a5', border: '#ef4444', dot: '#f87171' },
 };
+
+/* ── Droppable column zone ── */
+// Wraps a column of field cards so it's always a valid drop target — including
+// when empty or when the pointer is over blank space below the last card —
+// which the individual per-card useSortable droppables alone don't cover.
+function DroppableZone({ id, className, children }: { id: string; className: string; children: ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div ref={setNodeRef} className={`${className}${isOver ? ' drag-over' : ''}`}>
+      {children}
+    </div>
+  );
+}
+
+/* ── Drag overlay preview ── */
+// A lightweight, non-interactive clone shown following the cursor while
+// dragging. Without this, moving a card across columns unmounts/remounts it
+// (different SortableContext subtrees), which causes a one-frame visual
+// jump — the overlay clone papers over that by staying visually continuous
+// while the real card underneath quietly re-parents.
+function OverlayFieldCard({ field, translations }: { field: LayoutField; translations: Record<string, string> }) {
+  const cfg = getFieldConfig(field.fieldKey, field.fieldType);
+  const FieldIcon = cfg.icon;
+  const label = translations[field.fieldKey] || field.fieldKey;
+  return (
+    <div className="tb-field-card tb-field-card-overlay" style={{ borderLeftColor: cfg.color, borderLeftWidth: '3px' }}>
+      <div className="tb-field-header">
+        <span className="tb-drag-handle"><GripVertical size={14} /></span>
+        <span className="tb-type-icon" style={{ color: cfg.color }}><FieldIcon size={15} /></span>
+        <div className="tb-field-identity">
+          <span className="tb-field-label">{label}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── Sortable field card ── */
 function SortableFieldCard({
@@ -519,6 +566,7 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
   const [savedFlash, setSavedFlash] = useState(false);
 
   const [workflowDesignerKey, setWorkflowDesignerKey] = useState<string | null>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -580,6 +628,8 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
   const availableFields = allFields.filter(f => !usedKeys.has(f.fieldKey));
   const systemAvailable = availableFields.filter(f => f.isSystem);
   const customAvailable = availableFields.filter(f => !f.isSystem);
+  const { mainFields: editMainFields, sideFields: editSideFields } =
+    splitByWidth(activeTab?.fields ?? []);
 
   /* ── Tab operations ── */
   const addTab = () => {
@@ -696,18 +746,69 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
     setIsDirty(true);
   }, []);
 
+  // Which column (main/sidebar) a field currently belongs to, derived the same
+  // way the real ticket page groups fields — by width, not by array position.
+  const findFieldColumn = (fieldKey: string): 'main' | 'side' | null => {
+    const f = activeTab?.fields.find(fl => fl.fieldKey === fieldKey);
+    return f ? (f.width === 'half' ? 'side' : 'main') : null;
+  };
+
+  // `over.id` is either another field's key, or one of the column zone ids
+  // ('main-zone'/'side-zone') when hovering empty space in that column.
+  const resolveColumn = (id: string): 'main' | 'side' | null => {
+    if (id === 'main-zone') return 'main';
+    if (id === 'side-zone') return 'side';
+    return findFieldColumn(id);
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragId(String(event.active.id));
+  };
+
+  // Resolves the drag exactly once, on drop — NOT continuously during
+  // onDragOver. Mutating the sortable array on every pointer-move frame
+  // (the "live cross-column preview" pattern from dnd-kit's own docs)
+  // triggers a feedback loop between React re-renders and dnd-kit's internal
+  // droppable-rect remeasurement, which explodes into a real "Maximum update
+  // depth exceeded" crash under a fast drag gesture — confirmed via the
+  // actual stack trace pointing into dnd-kit's own measureRect internals.
+  // Same-container reordering still animates live for free (dnd-kit handles
+  // that visually via useSortable's transforms, no state change needed until
+  // drop), so the only thing lost by resolving on drop is the cross-column
+  // card visually jumping columns mid-drag — a fair trade for a stable drag.
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragId(null);
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over) return;
+    const activeKey = String(active.id);
+    const overId = String(over.id);
+    if (activeKey === overId) return;
+
+    const activeCol = findFieldColumn(activeKey);
+    const overCol = resolveColumn(overId);
+    if (!activeCol || !overCol) return;
+
     setLayout(prev => ({
       tabs: prev.tabs.map((t, i) => {
         if (i !== safeTabIdx) return t;
-        const oldIdx = t.fields.findIndex(f => f.fieldKey === active.id);
-        const newIdx = t.fields.findIndex(f => f.fieldKey === over.id);
-        return {
-          ...t,
-          fields: arrayMove(t.fields, oldIdx, newIdx).map((f, j) => ({ ...f, displayOrder: j + 1 })),
-        };
+
+        if (activeCol === overCol) {
+          const oldIdx = t.fields.findIndex(f => f.fieldKey === activeKey);
+          const newIdx = t.fields.findIndex(f => f.fieldKey === overId);
+          if (oldIdx === -1 || newIdx === -1 || oldIdx === newIdx) return t;
+          return { ...t, fields: arrayMove(t.fields, oldIdx, newIdx).map((f, j) => ({ ...f, displayOrder: j + 1 })) };
+        }
+
+        // Cross-column drop: flip width to match the target column and
+        // reposition next to whatever the pointer was over when released.
+        const fields = [...t.fields];
+        const activeIdx = fields.findIndex(f => f.fieldKey === activeKey);
+        if (activeIdx === -1) return t;
+        const [moved] = fields.splice(activeIdx, 1);
+        const updated: LayoutField = { ...moved, width: overCol === 'side' ? 'half' : 'full' };
+        const overIdx = fields.findIndex(f => f.fieldKey === overId);
+        fields.splice(overIdx === -1 ? fields.length : overIdx, 0, updated);
+        return { ...t, fields: fields.map((f, j) => ({ ...f, displayOrder: j + 1 })) };
       }),
     }));
     setIsDirty(true);
@@ -968,40 +1069,78 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
             )}
           </div>
 
-          {/* Right canvas — sortable field cards */}
+          {/* Right canvas — sortable field cards, split into a main column +
+              sidebar rail exactly like the real ticket page, so arranging
+              fields here predicts their final position. */}
           <div className="tb-canvas">
             <div className="tb-canvas-header">
               <span className="tb-panel-title">{t('template_layout_fields')}</span>
               <span className="tb-canvas-count">{activeTab.fields.length} fields</span>
             </div>
 
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext
-                items={activeTab.fields.map(f => f.fieldKey)}
-                strategy={verticalListSortingStrategy}
+            {activeTab.fields.length === 0 ? (
+              <div className="tb-canvas-empty">
+                <Plus size={20} className="tb-canvas-empty-icon" />
+                <span>Add fields from the panel on the left</span>
+              </div>
+            ) : (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragCancel={() => setActiveDragId(null)}
               >
-                <div className="tb-field-list">
-                  {activeTab.fields.length === 0 && (
-                    <div className="tb-canvas-empty">
-                      <Plus size={20} className="tb-canvas-empty-icon" />
-                      <span>Add fields from the panel on the left</span>
-                    </div>
-                  )}
-                  {activeTab.fields.map(field => (
-                    <SortableFieldCard
-                      key={field.fieldKey}
-                      field={field}
-                      translations={translations}
-                      onRemove={removeField}
-                      onDefaultChange={onDefaultChange}
-                      onWidthToggle={onWidthToggle}
-                      onVisibilityChange={onVisibilityChange}
-                      onOpenDesigner={setWorkflowDesignerKey}
-                    />
-                  ))}
+                <div className="tb-canvas-columns">
+                  <DroppableZone id="main-zone" className="tb-canvas-main">
+                    <SortableContext items={editMainFields.map(f => f.fieldKey)} strategy={verticalListSortingStrategy}>
+                      {editMainFields.map(field => (
+                        <SortableFieldCard
+                          key={field.fieldKey}
+                          field={field}
+                          translations={translations}
+                          onRemove={removeField}
+                          onDefaultChange={onDefaultChange}
+                          onWidthToggle={onWidthToggle}
+                          onVisibilityChange={onVisibilityChange}
+                          onOpenDesigner={setWorkflowDesignerKey}
+                        />
+                      ))}
+                      {editMainFields.length === 0 && (
+                        <div className="tb-canvas-col-empty">Drag a full-width field here</div>
+                      )}
+                    </SortableContext>
+                  </DroppableZone>
+
+                  <DroppableZone id="side-zone" className="tb-canvas-side">
+                    <SortableContext items={editSideFields.map(f => f.fieldKey)} strategy={verticalListSortingStrategy}>
+                      {editSideFields.map(field => (
+                        <SortableFieldCard
+                          key={field.fieldKey}
+                          field={field}
+                          translations={translations}
+                          onRemove={removeField}
+                          onDefaultChange={onDefaultChange}
+                          onWidthToggle={onWidthToggle}
+                          onVisibilityChange={onVisibilityChange}
+                          onOpenDesigner={setWorkflowDesignerKey}
+                        />
+                      ))}
+                      {editSideFields.length === 0 && (
+                        <div className="tb-canvas-col-empty">Drag a half-width field here</div>
+                      )}
+                    </SortableContext>
+                  </DroppableZone>
                 </div>
-              </SortableContext>
-            </DndContext>
+
+                <DragOverlay>
+                  {activeDragId ? (() => {
+                    const draggedField = activeTab.fields.find(f => f.fieldKey === activeDragId);
+                    return draggedField ? <OverlayFieldCard field={draggedField} translations={translations} /> : null;
+                  })() : null}
+                </DragOverlay>
+              </DndContext>
+            )}
 
             {/* AI panel */}
             <div className="tb-ai-panel">
@@ -1097,18 +1236,25 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
               </div>
             )}
 
-            {activeTab && (
-              <div className="tb-preview-grid">
-                {activeTab.fields.map(field => (
-                  <PreviewField
-                    key={field.fieldKey}
-                    field={field}
-                    translations={translations}
-                    parentId={templateId}
-                  />
-                ))}
-              </div>
-            )}
+            {activeTab && (() => {
+              const { mainFields: previewMain, sideFields: previewSide } = splitByWidth(activeTab.fields);
+              return (
+                <div className="tb-preview-columns">
+                  <div className="tb-preview-main">
+                    {previewMain.map(field => (
+                      <PreviewField key={field.fieldKey} field={field} translations={translations} parentId={templateId} />
+                    ))}
+                  </div>
+                  {previewSide.length > 0 && (
+                    <div className="tb-preview-side">
+                      {previewSide.map(field => (
+                        <PreviewField key={field.fieldKey} field={field} translations={translations} parentId={templateId} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

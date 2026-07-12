@@ -57,6 +57,10 @@ interface Props {
   readOnly?: boolean;
   entityId?: number;
   onNavigateTicket?: (id: number) => void;
+  // Same type='ticket_fields' translation bundle Template Builder uses for its
+  // palette/canvas labels — keeps field card titles identical in both places
+  // instead of falling back to the raw fieldKey.
+  fieldLabels?: Record<string, string>;
 }
 
 interface FieldControlProps {
@@ -313,7 +317,7 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onN
 };
 
 const FieldCards = ({
-  fields, values, onChange, aiFilledFields, readOnly, entityId, isAdmin, onNavigateTicket, t,
+  fields, values, onChange, aiFilledFields, readOnly, entityId, isAdmin, onNavigateTicket, fieldLabels, t,
 }: {
   fields: TemplateLayoutField[];
   values: Record<string, any>;
@@ -323,6 +327,7 @@ const FieldCards = ({
   entityId?: number;
   isAdmin?: boolean;
   onNavigateTicket?: (id: number) => void;
+  fieldLabels?: Record<string, string>;
   t: (key: string, opts?: any) => string;
 }) => (
   <>
@@ -349,7 +354,7 @@ const FieldCards = ({
               )}
             </div>
             <div className="tfr-field-title">
-              {t(field.fieldKey, { defaultValue: field.fieldKey.replace(/_/g, ' ') })}
+              {fieldLabels?.[field.fieldKey] || t(field.fieldKey, { defaultValue: field.fieldKey.replace(/_/g, ' ') })}
             </div>
             {(field.fieldVisibility === 'admin_only' || (!field.fieldVisibility && field.isAdminOnly)) && (
               <span className="tfr-admin-badge">
@@ -394,6 +399,7 @@ export const TicketFormRenderer = ({
   readOnly = false,
   entityId,
   onNavigateTicket,
+  fieldLabels,
 }: Props) => {
   const { t } = useTranslation();
   const [activeTabKey, setActiveTabKey] = useState<string>(() => tabs[0]?.tabKey ?? '');
@@ -450,6 +456,7 @@ export const TicketFormRenderer = ({
             entityId={entityId}
             isAdmin={isAdmin}
             onNavigateTicket={onNavigateTicket}
+            fieldLabels={fieldLabels}
             t={t}
           />
         </div>
@@ -464,6 +471,7 @@ export const TicketFormRenderer = ({
               entityId={entityId}
               isAdmin={isAdmin}
               onNavigateTicket={onNavigateTicket}
+              fieldLabels={fieldLabels}
               t={t}
             />
           </div>

@@ -31,10 +31,11 @@ interface PresenceUser {
 }
 
 export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTicket }: Props) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [ticket, setTicket]         = useState<TicketDetail | null>(null);
   const [layoutTabs, setLayoutTabs] = useState<TemplateTab[]>([]);
+  const [fieldLabels, setFieldLabels] = useState<Record<string, string>>({});
   const [values, setValues]         = useState<Record<string, any>>({});
   const [loading, setLoading]       = useState(true);
   const [saving, setSaving]         = useState(false);
@@ -87,6 +88,15 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
     };
     load();
   }, [ticketId]);
+
+  // Same field-label bundle Template Builder uses (nicely capitalized names
+  // like "Related Tickets" instead of the raw fieldKey fallback), so field
+  // card titles read identically here and in the builder.
+  useEffect(() => {
+    api.get(`/field-definitions/translations/${i18n.language || 'en'}`, {
+      params: { translationType: 'ticket_fields' },
+    }).then(r => setFieldLabels(r.data)).catch(() => {});
+  }, [i18n.language]);
 
   // SSE subscription for real-time updates
   useEffect(() => {
@@ -416,6 +426,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
             isAdmin={isAdmin}
             entityId={ticketId}
             onNavigateTicket={onNavigateTicket}
+            fieldLabels={fieldLabels}
           />
         )}
 
