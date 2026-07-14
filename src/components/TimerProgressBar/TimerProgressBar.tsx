@@ -12,6 +12,19 @@ interface TimerValue {
 interface Props {
   value: TimerValue | null | undefined;
   compact?: boolean;
+  /** Freezes the bar in a distinct "paused" visual state instead of computing from value — used
+   *  by SlaCountdownWidget while a ticket is in "waiting" status, since elapsed time is frozen too. */
+  paused?: boolean;
+}
+
+/** Shared 4-tier color scale (green→yellow→orange→red) — also used directly by
+ *  SlaCountdownWidget, which computes its own business-hours-aware percentage server-side rather
+ *  than feeding synthetic values through this component's naive wall-clock calculation. */
+export function tierColor(pctUsed: number, overdue: boolean): string {
+  return overdue        ? '#ef4444'
+       : pctUsed >= 80   ? '#f97316'
+       : pctUsed >= 50   ? '#eab308'
+       :                   '#22c55e';
 }
 
 function formatBusinessDuration(minutes: number, unit: string): string {
@@ -37,7 +50,7 @@ function formatWallClock(seconds: number): string {
   return `${m}m`;
 }
 
-export const TimerProgressBar = ({ value, compact = false }: Props) => {
+export const TimerProgressBar = ({ value, compact = false, paused = false }: Props) => {
   const { formatDateTime } = useDateTimeFormatter();
   const info = useMemo(() => {
     if (!value?.started_at || !value?.target_datetime) return null;
@@ -67,20 +80,18 @@ export const TimerProgressBar = ({ value, compact = false }: Props) => {
   if (!value) return <span className="tpb-not-set">—</span>;
   if (!info)  return <span className="tpb-not-set">Not set</span>;
 
-  const color = info.overdue       ? '#ef4444'
-              : info.pct >= 80     ? '#f97316'
-              : info.pct >= 50     ? '#eab308'
-              :                      '#22c55e';
+  const color = paused ? '#94a3b8' : tierColor(info.pct, info.overdue);
 
   if (compact) {
     return (
       <div className="tpb-compact" title={
-        info.overdue
+        paused ? '⏸ Paused'
+        : info.overdue
           ? `Overdue by ${formatWallClock(info.overdueBy)}`
           : `${formatBusinessDuration(info.remainingBusinessMins, info.unit)} remaining`
       }>
         <div className="tpb-bar-wrap-compact">
-          <div className="tpb-bar-fill" style={{ width: `${info.pct}%`, background: color }} />
+          <div className={`tpb-bar-fill${paused ? ' tpb-bar-fill--paused' : ''}`} style={{ width: `${info.pct}%`, background: color }} />
         </div>
       </div>
     );
@@ -89,10 +100,11 @@ export const TimerProgressBar = ({ value, compact = false }: Props) => {
   return (
     <div className="tpb-root">
       <div className="tpb-bar-wrap">
-        <div className="tpb-bar-fill" style={{ width: `${info.pct}%`, background: color }} />
+        <div className={`tpb-bar-fill${paused ? ' tpb-bar-fill--paused' : ''}`} style={{ width: `${info.pct}%`, background: color }} />
       </div>
       <div className="tpb-label" style={{ color }}>
-        {info.overdue
+        {paused ? '⏸ Paused'
+          : info.overdue
           ? `Overdue by ${formatWallClock(info.overdueBy)}`
           : `${formatBusinessDuration(info.remainingBusinessMins, info.unit)} remaining`}
       </div>

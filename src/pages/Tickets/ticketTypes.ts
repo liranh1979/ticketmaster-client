@@ -40,6 +40,22 @@ export interface TicketPickerItem {
   status: string;
 }
 
+export interface SlaState {
+  slaPolicyId: number | null;
+  businessHours: boolean;
+  firstResponseTargetAt: string | null;
+  firstResponseAt: string | null;
+  firstResponseBreached: boolean;
+  firstResponsePercentUsed: number | null;
+  resolutionTargetAt: string | null;
+  resolutionAt: string | null;
+  resolutionBreached: boolean;
+  resolutionPercentUsed: number | null;
+  pausedAt: string | null;
+  aiBreachRiskScore: number | null;
+  aiRiskReason: string | null;
+}
+
 export interface TicketDetail {
   id: number;
   title: string;
@@ -62,6 +78,7 @@ export interface TicketDetail {
   csatScore: number | null;
   csatComment: string | null;
   relationships: TicketRelationship[];
+  slaState: SlaState | null;
 }
 
 export type FieldVisibility = 'admin_only' | 'all' | 'user_view_admin_edit';

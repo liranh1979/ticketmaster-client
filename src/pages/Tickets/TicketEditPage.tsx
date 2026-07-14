@@ -427,6 +427,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
             entityId={ticketId}
             onNavigateTicket={onNavigateTicket}
             fieldLabels={fieldLabels}
+            slaState={ticket?.slaState}
           />
         )}
 

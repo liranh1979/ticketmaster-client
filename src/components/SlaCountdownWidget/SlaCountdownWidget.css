@@ -1,0 +1,91 @@
+.slacw-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.slacw-no-policy {
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.slacw-breach-banner {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.slacw-clock {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.slacw-metric {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-left-width: 3px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  transition: border-color 0.4s ease;
+}
+
+.slacw-metric--paused {
+  background-image: repeating-linear-gradient(135deg, rgba(148, 163, 184, 0.04) 0 8px, transparent 8px 16px);
+}
+
+.slacw-metric-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.slacw-metric-val {
+  font-size: 18px;
+  font-weight: 700;
+  transition: color 0.4s ease;
+}
+
+.slacw-metric-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.slacw-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slacw-progress-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.slacw-bar-bg {
+  height: 6px;
+  background: #1e293b;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.slacw-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.4s ease, background 0.4s ease;
+}
+
+.slacw-bar-fill--paused {
+  background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.15) 0 6px, transparent 6px 12px);
+}

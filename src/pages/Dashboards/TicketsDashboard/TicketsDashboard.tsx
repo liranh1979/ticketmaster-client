@@ -8,6 +8,8 @@ import { CsatMetricsRow } from './CsatMetricsRow';
 import { CsatDistributionChart } from './CsatDistributionChart';
 import { CsatAiInsightsCard } from './CsatAiInsightsCard';
 import { CsatLowScoreTable } from './CsatLowScoreTable';
+import { SlaPriorityStatsTable } from './SlaPriorityStatsTable';
+import { SlaAiInsightCard } from './SlaAiInsightCard';
 import './TicketsDashboard.css';
 
 interface Props {
@@ -90,6 +92,25 @@ export const TicketsDashboard = ({ onEditTicket }: Props) => {
             </div>
             <CsatLowScoreTable tickets={data.csat.lowScoreTickets} onTicketClick={onEditTicket} />
           </div>
+        </div>
+      )}
+
+      {data && (
+        <div className="td-sla-section">
+          <h2 className="td-section-title">
+            ⏱ {t('dashboard_sla_section_title', { defaultValue: 'SLA Performance' })}
+          </h2>
+
+          <div className="dc-card">
+            <div className="dc-card-title-row">
+              <h2 className="dc-card-title">
+                {t('dashboard_sla_stats_title', { defaultValue: 'Breach Rates by Priority' })}
+              </h2>
+            </div>
+            <SlaPriorityStatsTable stats={data.sla.priorityStats} />
+          </div>
+
+          <SlaAiInsightCard insight={data.sla.aiInsight} />
         </div>
       )}
     </div>

@@ -110,7 +110,8 @@
 .dc-empty { margin-top: var(--sd-space-4); font-size: var(--sd-text-sm); color: var(--sd-fg-subtle); padding: var(--sd-space-4) 0; text-align: center; }
 
 /* CSAT section */
-.td-csat-section {
+.td-csat-section,
+.td-sla-section {
   display: flex;
   flex-direction: column;
   gap: var(--sd-space-5);
@@ -187,3 +188,41 @@
 
 .cst-ticket-cell { font-weight: 600; white-space: nowrap; }
 .cst-comment-cell { color: var(--sd-fg-muted); font-style: italic; }
+
+/* SLA priority breach stats table */
+.spt-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--sd-space-3);
+  font-size: var(--sd-text-sm);
+}
+.spt-table th {
+  text-align: left;
+  font-size: var(--sd-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sd-fg-subtle);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--sd-border);
+}
+.spt-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--sd-border);
+  color: var(--sd-fg);
+}
+.spt-table tbody tr:last-child td { border-bottom: none; }
+
+.spt-rate-warn { color: #eab308; font-weight: 700; }
+
+.spt-priority-chip {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: var(--sd-text-xs);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.spt-priority-chip--critical { background: oklch(94% 0.05 25); color: oklch(45% 0.2 25); }
+.spt-priority-chip--high     { background: oklch(95% 0.06 60); color: oklch(48% 0.18 55); }
+.spt-priority-chip--medium   { background: oklch(96% 0.05 95); color: oklch(50% 0.14 90); }
+.spt-priority-chip--low      { background: oklch(95% 0.04 150); color: oklch(45% 0.12 150); }

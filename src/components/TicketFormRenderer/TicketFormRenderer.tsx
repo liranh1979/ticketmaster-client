@@ -11,7 +11,9 @@ import { ActivityLogControl } from '../ActivityLogControl/ActivityLogControl';
 import { TimerFieldControl } from '../TimerFieldControl/TimerFieldControl';
 import { TicketRelationsPanel } from '../TicketRelationsPanel/TicketRelationsPanel';
 import '../TicketRelationsPanel/TicketRelationsPanel.css';
-import type { TemplateLayoutField, TemplateTab, FieldVisibility } from '../../pages/Tickets/ticketTypes';
+import { SlaCountdownWidget } from '../SlaCountdownWidget/SlaCountdownWidget';
+import '../SlaCountdownWidget/SlaCountdownWidget.css';
+import type { TemplateLayoutField, TemplateTab, FieldVisibility, SlaState } from '../../pages/Tickets/ticketTypes';
 import './TicketFormRenderer.css';
 import '../TimerFieldControl/TimerFieldControl.css';
 
@@ -28,6 +30,7 @@ const FIELD_BAR_COLORS: Record<string, string> = {
   emails:       '#ec4899',
   approval_flow:'#4f46e5',
   ticket_relations: '#8b5cf6',
+  sla: '#ef4444',
 };
 
 const FIELD_TYPE_ICONS: Record<string, string> = {
@@ -43,6 +46,7 @@ const FIELD_TYPE_ICONS: Record<string, string> = {
   nodelist:     '≡',
   workflow:     '⚙',
   ticket_relations: '🔗',
+  sla: '⏱',
 };
 
 const STATUS_OPTIONS = ['new', 'open', 'in_progress', 'waiting', 'resolved', 'closed'];
@@ -61,6 +65,7 @@ interface Props {
   // palette/canvas labels — keeps field card titles identical in both places
   // instead of falling back to the raw fieldKey.
   fieldLabels?: Record<string, string>;
+  slaState?: SlaState | null;
 }
 
 interface FieldControlProps {
@@ -71,6 +76,7 @@ interface FieldControlProps {
   entityId?: number;
   isAdmin?: boolean;
   onNavigateTicket?: (id: number) => void;
+  slaState?: SlaState | null;
 }
 
 const WorkflowFieldButton = ({ entityId, isAdmin }: { entityId?: number; isAdmin?: boolean }) => {
@@ -152,11 +158,19 @@ const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: 
 };
 
 // Proper React component — hooks are allowed here
-const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onNavigateTicket }: FieldControlProps) => {
+const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onNavigateTicket, slaState }: FieldControlProps) => {
   const { t } = useTranslation();
 
   if (field.fieldType === 'workflow') {
     return <WorkflowFieldButton entityId={entityId} isAdmin={isAdmin} />;
+  }
+
+  if (field.fieldType === 'sla') {
+    return entityId != null ? (
+      <SlaCountdownWidget slaState={slaState ?? null} />
+    ) : (
+      <div className="tfr-activity-placeholder">SLA clock starts once the ticket is saved.</div>
+    );
   }
 
   if (field.fieldType === 'ticket_relations') {
@@ -317,7 +331,7 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onN
 };
 
 const FieldCards = ({
-  fields, values, onChange, aiFilledFields, readOnly, entityId, isAdmin, onNavigateTicket, fieldLabels, t,
+  fields, values, onChange, aiFilledFields, readOnly, entityId, isAdmin, onNavigateTicket, fieldLabels, slaState, t,
 }: {
   fields: TemplateLayoutField[];
   values: Record<string, any>;
@@ -328,6 +342,7 @@ const FieldCards = ({
   isAdmin?: boolean;
   onNavigateTicket?: (id: number) => void;
   fieldLabels?: Record<string, string>;
+  slaState?: SlaState | null;
   t: (key: string, opts?: any) => string;
 }) => (
   <>
@@ -382,6 +397,7 @@ const FieldCards = ({
               entityId={entityId}
               isAdmin={isAdmin}
               onNavigateTicket={onNavigateTicket}
+              slaState={slaState}
             />
           </div>
         </div>
@@ -400,6 +416,7 @@ export const TicketFormRenderer = ({
   entityId,
   onNavigateTicket,
   fieldLabels,
+  slaState,
 }: Props) => {
   const { t } = useTranslation();
   const [activeTabKey, setActiveTabKey] = useState<string>(() => tabs[0]?.tabKey ?? '');
@@ -457,6 +474,7 @@ export const TicketFormRenderer = ({
             isAdmin={isAdmin}
             onNavigateTicket={onNavigateTicket}
             fieldLabels={fieldLabels}
+            slaState={slaState}
             t={t}
           />
         </div>
@@ -472,6 +490,7 @@ export const TicketFormRenderer = ({
               isAdmin={isAdmin}
               onNavigateTicket={onNavigateTicket}
               fieldLabels={fieldLabels}
+              slaState={slaState}
               t={t}
             />
           </div>

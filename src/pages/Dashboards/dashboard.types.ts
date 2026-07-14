@@ -52,11 +52,38 @@ export interface CsatDashboard {
   aiAnalysis: CsatAiAnalysis;
 }
 
+export interface SlaFinding {
+  observation: string;
+  recommendation: string;
+}
+
+export interface SlaAiInsight {
+  summary: string;
+  findings: SlaFinding[];
+  cached: boolean;
+  generatedAt: string;
+}
+
+export interface SlaPriorityStat {
+  priority: string;
+  total: number;
+  resolvedCount: number;
+  firstResponseBreached: number;
+  resolutionBreached: number;
+  resolutionBreachRatePercent: number;
+}
+
+export interface SlaDashboard {
+  priorityStats: SlaPriorityStat[];
+  aiInsight: SlaAiInsight;
+}
+
 export interface TicketsDashboardResponse {
   tickets: DashboardSeries;
   actionItems: DashboardSeries;
   aiReport: DashboardAiReport;
   csat: CsatDashboard;
+  sla: SlaDashboard;
 }
 
 export type DashboardRange = 'day' | 'week' | 'month';

@@ -21,7 +21,7 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   GripVertical, Lock, X, Plus, Sparkles, Save, Check, Columns, AlignJustify,
   Type, FileText, List, Calendar, Paperclip, MessageSquare, Mail, Tag, User,
-  ChevronRight, ArrowLeft, GitBranch, Link2,
+  ChevronRight, ArrowLeft, GitBranch, Link2, Timer,
 } from 'lucide-react';
 import { WorkflowDesignerModal, type WorkflowFieldConfig } from './WorkflowDesignerModal';
 import api from '../../../api';
@@ -90,6 +90,7 @@ const FIELD_TYPE_CONFIG: Record<string, FieldConfig> = {
   labels:       { icon: Tag,           color: '#3b82f6', label: 'Labels'       },
   workflow:     { icon: GitBranch,     color: '#4f46e5', label: 'Workflow'     },
   ticket_relations: { icon: Link2,     color: '#8b5cf6', label: 'Related Tickets' },
+  sla:          { icon: Timer,         color: '#ef4444', label: 'SLA' },
 };
 
 const FIELD_KEY_CONFIG: Record<string, FieldConfig> = {
@@ -227,6 +228,14 @@ function SortableFieldCard({
         <div className="tb-field-sys-note">
           <Link2 size={12} />
           Ticket links are managed from the ticket edit page
+        </div>
+      );
+    }
+    if (field.fieldType === 'sla') {
+      return (
+        <div className="tb-field-sys-note">
+          <Timer size={12} />
+          SLA targets are configured per priority in Settings → SLA
         </div>
       );
     }
@@ -493,6 +502,11 @@ function PreviewField({
     /* Related tickets — no ticket context exists in preview mode */
     if (field.fieldType === 'ticket_relations') {
       return <div className="tb-preview-placeholder">No related tickets in preview</div>;
+    }
+
+    /* SLA — no real ticket/policy context exists in preview mode */
+    if (field.fieldType === 'sla') {
+      return <div className="tb-preview-placeholder">SLA countdown shown once a real ticket exists</div>;
     }
 
     switch (field.fieldType) {
