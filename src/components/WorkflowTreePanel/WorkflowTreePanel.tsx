@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X, ShieldCheck, ShieldX, Clock, ArrowUpRight, Globe2, Plug } from 'lucide-react';
 import api from '../../api';
 import { UserPickerControl } from '../UserPickerControl/UserPickerControl';
 import './WorkflowTreePanel.css';
@@ -13,17 +13,44 @@ interface WorkflowItem {
   parentItemId: number | null;
   title: string;
   status: string;
+  type?: string;
+  typeConfig?: { levels?: ApprovalLevelConfig[]; calls?: unknown[] } | null;
   assignedUserId: number | null;
   assignedUserDisplayName: string | null;
   assignedGroupId: number | null;
+  lastError?: string | null;
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
 }
 
+interface ApprovalLevelConfig {
+  approverType: 'specific_user' | 'group';
+  approverUserId?: number | null;
+  approverGroupId?: number | null;
+  timeoutHours?: number | null;
+  escalateToUserId?: number | null;
+}
+
+interface ApprovalDecision {
+  id: number;
+  workflowItemId: number;
+  levelOrder: number;
+  approverUserId: number | null;
+  approverGroupId: number | null;
+  decision: 'pending' | 'approved' | 'rejected' | 'escalated';
+  decidedAt: string | null;
+  decidedByUserId: number | null;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
+interface NameLookup { id: number; display_name: string; }
+
 interface Props {
   ticketId: number;
   isAdmin: boolean;
+  currentUserId?: number;
   onClose: () => void;
 }
 
@@ -75,7 +102,7 @@ function fmtDt(iso: string): string {
 
 /* ── Component ── */
 
-export const WorkflowTreePanel = ({ ticketId, isAdmin, onClose }: Props) => {
+export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }: Props) => {
   const [items, setItems]             = useState<WorkflowItem[]>([]);
   const [loading, setLoading]         = useState(true);
   const [selectedId, setSelectedId]   = useState<number | null>(null);
@@ -85,6 +112,16 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, onClose }: Props) => {
   const [saving, setSaving]             = useState(false);
   const [savedFlash, setSavedFlash]     = useState(false);
   const [childActivated, setChildActivated] = useState<number | null>(null);
+
+  // Approval-type items
+  const [decisions, setDecisions]         = useState<ApprovalDecision[]>([]);
+  const [decisionsLoading, setDecisionsLoading] = useState(false);
+  const [userNames, setUserNames]         = useState<Record<number, string>>({});
+  const [groupNames, setGroupNames]       = useState<Record<number, string>>({});
+  const [deciding, setDeciding]           = useState(false);
+  const [decideError, setDecideError]     = useState('');
+  const [rejectReason, setRejectReason]   = useState('');
+  const [showRejectBox, setShowRejectBox] = useState(false);
 
   const flatTree = useMemo(() => flattenTree(items), [items]);
   const selected = items.find(i => i.id === selectedId) ?? null;
@@ -101,6 +138,31 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, onClose }: Props) => {
 
   useEffect(() => { load(); }, [load]);
 
+  // Name lookups for approver display (approval-type items only render this info, but the
+  // lookups are cheap and shared across every item, so fetch once up front).
+  useEffect(() => {
+    api.get('/ticket-users/assignable').then(r => {
+      const map: Record<number, string> = {};
+      (r.data as { user_id: number; display_name: string }[]).forEach(u => { map[u.user_id] = u.display_name; });
+      setUserNames(map);
+    }).catch(() => {});
+    api.get('/groups').then(r => {
+      const map: Record<number, string> = {};
+      (r.data as NameLookup[]).forEach(g => { map[g.id] = g.display_name; });
+      setGroupNames(map);
+    }).catch(() => {});
+  }, []);
+
+  const loadDecisions = useCallback(async (itemId: number) => {
+    setDecisionsLoading(true);
+    try {
+      const res = await api.get(`/workflow/items/${itemId}/approval-decisions`);
+      setDecisions(res.data);
+    } finally {
+      setDecisionsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
@@ -114,6 +176,14 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, onClose }: Props) => {
       setDraftAssignee(selected.assignedUserId?.toString() ?? '');
       setChildActivated(null);
       setSavedFlash(false);
+      setDecideError('');
+      setShowRejectBox(false);
+      setRejectReason('');
+      if (selected.type === 'approval') {
+        loadDecisions(selected.id);
+      } else {
+        setDecisions([]);
+      }
     }
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -155,6 +225,46 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, onClose }: Props) => {
       setSaving(false);
     }
   };
+
+  const handleDecision = async (decision: 'approved' | 'rejected') => {
+    if (!selected) return;
+    setDecideError('');
+    setDeciding(true);
+    try {
+      await api.post(`/workflow/items/${selected.id}/approval-decision`, {
+        decision,
+        reason: decision === 'rejected' ? rejectReason : undefined,
+      });
+      setShowRejectBox(false);
+      setRejectReason('');
+      const [freshRes] = await Promise.all([
+        api.get(`/tickets/${ticketId}/workflow`),
+        loadDecisions(selected.id),
+      ]);
+      setItems(freshRes.data);
+    } catch (err: any) {
+      setDecideError(err?.response?.data?.message || 'Failed to record decision');
+    } finally {
+      setDeciding(false);
+    }
+  };
+
+  const approverLabel = (d: ApprovalDecision) => {
+    if (d.approverGroupId != null) return groupNames[d.approverGroupId] ?? `Group #${d.approverGroupId}`;
+    if (d.approverUserId != null) return userNames[d.approverUserId] ?? `User #${d.approverUserId}`;
+    return 'Unassigned';
+  };
+
+  const DECISION_META: Record<ApprovalDecision['decision'], { icon: React.ReactNode; label: string; cls: string }> = {
+    pending:   { icon: <Clock size={12} />,       label: 'Pending',   cls: 'pending' },
+    approved:  { icon: <ShieldCheck size={12} />, label: 'Approved',  cls: 'approved' },
+    rejected:  { icon: <ShieldX size={12} />,      label: 'Rejected',  cls: 'rejected' },
+    escalated: { icon: <ArrowUpRight size={12} />, label: 'Escalated', cls: 'escalated' },
+  };
+
+  const canDecide = (d: ApprovalDecision) =>
+    d.decision === 'pending' && currentUserId != null &&
+    (d.approverUserId === currentUserId || d.approverGroupId != null);
 
   const st = (s: string) => WF_STATUS[s] ?? WF_STATUS.pending;
   const statusOptions = isAdmin ? ADMIN_STATUSES : USER_STATUSES;
@@ -208,7 +318,12 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, onClose }: Props) => {
                       >
                         L{depth}
                       </span>
-                      <span className="wtp-node-title">{item.title}</span>
+                      <span className="wtp-node-title">
+                        {item.type === 'approval' && <ShieldCheck size={11} className="wtp-node-approval-icon" />}
+                        {item.type === 'external_api' && <Globe2 size={11} className="wtp-node-approval-icon" />}
+                        {item.type === 'mcp_tool' && <Plug size={11} className="wtp-node-approval-icon" />}
+                        {item.title}
+                      </span>
                       {item.assignedUserDisplayName && (
                         <span className="wtp-node-assignee" title={item.assignedUserDisplayName}>
                           {item.assignedUserDisplayName}
@@ -244,53 +359,146 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, onClose }: Props) => {
                   <span className="wtp-item-title">{selected.title}</span>
                 </div>
 
-                {/* Status selector */}
-                <div className="wtp-field-group">
-                  <label className="wtp-field-label">Status</label>
-                  <select
-                    className="wtp-select"
-                    value={draftStatus}
-                    onChange={e => setDraftStatus(e.target.value)}
-                  >
-                    {statusOptions.map(s => (
-                      <option key={s} value={s}>{st(s).label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Assignee — admin only */}
-                {isAdmin && (
+                {selected.type === 'external_api' && (
                   <div className="wtp-field-group">
-                    <label className="wtp-field-label">Assignee</label>
-                    <UserPickerControl
-                      mode="all"
-                      value={draftAssignee}
-                      onChange={v => setDraftAssignee(v)}
-                      compact
-                    />
+                    <label className="wtp-field-label">External API Action</label>
+                    <p className="wtp-approval-empty">
+                      {(selected.typeConfig?.calls?.length ?? 0)} call{(selected.typeConfig?.calls?.length ?? 0) !== 1 ? 's' : ''} configured — runs automatically, no manual status change needed.
+                    </p>
+                    {selected.status === 'blocked' && selected.lastError && (
+                      <div className="wtp-approval-reason">{selected.lastError}</div>
+                    )}
                   </div>
                 )}
 
-                {/* Child activation notice */}
-                {childActivated !== null && (
-                  <div className={`wtp-child-notice${childActivated > 0 ? ' active' : ''}`}>
-                    <Check size={13} />
-                    {childActivated > 0
-                      ? `${childActivated} child item${childActivated === 1 ? '' : 's'} now active`
-                      : 'No pending children to activate'}
+                {selected.type === 'mcp_tool' && (
+                  <div className="wtp-field-group">
+                    <label className="wtp-field-label">MCP Tool Action</label>
+                    <p className="wtp-approval-empty">
+                      {(selected.typeConfig?.calls?.length ?? 0)} tool call{(selected.typeConfig?.calls?.length ?? 0) !== 1 ? 's' : ''} configured — runs automatically, no manual status change needed.
+                    </p>
+                    {selected.status === 'blocked' && selected.lastError && (
+                      <div className="wtp-approval-reason">{selected.lastError}</div>
+                    )}
                   </div>
                 )}
 
-                {/* Save button */}
-                <button
-                  className={`wtp-save-btn${savedFlash ? ' saved' : ''}`}
-                  onClick={handleSave}
-                  disabled={saving}
-                >
-                  {savedFlash
-                    ? <><Check size={13} /> Saved</>
-                    : saving ? 'Saving…' : 'Save Changes'}
-                </button>
+                {selected.type === 'approval' ? (
+                  <>
+                    {/* Approval chain progress */}
+                    <div className="wtp-field-group">
+                      <label className="wtp-field-label">Approval Chain</label>
+                      {decisionsLoading ? (
+                        <div className="wtp-loading">Loading…</div>
+                      ) : decisions.length === 0 ? (
+                        <p className="wtp-approval-empty">No decisions recorded yet.</p>
+                      ) : (
+                        <div className="wtp-approval-chain">
+                          {decisions.map(d => {
+                            const meta = DECISION_META[d.decision];
+                            return (
+                              <div key={d.id} className={`wtp-approval-row wtp-approval-${meta.cls}`}>
+                                <div className="wtp-approval-row-top">
+                                  <span className="wtp-approval-level">Level {d.levelOrder + 1}</span>
+                                  <span className="wtp-approval-badge">{meta.icon} {meta.label}</span>
+                                </div>
+                                <div className="wtp-approval-approver">{approverLabel(d)}</div>
+                                {d.decidedAt && (
+                                  <div className="wtp-approval-decided-at">on {fmtDt(d.decidedAt)}</div>
+                                )}
+                                {d.rejectionReason && (
+                                  <div className="wtp-approval-reason">"{d.rejectionReason}"</div>
+                                )}
+                                {canDecide(d) && (
+                                  <div className="wtp-approval-actions">
+                                    {showRejectBox ? (
+                                      <div className="wtp-approval-reject-box">
+                                        <textarea
+                                          className="wtp-approval-reason-input"
+                                          placeholder="Reason for rejection (optional)…"
+                                          value={rejectReason}
+                                          onChange={e => setRejectReason(e.target.value)}
+                                        />
+                                        <div className="wtp-approval-reject-btns">
+                                          <button className="wtp-approval-btn-cancel" onClick={() => setShowRejectBox(false)} disabled={deciding}>
+                                            Cancel
+                                          </button>
+                                          <button className="wtp-approval-btn-reject" onClick={() => handleDecision('rejected')} disabled={deciding}>
+                                            <ShieldX size={13} /> Confirm Reject
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <button className="wtp-approval-btn-approve" onClick={() => handleDecision('approved')} disabled={deciding}>
+                                          <ShieldCheck size={13} /> Approve
+                                        </button>
+                                        <button className="wtp-approval-btn-reject" onClick={() => setShowRejectBox(true)} disabled={deciding}>
+                                          <ShieldX size={13} /> Reject
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {decideError && <p className="wtp-approval-error">{decideError}</p>}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Status selector */}
+                    <div className="wtp-field-group">
+                      <label className="wtp-field-label">Status</label>
+                      <select
+                        className="wtp-select"
+                        value={draftStatus}
+                        onChange={e => setDraftStatus(e.target.value)}
+                      >
+                        {statusOptions.map(s => (
+                          <option key={s} value={s}>{st(s).label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Assignee — admin only */}
+                    {isAdmin && (
+                      <div className="wtp-field-group">
+                        <label className="wtp-field-label">Assignee</label>
+                        <UserPickerControl
+                          mode="all"
+                          value={draftAssignee}
+                          onChange={v => setDraftAssignee(v)}
+                          compact
+                        />
+                      </div>
+                    )}
+
+                    {/* Child activation notice */}
+                    {childActivated !== null && (
+                      <div className={`wtp-child-notice${childActivated > 0 ? ' active' : ''}`}>
+                        <Check size={13} />
+                        {childActivated > 0
+                          ? `${childActivated} child item${childActivated === 1 ? '' : 's'} now active`
+                          : 'No pending children to activate'}
+                      </div>
+                    )}
+
+                    {/* Save button */}
+                    <button
+                      className={`wtp-save-btn${savedFlash ? ' saved' : ''}`}
+                      onClick={handleSave}
+                      disabled={saving}
+                    >
+                      {savedFlash
+                        ? <><Check size={13} /> Saved</>
+                        : saving ? 'Saving…' : 'Save Changes'}
+                    </button>
+                  </>
+                )}
 
                 {/* Timestamps */}
                 <div className="wtp-timestamps">

@@ -1,6 +1,17 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { X, Plus, GitBranch, Trash2, Database, ArrowRight, Lock } from 'lucide-react';
+import { X, Plus, GitBranch, Trash2, Database, ArrowRight, Lock, ShieldCheck, Globe2, Plug, Play } from 'lucide-react';
 import { UserPickerControl } from '../../../components/UserPickerControl/UserPickerControl';
+import { ApprovalLevelsEditor, makeDefaultLevel, type ApprovalLevel } from './ApprovalLevelsEditor';
+import {
+  ExternalApiCallsEditor, ExternalApiFieldMappingsEditor,
+  type ExternalApiCall, type ExternalApiFieldMappings,
+} from './ExternalApiCallsEditor';
+import {
+  McpServerConnectionEditor, McpToolPicker, McpToolCallsEditor, McpResponseMappingsEditor,
+  makeDefaultCall as makeDefaultMcpCall,
+  type McpCall, type McpAuth, type McpResponseMapping,
+} from './McpToolCallsEditor';
+import { TestActionModal } from './TestActionModal';
 import './WorkflowDesignerModal.css';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -12,9 +23,19 @@ export interface DataFlow {
   target: string;
 }
 
+// 'task' (default, today's plain checklist behavior) is the only type with an Inspector UI so far —
+// 'approval'/'external_api'/'mcp_tool' round-trip through save/load from here on (backend now
+// persists them, see WorkflowService.seedWorkflowItems) but their own Inspector sections and
+// type-selector UI debut in the phases that give them real functionality, not before.
+export type WorkflowNodeType = 'task' | 'approval' | 'external_api' | 'mcp_tool';
+
 export interface WorkflowNodeDef {
   id: string;
   title: string;
+  type?: WorkflowNodeType;
+  typeConfig?: Record<string, unknown>;
+  // Only meaningful when this node's parent is an 'approval' node — see WorkflowService.activateChildren.
+  activationCondition?: 'approved' | 'rejected';
   parentId: string | null;
   displayOrder: number;
   defaultAssigneeUserId: number | null;
@@ -149,6 +170,7 @@ interface Props {
   fieldLabel: string;
   fieldConfig: WorkflowFieldConfig;
   ticketFieldKeys?: string[];
+  templateId?: number;
   onSave: (config: WorkflowFieldConfig) => void;
   onClose: () => void;
 }
@@ -159,6 +181,7 @@ export const WorkflowDesignerModal = ({
   fieldLabel,
   fieldConfig,
   ticketFieldKeys = [],
+  templateId,
   onSave,
   onClose,
 }: Props) => {
@@ -181,6 +204,8 @@ export const WorkflowDesignerModal = ({
   });
 
   const [selId, setSelId] = useState<string | null>(null);
+  const [mcpDiscoveredTools, setMcpDiscoveredTools] = useState<any[]>([]);
+  const [testModalOpen, setTestModalOpen] = useState(false);
 
   // Drag-to-move
   const [dragMove, setDragMove] = useState<{
@@ -208,6 +233,9 @@ export const WorkflowDesignerModal = ({
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
   }, [onClose]);
+
+  // Discovered MCP tools and any open test-run panel are transient per-editing-session state
+  useEffect(() => { setMcpDiscoveredTools([]); setTestModalOpen(false); }, [selId]);
 
   // ── Mouse helpers ─────────────────────────────────────────────────────────
 
@@ -281,7 +309,7 @@ export const WorkflowDesignerModal = ({
     const id = crypto.randomUUID();
     const par = selId ? nm[selId] : null;
     const newN: FullNode = {
-      id, title: 'New Item', parentId: selId ?? null, displayOrder: nodes.length,
+      id, title: 'New Item', type: 'task', parentId: selId ?? null, displayOrder: nodes.length,
       defaultAssigneeUserId: null, customFieldKeys: [], dataFlows: [],
       x: par ? Math.min(par.x + NODE_W + 52, CANVAS_W - NODE_W - 20) : CANVAS_W / 2 - NODE_W / 2,
       y: par ? par.y + LEVEL_H : TRIGGER_Y + TRIGGER_H + 72,
@@ -299,6 +327,73 @@ export const WorkflowDesignerModal = ({
 
   const upd = (id: string, patch: Partial<FullNode>) =>
     setNodes(prev => prev.map(n => n.id === id ? { ...n, ...patch } : n));
+
+  const setNodeType = (id: string, type: WorkflowNodeType) => {
+    const n = nm[id]; if (!n) return;
+    if (type === 'approval' && !Array.isArray((n.typeConfig as any)?.levels)) {
+      upd(id, { type, typeConfig: { ...n.typeConfig, levels: [makeDefaultLevel()] } });
+    } else if (type === 'external_api' && !Array.isArray((n.typeConfig as any)?.calls)) {
+      upd(id, { type, typeConfig: { ...n.typeConfig, calls: [], fieldMappings: { request: [], response: [] } } });
+    } else if (type === 'mcp_tool' && !Array.isArray((n.typeConfig as any)?.calls)) {
+      upd(id, { type, typeConfig: { serverUrl: '', auth: { type: 'none' }, calls: [], fieldMappings: { response: [] } } });
+    } else {
+      upd(id, { type });
+    }
+  };
+
+  const approvalLevelsOf = (n: FullNode): ApprovalLevel[] =>
+    (n.typeConfig?.levels as ApprovalLevel[] | undefined) ?? [];
+
+  const setApprovalLevels = (id: string, levels: ApprovalLevel[]) => {
+    const n = nm[id]; if (!n) return;
+    upd(id, { typeConfig: { ...n.typeConfig, levels } });
+  };
+
+  const externalApiCallsOf = (n: FullNode): ExternalApiCall[] =>
+    (n.typeConfig?.calls as ExternalApiCall[] | undefined) ?? [];
+
+  const externalApiMappingsOf = (n: FullNode): ExternalApiFieldMappings =>
+    (n.typeConfig?.fieldMappings as ExternalApiFieldMappings | undefined) ?? { request: [], response: [] };
+
+  const setExternalApiCalls = (id: string, calls: ExternalApiCall[]) => {
+    const n = nm[id]; if (!n) return;
+    upd(id, { typeConfig: { ...n.typeConfig, calls } });
+  };
+
+  const setExternalApiMappings = (id: string, fieldMappings: ExternalApiFieldMappings) => {
+    const n = nm[id]; if (!n) return;
+    upd(id, { typeConfig: { ...n.typeConfig, fieldMappings } });
+  };
+
+  const mcpServerUrlOf = (n: FullNode): string => (n.typeConfig?.serverUrl as string | undefined) ?? '';
+  const mcpAuthOf = (n: FullNode): McpAuth => (n.typeConfig?.auth as McpAuth | undefined) ?? { type: 'none' };
+  const mcpCallsOf = (n: FullNode): McpCall[] => (n.typeConfig?.calls as McpCall[] | undefined) ?? [];
+  const mcpResponseMappingsOf = (n: FullNode): McpResponseMapping[] =>
+    ((n.typeConfig?.fieldMappings as { response?: McpResponseMapping[] } | undefined)?.response) ?? [];
+
+  const setMcpServerUrl = (id: string, serverUrl: string) => {
+    const n = nm[id]; if (!n) return;
+    upd(id, { typeConfig: { ...n.typeConfig, serverUrl } });
+  };
+  const setMcpAuth = (id: string, auth: McpAuth) => {
+    const n = nm[id]; if (!n) return;
+    upd(id, { typeConfig: { ...n.typeConfig, auth } });
+  };
+  const setMcpCalls = (id: string, calls: McpCall[]) => {
+    const n = nm[id]; if (!n) return;
+    upd(id, { typeConfig: { ...n.typeConfig, calls } });
+  };
+  const setMcpResponseMappings = (id: string, response: McpResponseMapping[]) => {
+    const n = nm[id]; if (!n) return;
+    upd(id, { typeConfig: { ...n.typeConfig, fieldMappings: { response } } });
+  };
+  const addMcpCallFromTool = (id: string, tool: any) => {
+    const n = nm[id]; if (!n) return;
+    const properties = tool?.inputSchema?.properties ?? {};
+    const call = makeDefaultMcpCall(mcpCallsOf(n).length, tool.name);
+    call.argumentMappings = Object.keys(properties).map(key => ({ toolArgument: key, ticketField: '' }));
+    setMcpCalls(id, [...mcpCallsOf(n), call]);
+  };
 
   const addFlow = (nodeId: string) => {
     const f: DataFlow = { id: crypto.randomUUID(), direction: 'pull', source: '', target: '' };
@@ -423,10 +518,32 @@ export const WorkflowDesignerModal = ({
                       ><Trash2 size={9} /></button>
                     </div>
                     {/* title */}
-                    <div className="wfd-nttl">{n.title || 'Untitled'}</div>
+                    <div className="wfd-nttl">
+                      {n.type === 'approval' && <ShieldCheck size={11} className="wfd-nttl-icon" />}
+                      {n.type === 'external_api' && <Globe2 size={11} className="wfd-nttl-icon" />}
+                      {n.type === 'mcp_tool' && <Plug size={11} className="wfd-nttl-icon" />}
+                      {n.title || 'Untitled'}
+                    </div>
                     {/* meta pills */}
-                    {(n.customFieldKeys.length > 0 || n.dataFlows.length > 0) && (
+                    {(n.customFieldKeys.length > 0 || n.dataFlows.length > 0 || n.type === 'approval' || n.type === 'external_api' || n.type === 'mcp_tool' || n.activationCondition) && (
                       <div className="wfd-nmeta">
+                        {n.type === 'approval' && (
+                          <span className="wfd-pill wfd-pill-approval">
+                            {approvalLevelsOf(n).length} level{approvalLevelsOf(n).length !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {n.type === 'external_api' && (
+                          <span className="wfd-pill wfd-pill-approval">
+                            {externalApiCallsOf(n).length} call{externalApiCallsOf(n).length !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {n.type === 'mcp_tool' && (
+                          <span className="wfd-pill wfd-pill-approval">
+                            {mcpCallsOf(n).length} call{mcpCallsOf(n).length !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {n.activationCondition === 'approved' && <span className="wfd-pill wfd-pill-pull">on approved</span>}
+                        {n.activationCondition === 'rejected' && <span className="wfd-pill wfd-pill-push">on rejected</span>}
                         {n.customFieldKeys.length > 0 && (
                           <span className="wfd-pill">{n.customFieldKeys.length} field{n.customFieldKeys.length > 1 ? 's' : ''}</span>
                         )}
@@ -494,29 +611,138 @@ export const WorkflowDesignerModal = ({
                   <p className="wfd-hint-xs">Or drag the ● port on the canvas to connect</p>
                 </div>
 
-                {/* Assignee */}
+                {/* Type */}
                 <div className="wfd-sec">
-                  <div className="wfd-sec-lbl">DEFAULT ASSIGNEE</div>
-                  <UserPickerControl
-                    mode="all"
-                    value={selNode.defaultAssigneeUserId?.toString() ?? ''}
-                    onChange={v => upd(selNode.id, { defaultAssigneeUserId: v ? Number(v) : null })}
-                    compact
-                  />
+                  <div className="wfd-sec-lbl">ITEM TYPE</div>
+                  <select
+                    className="wfd-sel"
+                    value={selNode.type ?? 'task'}
+                    onChange={e => setNodeType(selNode.id, e.target.value as WorkflowNodeType)}
+                  >
+                    <option value="task">Task — manual checklist item</option>
+                    <option value="approval">Approval — requires a decision</option>
+                    <option value="external_api">External API — calls an outside system</option>
+                    <option value="mcp_tool">MCP Tool — calls an MCP server's tools</option>
+                  </select>
                 </div>
 
-                {/* Pre-built fields */}
-                <div className="wfd-sec">
-                  <div className="wfd-sec-lbl"><Lock size={9} /> PRE-BUILT FIELDS</div>
-                  {['Workflow Status', 'Assignee', 'Attachments 📎'].map(f => (
-                    <div key={f} className="wfd-locked-row">
-                      <span>{f}</span>
-                      <span className="wfd-locked-badge">LOCKED</span>
+                {/* Activation condition — only meaningful when the parent is an approval item */}
+                {selNode.parentId && nm[selNode.parentId]?.type === 'approval' && (
+                  <div className="wfd-sec">
+                    <div className="wfd-sec-lbl">ACTIVATES ON</div>
+                    <select
+                      className="wfd-sel"
+                      value={selNode.activationCondition ?? ''}
+                      onChange={e => upd(selNode.id, {
+                        activationCondition: (e.target.value || undefined) as 'approved' | 'rejected' | undefined,
+                      })}
+                    >
+                      <option value="">Always (any outcome)</option>
+                      <option value="approved">Only if parent is Approved</option>
+                      <option value="rejected">Only if parent is Rejected</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Approval levels */}
+                {selNode.type === 'approval' ? (
+                  <div className="wfd-sec">
+                    <div className="wfd-sec-row">
+                      <div className="wfd-sec-lbl"><ShieldCheck size={9} /> APPROVAL LEVELS</div>
                     </div>
-                  ))}
-                </div>
+                    <ApprovalLevelsEditor
+                      levels={approvalLevelsOf(selNode)}
+                      onChange={levels => setApprovalLevels(selNode.id, levels)}
+                    />
+                  </div>
+                ) : selNode.type === 'external_api' ? (
+                  <>
+                    <div className="wfd-sec">
+                      <div className="wfd-sec-row">
+                        <div className="wfd-sec-lbl"><Globe2 size={9} /> API CALLS</div>
+                        {externalApiCallsOf(selNode).length > 0 && (
+                          <button className="wfd-add-flow-btn" onClick={() => setTestModalOpen(true)}>
+                            <Play size={10} /> Test this call now
+                          </button>
+                        )}
+                      </div>
+                      <p className="wfd-hint-xs">
+                        Runs automatically the moment this item activates — no human action needed.
+                        Use <code>{'{{placeholder}}'}</code> in URL/header/body templates.
+                      </p>
+                      <ExternalApiCallsEditor
+                        calls={externalApiCallsOf(selNode)}
+                        onChange={calls => setExternalApiCalls(selNode.id, calls)}
+                      />
+                    </div>
+                    <ExternalApiFieldMappingsEditor
+                      mappings={externalApiMappingsOf(selNode)}
+                      onChange={m => setExternalApiMappings(selNode.id, m)}
+                      ticketFieldKeys={ticketFieldKeys}
+                      captureNames={externalApiCallsOf(selNode).flatMap(c => c.responseCaptures.map(r => r.name).filter(Boolean))}
+                    />
+                  </>
+                ) : selNode.type === 'mcp_tool' ? (
+                  <>
+                    <div className="wfd-sec">
+                      <div className="wfd-sec-row">
+                        <div className="wfd-sec-lbl"><Plug size={9} /> MCP TOOL CALLS</div>
+                        {mcpCallsOf(selNode).length > 0 && (
+                          <button className="wfd-add-flow-btn" onClick={() => setTestModalOpen(true)}>
+                            <Play size={10} /> Test this call now
+                          </button>
+                        )}
+                      </div>
+                      <p className="wfd-hint-xs">
+                        Runs automatically the moment this item activates — no human action needed.
+                      </p>
+                      <McpServerConnectionEditor
+                        serverUrl={mcpServerUrlOf(selNode)}
+                        onServerUrlChange={v => setMcpServerUrl(selNode.id, v)}
+                        auth={mcpAuthOf(selNode)}
+                        onAuthChange={a => setMcpAuth(selNode.id, a)}
+                        onToolsDiscovered={setMcpDiscoveredTools}
+                      />
+                      <McpToolPicker tools={mcpDiscoveredTools} onPick={tool => addMcpCallFromTool(selNode.id, tool)} />
+                      <McpToolCallsEditor
+                        calls={mcpCallsOf(selNode)}
+                        onChange={calls => setMcpCalls(selNode.id, calls)}
+                      />
+                    </div>
+                    <McpResponseMappingsEditor
+                      mappings={mcpResponseMappingsOf(selNode)}
+                      onChange={m => setMcpResponseMappings(selNode.id, m)}
+                      captureNames={mcpCallsOf(selNode).flatMap(c => c.responseCaptures.map(r => r.name).filter(Boolean))}
+                    />
+                  </>
+                ) : (
+                  <>
+                    {/* Assignee */}
+                    <div className="wfd-sec">
+                      <div className="wfd-sec-lbl">DEFAULT ASSIGNEE</div>
+                      <UserPickerControl
+                        mode="all"
+                        value={selNode.defaultAssigneeUserId?.toString() ?? ''}
+                        onChange={v => upd(selNode.id, { defaultAssigneeUserId: v ? Number(v) : null })}
+                        compact
+                      />
+                    </div>
 
-                {/* Custom fields */}
+                    {/* Pre-built fields */}
+                    <div className="wfd-sec">
+                      <div className="wfd-sec-lbl"><Lock size={9} /> PRE-BUILT FIELDS</div>
+                      {['Workflow Status', 'Assignee', 'Attachments 📎'].map(f => (
+                        <div key={f} className="wfd-locked-row">
+                          <span>{f}</span>
+                          <span className="wfd-locked-badge">LOCKED</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Custom fields — not applicable to external_api (field mapping above covers I/O) or approval */}
+                {selNode.type !== 'approval' && selNode.type !== 'external_api' && selNode.type !== 'mcp_tool' && (
                 <div className="wfd-sec">
                   <div className="wfd-sec-lbl">CUSTOM FIELDS</div>
                   {selNode.customFieldKeys.length === 0 && (
@@ -552,8 +778,11 @@ export const WorkflowDesignerModal = ({
                     <p className="wfd-empty-txt">No ticket fields available (add fields to the template first)</p>
                   )}
                 </div>
+                )}
 
-                {/* Data flows */}
+                {/* Data flows — not applicable to approval/external_api items (approvers/decisions
+                    aren't field-mapped; external_api has its own dedicated field-mapping section above) */}
+                {selNode.type !== 'approval' && selNode.type !== 'external_api' && selNode.type !== 'mcp_tool' && (
                 <div className="wfd-sec">
                   <div className="wfd-sec-row">
                     <div className="wfd-sec-lbl"><Database size={9} /> DATA FLOWS</div>
@@ -678,6 +907,7 @@ export const WorkflowDesignerModal = ({
                     </div>
                   ))}
                 </div>
+                )}
 
                 {/* Delete */}
                 <div className="wfd-sec wfd-sec-last">
@@ -700,6 +930,21 @@ export const WorkflowDesignerModal = ({
           </aside>
         </div>
       </div>
+
+      {testModalOpen && selNode && (selNode.type === 'external_api' || selNode.type === 'mcp_tool') && (
+        <TestActionModal
+          type={selNode.type}
+          nodeId={selNode.id}
+          templateId={templateId}
+          typeConfig={selNode.typeConfig ?? {}}
+          referencedTicketFields={
+            selNode.type === 'external_api'
+              ? externalApiMappingsOf(selNode).request.map(r => r.ticketField).filter(Boolean)
+              : mcpCallsOf(selNode).flatMap(c => c.argumentMappings).map(m => m.ticketField).filter((f): f is string => !!f)
+          }
+          onClose={() => setTestModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

@@ -66,6 +66,7 @@ interface Props {
   // instead of falling back to the raw fieldKey.
   fieldLabels?: Record<string, string>;
   slaState?: SlaState | null;
+  currentUserId?: number;
 }
 
 interface FieldControlProps {
@@ -77,9 +78,10 @@ interface FieldControlProps {
   isAdmin?: boolean;
   onNavigateTicket?: (id: number) => void;
   slaState?: SlaState | null;
+  currentUserId?: number;
 }
 
-const WorkflowFieldButton = ({ entityId, isAdmin }: { entityId?: number; isAdmin?: boolean }) => {
+const WorkflowFieldButton = ({ entityId, isAdmin, currentUserId }: { entityId?: number; isAdmin?: boolean; currentUserId?: number }) => {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -96,6 +98,7 @@ const WorkflowFieldButton = ({ entityId, isAdmin }: { entityId?: number; isAdmin
         <WorkflowTreePanel
           ticketId={entityId}
           isAdmin={isAdmin ?? false}
+          currentUserId={currentUserId}
           onClose={() => setOpen(false)}
         />
       )}
@@ -158,11 +161,11 @@ const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: 
 };
 
 // Proper React component — hooks are allowed here
-const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onNavigateTicket, slaState }: FieldControlProps) => {
+const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onNavigateTicket, slaState, currentUserId }: FieldControlProps) => {
   const { t } = useTranslation();
 
   if (field.fieldType === 'workflow') {
-    return <WorkflowFieldButton entityId={entityId} isAdmin={isAdmin} />;
+    return <WorkflowFieldButton entityId={entityId} isAdmin={isAdmin} currentUserId={currentUserId} />;
   }
 
   if (field.fieldType === 'sla') {
@@ -331,7 +334,7 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onN
 };
 
 const FieldCards = ({
-  fields, values, onChange, aiFilledFields, readOnly, entityId, isAdmin, onNavigateTicket, fieldLabels, slaState, t,
+  fields, values, onChange, aiFilledFields, readOnly, entityId, isAdmin, onNavigateTicket, fieldLabels, slaState, currentUserId, t,
 }: {
   fields: TemplateLayoutField[];
   values: Record<string, any>;
@@ -343,6 +346,7 @@ const FieldCards = ({
   onNavigateTicket?: (id: number) => void;
   fieldLabels?: Record<string, string>;
   slaState?: SlaState | null;
+  currentUserId?: number;
   t: (key: string, opts?: any) => string;
 }) => (
   <>
@@ -398,6 +402,7 @@ const FieldCards = ({
               isAdmin={isAdmin}
               onNavigateTicket={onNavigateTicket}
               slaState={slaState}
+              currentUserId={currentUserId}
             />
           </div>
         </div>
@@ -417,6 +422,7 @@ export const TicketFormRenderer = ({
   onNavigateTicket,
   fieldLabels,
   slaState,
+  currentUserId,
 }: Props) => {
   const { t } = useTranslation();
   const [activeTabKey, setActiveTabKey] = useState<string>(() => tabs[0]?.tabKey ?? '');
@@ -475,6 +481,7 @@ export const TicketFormRenderer = ({
             onNavigateTicket={onNavigateTicket}
             fieldLabels={fieldLabels}
             slaState={slaState}
+            currentUserId={currentUserId}
             t={t}
           />
         </div>

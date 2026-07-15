@@ -279,3 +279,33 @@
   align-items: center;
   padding: 0 4px;
 }
+
+/* ── Approval items ── */
+.mwi-approval-icon {
+  color: #6ee7b7;
+  flex-shrink: 0;
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+
+.mwi-approval-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 6px 11px;
+  background: rgba(79, 70, 229, 0.15);
+  border: 1px solid rgba(79, 70, 229, 0.4);
+  border-radius: 6px;
+  color: #a5b4fc;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.mwi-approval-cta:hover {
+  background: rgba(79, 70, 229, 0.28);
+  border-color: rgba(79, 70, 229, 0.6);
+}

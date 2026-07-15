@@ -1221,6 +1221,7 @@ export const TemplateBuilderPage = ({ templateId, onBack }: Props) => {
             ticketFieldKeys={layout.tabs.flatMap(t => t.fields)
               .filter(f => f.fieldType !== 'workflow')
               .map(f => f.fieldKey)}
+            templateId={templateId}
             onSave={config => handleWorkflowSave(workflowDesignerKey, config)}
             onClose={() => setWorkflowDesignerKey(null)}
           />

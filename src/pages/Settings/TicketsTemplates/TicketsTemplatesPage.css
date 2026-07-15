@@ -44,6 +44,29 @@
 .tt-create-btn:hover:not(:disabled) { background: var(--sd-brand-hover); }
 .tt-create-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.tt-tabbar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--sd-border);
+  padding-bottom: 0;
+}
+
+.tt-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--sd-fg-subtle);
+  font: 600 var(--sd-text-sm)/1 var(--sd-font);
+  cursor: pointer;
+  transition: color var(--sd-dur-fast) var(--sd-ease), border-color var(--sd-dur-fast) var(--sd-ease);
+}
+.tt-tab-btn:hover { color: var(--sd-fg); }
+.tt-tab-btn.active { color: var(--sd-brand); border-bottom-color: var(--sd-brand); }
+
 .tt-loading, .tt-empty {
   color: var(--sd-fg-subtle);
   text-align: center;

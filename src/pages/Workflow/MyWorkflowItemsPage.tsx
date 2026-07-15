@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, ShieldCheck, ArrowRight } from 'lucide-react';
 import api from '../../api';
 import './MyWorkflowItemsPage.css';
 
@@ -10,6 +10,7 @@ interface WorkflowItem {
   ticketId: number;
   title: string;
   status: string;
+  type?: string;
   assignedUserDisplayName: string | null;
   displayOrder: number;
   updatedAt: string;
@@ -138,21 +139,31 @@ export const MyWorkflowItemsPage = ({ onBack, onViewTicket }: Props) => {
                     <div className="mwi-card-left" onClick={() => onViewTicket(item.ticketId)}>
                       <span className="mwi-card-dot" style={{ background: s.dot }} />
                       <div className="mwi-card-info">
-                        <div className="mwi-card-title">{item.title}</div>
+                        <div className="mwi-card-title">
+                          {item.type === 'approval' && <ShieldCheck size={13} className="mwi-approval-icon" />}
+                          {item.title}
+                        </div>
                         <div className="mwi-card-meta">
                           <span className="mwi-ticket-ref">TT-{item.ticketId}</span>
                           <span
                             className="mwi-status-chip"
                             style={{ color: s.text, background: s.bg }}
                           >
-                            {s.label}
+                            {item.type === 'approval' && item.status === 'in_progress' ? 'Awaiting your decision' : s.label}
                           </span>
                         </div>
                       </div>
                     </div>
 
                     <div className="mwi-card-right">
-                      {isUpdating ? (
+                      {item.type === 'approval' ? (
+                        <button
+                          className="mwi-approval-cta"
+                          onClick={() => onViewTicket(item.ticketId)}
+                        >
+                          Review &amp; Decide <ArrowRight size={12} />
+                        </button>
+                      ) : isUpdating ? (
                         <span className="mwi-updating"><Check size={14} /></span>
                       ) : (
                         <select

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Layers, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, Layers, Star, Sparkles } from 'lucide-react';
 import api from '../../../api';
 import { TemplateBuilderPage } from './TemplateBuilderPage';
+import { AiWorkflowBuilderPage } from './AiWorkflowBuilderPage';
 import './TicketsTemplatesPage.css';
 
 interface TemplateSummary {
@@ -20,6 +21,7 @@ export const TicketsTemplatesPage = () => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [settingDefaultId, setSettingDefaultId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'templates' | 'ai-builder'>('templates');
 
   const load = async () => {
     setLoading(true);
@@ -76,12 +78,31 @@ export const TicketsTemplatesPage = () => {
     <div className="tt-page">
       <div className="tt-header">
         <h2 className="tt-title">{t('template_management')}</h2>
-        <button className="tt-create-btn" onClick={handleCreate} disabled={creating}>
-          <Plus size={16} /> {t('create_template')}
+        {activeTab === 'templates' && (
+          <button className="tt-create-btn" onClick={handleCreate} disabled={creating}>
+            <Plus size={16} /> {t('create_template')}
+          </button>
+        )}
+      </div>
+
+      <div className="tt-tabbar">
+        <button
+          className={`tt-tab-btn${activeTab === 'templates' ? ' active' : ''}`}
+          onClick={() => setActiveTab('templates')}
+        >
+          <Layers size={13} /> Templates
+        </button>
+        <button
+          className={`tt-tab-btn${activeTab === 'ai-builder' ? ' active' : ''}`}
+          onClick={() => setActiveTab('ai-builder')}
+        >
+          <Sparkles size={13} /> AI Workflow Builder
         </button>
       </div>
 
-      {loading ? (
+      {activeTab === 'ai-builder' ? (
+        <AiWorkflowBuilderPage />
+      ) : loading ? (
         <div className="tt-loading">Loading...</div>
       ) : templates.length === 0 ? (
         <div className="tt-empty">{t('no_templates')}</div>

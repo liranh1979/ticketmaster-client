@@ -370,6 +370,170 @@
   color: #64748b;
 }
 
+/* ── Approval icon in tree row ── */
+.wtp-node-approval-icon {
+  color: #6ee7b7;
+  flex-shrink: 0;
+  margin-right: 3px;
+  vertical-align: -1px;
+}
+
+/* ── Approval chain (Inspector) ── */
+.wtp-approval-empty {
+  font-size: 12px;
+  color: #475569;
+  font-style: italic;
+}
+
+.wtp-approval-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wtp-approval-row {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-left: 3px solid #334155;
+  border-radius: 6px;
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wtp-approval-row.wtp-approval-pending   { border-left-color: #64748b; }
+.wtp-approval-row.wtp-approval-approved  { border-left-color: #10b981; }
+.wtp-approval-row.wtp-approval-rejected  { border-left-color: #ef4444; }
+.wtp-approval-row.wtp-approval-escalated { border-left-color: #f59e0b; }
+
+.wtp-approval-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wtp-approval-level {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.wtp-approval-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+.wtp-approval-pending   .wtp-approval-badge { color: #94a3b8; background: rgba(100,116,139,0.15); }
+.wtp-approval-approved  .wtp-approval-badge { color: #6ee7b7; background: rgba(16,185,129,0.15); }
+.wtp-approval-rejected  .wtp-approval-badge { color: #fca5a5; background: rgba(239,68,68,0.15); }
+.wtp-approval-escalated .wtp-approval-badge { color: #fcd34d; background: rgba(245,158,11,0.15); }
+
+.wtp-approval-approver {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.wtp-approval-decided-at {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.wtp-approval-reason {
+  font-size: 12px;
+  color: #cbd5e1;
+  font-style: italic;
+  background: rgba(239,68,68,0.08);
+  border-radius: 4px;
+  padding: 5px 8px;
+}
+
+.wtp-approval-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.wtp-approval-btn-approve,
+.wtp-approval-btn-reject,
+.wtp-approval-btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.wtp-approval-btn-approve {
+  background: rgba(16,185,129,0.15);
+  border-color: rgba(16,185,129,0.35);
+  color: #6ee7b7;
+}
+.wtp-approval-btn-approve:hover:not(:disabled) { background: rgba(16,185,129,0.28); }
+
+.wtp-approval-btn-reject {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.35);
+  color: #fca5a5;
+}
+.wtp-approval-btn-reject:hover:not(:disabled) { background: rgba(239,68,68,0.28); }
+
+.wtp-approval-btn-cancel {
+  background: transparent;
+  border-color: #334155;
+  color: #94a3b8;
+}
+.wtp-approval-btn-cancel:hover:not(:disabled) { border-color: #475569; color: #e2e8f0; }
+
+.wtp-approval-btn-approve:disabled,
+.wtp-approval-btn-reject:disabled,
+.wtp-approval-btn-cancel:disabled { opacity: 0.5; cursor: default; }
+
+.wtp-approval-reject-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.wtp-approval-reason-input {
+  background: #0b1220;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 7px 9px;
+  resize: vertical;
+  min-height: 44px;
+  outline: none;
+}
+.wtp-approval-reason-input:focus { border-color: #ef4444; }
+
+.wtp-approval-reject-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.wtp-approval-error {
+  font-size: 12px;
+  color: #fca5a5;
+  margin-top: 6px;
+}
+
 /* ── "View Workflow" button in TicketFormRenderer ── */
 .tfr-workflow-btn {
   display: flex;

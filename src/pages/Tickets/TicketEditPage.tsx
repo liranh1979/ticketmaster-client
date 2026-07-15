@@ -7,6 +7,7 @@ import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permission
 import { ActivityLogControl } from '../../components/ActivityLogControl/ActivityLogControl';
 import { AiTicketConsultPanel } from '../../components/AiTicketConsultPanel/AiTicketConsultPanel';
 import { ParentIncidentBanner } from '../../components/TicketRelationsPanel/ParentIncidentBanner';
+import { TicketApprovalStatusPanel } from '../../components/TicketApprovalStatusPanel/TicketApprovalStatusPanel';
 import { useTicketRelationships } from '../../hooks/useTicketRelationships';
 import type {
   TicketDetail,
@@ -417,6 +418,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
       {/* Form body */}
       <div className="te-body">
         <ParentIncidentBanner relationships={relationships} onNavigateTicket={onNavigateTicket} />
+        <TicketApprovalStatusPanel ticketId={ticketId} />
 
         {layoutTabs.length > 0 && (
           <TicketFormRenderer
@@ -428,6 +430,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
             onNavigateTicket={onNavigateTicket}
             fieldLabels={fieldLabels}
             slaState={ticket?.slaState}
+            currentUserId={user?.red_id}
           />
         )}
 
