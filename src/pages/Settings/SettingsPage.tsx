@@ -23,6 +23,7 @@ import { SystemSettingsPage } from './SystemSettings/SystemSettingsPage';
 import { SslCertPage } from './SslCert/SslCertPage';
 import { AccelerationRulesPage } from './AccelerationRules/AccelerationRulesPage';
 import { SlaPoliciesPage } from './SlaPolicies/SlaPoliciesPage';
+import { DashboardManagerPage } from './DashboardManager/DashboardManagerPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -54,7 +55,8 @@ type ViewState =
   | 'workflow-fields'
   | 'ssl-manager'
   | 'acceleration-rules'
-  | 'sla-policies';
+  | 'sla-policies'
+  | 'dashboard-manager';
 
 export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: SettingsPageProps) => {
   const { t } = useTranslation();
@@ -132,6 +134,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (['users-groups-hub','users','groups','ldap','azure'].includes(currentView)) return 'users-groups';
     if (currentView === 'acceleration-rules') return 'acceleration-rules';
     if (currentView === 'sla-policies') return 'sla-policies';
+    if (currentView === 'dashboard-manager') return 'dashboard-manager';
     return '';
   })();
 
@@ -183,6 +186,13 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
             <div className="settings-card" onClick={() => setCurrentView('ssl-manager')}>
               <div className="settings-icon-box"><div className="ai-icon-placeholder">🔒</div></div>
               <span className="settings-text">{t('ssl_title')}</span>
+            </div>
+          )}
+
+          {isSuperAdminUser && (
+            <div className="settings-card" onClick={() => setCurrentView('dashboard-manager')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">📋</div></div>
+              <span className="settings-text">{t('dashboard_manager_title', { defaultValue: 'Dashboard Manager' })}</span>
             </div>
           )}
 
@@ -260,6 +270,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'notification-manager') return <NotificationManager />;
     if (currentView === 'acceleration-rules') return <AccelerationRulesPage />;
     if (currentView === 'sla-policies') return <SlaPoliciesPage />;
+    if (currentView === 'dashboard-manager') return <DashboardManagerPage />;
     if (currentView === 'selection') return <FieldEntityList onSelectEntity={handleEntitySelection} />;
     if (currentView === 'users-groups-hub') return <UsersGroupsHub user={user} onSelect={(entity) => setCurrentView(entity)} />;
 
@@ -355,6 +366,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
         {isSuperAdminUser && navBtn('companies',   t('companies_settings_card'), () => setCurrentView('companies'))}
         {isSuperAdminUser && navBtn('system-settings', t('system_settings_card_label'), () => setCurrentView('system-settings'))}
         {isSuperAdminUser && navBtn('ssl-manager', t('ssl_title'), () => setCurrentView('ssl-manager'))}
+        {isSuperAdminUser && navBtn('dashboard-manager', t('dashboard_manager_title', { defaultValue: 'Dashboard Manager' }), () => setCurrentView('dashboard-manager'))}
       </aside>
 
       <div className="stg-content">

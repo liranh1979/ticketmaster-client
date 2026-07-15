@@ -1,21 +1,28 @@
+/* Fills the full grid column like ServiceDeskPage's .sd-main / SettingsPage's .stg-layout (no
+   max-width — previously capped at 1240px with no margin:auto, which left unused space on wide
+   viewports) and delegates scrolling to itself (previously had none, so anything taller than
+   .sd-app-content's overflow:hidden cell was simply unreachable) rather than a nested element. */
 .td-root {
   display: flex;
   flex-direction: column;
   gap: var(--sd-space-5);
   padding: var(--sd-space-5);
-  max-width: 1240px;
+  height: calc(100vh - var(--sd-header-h));
+  box-sizing: border-box;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .td-header-row { display: flex; align-items: center; justify-content: space-between; }
 .td-title { font-size: var(--sd-text-xl); font-weight: 700; margin: 0; color: var(--sd-fg); }
 
+/* auto-fit reflows to 2/3/4 columns depending on available width instead of a hard 2-up split
+   that left empty space on wide viewports; collapses to 1 column on narrow ones on its own, so
+   the old max-width media query is no longer needed. */
 .td-charts-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: var(--sd-space-5);
-}
-@media (max-width: 900px) {
-  .td-charts-grid { grid-template-columns: 1fr; }
 }
 
 /* AI Report card */
@@ -35,8 +42,11 @@
   padding: 3px 10px; border-radius: var(--sd-radius-pill);
   font-size: var(--sd-text-xs); font-weight: 600; white-space: nowrap;
 }
-.arc-pill-cached { background: var(--status-closed-bg); color: var(--status-closed-fg); }
-.arc-pill-fresh  { background: var(--status-resolved-bg); color: var(--status-resolved-fg); }
+.arc-pill-fresh   { background: var(--status-resolved-bg); color: var(--status-resolved-fg); }
+.arc-pill-pending { background: var(--sd-surface-2); color: var(--sd-fg-muted); }
+.arc-pill-stale   { background: rgba(234,179,8,0.15); color: #eab308; }
+
+.arc-generated-at { font-size: var(--sd-text-xs); color: var(--sd-fg-subtle); margin-top: -8px; margin-bottom: var(--sd-space-2); }
 
 .arc-loading, .arc-error { font-size: var(--sd-text-sm); color: var(--sd-fg-muted); padding: var(--sd-space-3) 0; display: flex; align-items: center; gap: var(--sd-space-3); }
 

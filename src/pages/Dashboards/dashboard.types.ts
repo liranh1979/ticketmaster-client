@@ -20,7 +20,8 @@ export interface DashboardAiReport {
   summary: string;
   recurringProblems: RecurringProblem[];
   cached: boolean;
-  generatedAt: string;
+  stale: boolean;
+  generatedAt: string | null;
 }
 
 export interface CsatImprovementPoint {
@@ -32,7 +33,8 @@ export interface CsatAiAnalysis {
   summary: string;
   improvementPoints: CsatImprovementPoint[];
   cached: boolean;
-  generatedAt: string;
+  stale: boolean;
+  generatedAt: string | null;
 }
 
 export interface CsatLowScoreTicket {
@@ -61,7 +63,8 @@ export interface SlaAiInsight {
   summary: string;
   findings: SlaFinding[];
   cached: boolean;
-  generatedAt: string;
+  stale: boolean;
+  generatedAt: string | null;
 }
 
 export interface SlaPriorityStat {
@@ -84,6 +87,7 @@ export interface TicketsDashboardResponse {
   aiReport: DashboardAiReport;
   csat: CsatDashboard;
   sla: SlaDashboard;
+  sectionOrder: string[];
 }
 
 export type DashboardRange = 'day' | 'week' | 'month';

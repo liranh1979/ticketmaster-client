@@ -1,6 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { DashboardAiReport } from '../dashboard.types';
+import { getAiPillState, formatRelativeTime } from '../aiReportStatus';
 import { RecurringProblemItem } from './RecurringProblemItem';
 
 interface Props {
@@ -12,19 +13,26 @@ interface Props {
 
 export const AiReportCard = ({ report, loading, error, onRetry }: Props) => {
   const { t } = useTranslation();
+  const pillState = report ? getAiPillState(report.cached, report.stale, report.generatedAt) : null;
+  const generatedAgo = report ? formatRelativeTime(report.generatedAt) : null;
 
   return (
     <div className="arc-card">
       <div className="arc-title-row">
         <h2 className="arc-title">🤖 {t('dashboard_ai_report_title', { defaultValue: 'AI Insights' })}</h2>
-        {report && (
-          <span className={`arc-pill ${report.cached ? 'arc-pill-cached' : 'arc-pill-fresh'}`}>
-            {report.cached
-              ? t('dashboard_report_cached_label', { defaultValue: 'Cached' })
-              : t('dashboard_report_fresh_label', { defaultValue: 'Freshly generated' })}
+        {pillState && (
+          <span className={`arc-pill arc-pill-${pillState}`}>
+            {pillState === 'pending' && t('dashboard_report_pending_label', { defaultValue: 'Generating…' })}
+            {pillState === 'fresh' && t('dashboard_report_up_to_date_label', { defaultValue: 'Up to date' })}
+            {pillState === 'stale' && t('dashboard_report_refreshing_label', { defaultValue: 'Refreshing…' })}
           </span>
         )}
       </div>
+      {generatedAgo && (
+        <div className="arc-generated-at">
+          {t('dashboard_report_generated_at_label', { defaultValue: 'as of {{time}}', time: generatedAgo })}
+        </div>
+      )}
 
       {loading && (
         <div className="arc-loading">
