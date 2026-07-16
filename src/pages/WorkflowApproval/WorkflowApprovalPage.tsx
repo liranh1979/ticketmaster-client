@@ -52,7 +52,7 @@ export const WorkflowApprovalPage = ({ token, initialAction }: Props) => {
       await api.post(`/workflow-approval/${token}`, { decision, reason: reason.trim() || null });
       setSubmitted(decision);
     } catch (err: any) {
-      setSubmitError(err?.response?.data?.message || 'Something went wrong. Please try again.');
+      setSubmitError(err?.response?.data?.message || t('something_went_wrong', { defaultValue: 'Something went wrong. Please try again.' }));
     } finally {
       setSubmitting(false);
     }

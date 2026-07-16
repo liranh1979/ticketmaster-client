@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, X, GripVertical, Clock, ArrowUpRight } from 'lucide-react';
 import {
   DndContext, closestCenter,
@@ -41,6 +42,7 @@ function LevelRow({
   onChange: (updated: ApprovalLevel) => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   const sortId = `level-${index}`;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: sortId });
 
@@ -54,7 +56,7 @@ function LevelRow({
     <div ref={setNodeRef} style={style} className="ale-row">
       <div className="ale-row-top">
         <span className="ale-grip" {...attributes} {...listeners}><GripVertical size={13} /></span>
-        <span className="ale-order">Level {index + 1}</span>
+        <span className="ale-order">{t('workflow_level_label', { defaultValue: 'Level {{level}}', level: index + 1 })}</span>
         <button className="ale-rm-btn" onClick={onRemove}><X size={12} /></button>
       </div>
 
@@ -66,8 +68,8 @@ function LevelRow({
             ? { ...level, approverType: 'group', approverUserId: null }
             : { ...level, approverType: 'specific_user', approverGroupId: null })}
         >
-          <option value="specific_user">Approver: Specific user</option>
-          <option value="group">Approver: Group (any member)</option>
+          <option value="specific_user">{t('approver_specific_user_option', { defaultValue: 'Approver: Specific user' })}</option>
+          <option value="group">{t('approver_group_option', { defaultValue: 'Approver: Group (any member)' })}</option>
         </select>
 
         {level.approverType === 'specific_user' ? (
@@ -83,25 +85,25 @@ function LevelRow({
             value={level.approverGroupId ?? ''}
             onChange={e => onChange({ ...level, approverGroupId: e.target.value ? Number(e.target.value) : null })}
           >
-            <option value="">— Select group —</option>
+            <option value="">{t('select_group_placeholder', { defaultValue: '— Select group —' })}</option>
             {groups.map(g => <option key={g.id} value={g.id}>{g.display_name}</option>)}
           </select>
         )}
 
         <div className="ale-timeout-row">
-          <span className="ale-timeout-lbl"><Clock size={10} /> Timeout</span>
+          <span className="ale-timeout-lbl"><Clock size={10} /> {t('timeout_label', { defaultValue: 'Timeout' })}</span>
           <input
             className="wfd-inp ale-timeout-inp"
             type="number" min={0} step={1}
             value={level.timeoutHours ?? ''}
             onChange={e => onChange({ ...level, timeoutHours: e.target.value ? Number(e.target.value) : null })}
-            placeholder="hrs"
+            placeholder={t('timeout_hours_placeholder', { defaultValue: 'hrs' }) as string}
           />
-          <span className="ale-timeout-unit">hours</span>
+          <span className="ale-timeout-unit">{t('hours_unit', { defaultValue: 'hours' })}</span>
         </div>
 
         <div className="ale-escalate-row">
-          <span className="ale-timeout-lbl"><ArrowUpRight size={10} /> Escalate to (on timeout)</span>
+          <span className="ale-timeout-lbl"><ArrowUpRight size={10} /> {t('escalate_to_on_timeout_label', { defaultValue: 'Escalate to (on timeout)' })}</span>
           <UserPickerControl
             mode="all"
             value={level.escalateToUserId?.toString() ?? ''}
@@ -120,6 +122,7 @@ export const ApprovalLevelsEditor = ({
   levels: ApprovalLevel[];
   onChange: (levels: ApprovalLevel[]) => void;
 }) => {
+  const { t } = useTranslation();
   const [groups, setGroups] = useState<GroupOption[]>([]);
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -147,7 +150,7 @@ export const ApprovalLevelsEditor = ({
   return (
     <div className="ale-wrap">
       {levels.length === 0 ? (
-        <p className="wfd-empty-txt">No approval levels yet — add one to require a decision before this item completes.</p>
+        <p className="wfd-empty-txt">{t('approval_levels_empty', { defaultValue: 'No approval levels yet — add one to require a decision before this item completes.' })}</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={levels.map((_, i) => `level-${i}`)} strategy={verticalListSortingStrategy}>
@@ -165,7 +168,7 @@ export const ApprovalLevelsEditor = ({
         </DndContext>
       )}
       <button className="wfd-add-flow-btn ale-add-btn" onClick={addLevel}>
-        <Plus size={10} /> Add level
+        <Plus size={10} /> {t('add_level_btn', { defaultValue: 'Add level' })}
       </button>
     </div>
   );

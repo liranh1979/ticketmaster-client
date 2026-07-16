@@ -90,13 +90,13 @@ export const TicketsTemplatesPage = () => {
           className={`tt-tab-btn${activeTab === 'templates' ? ' active' : ''}`}
           onClick={() => setActiveTab('templates')}
         >
-          <Layers size={13} /> Templates
+          <Layers size={13} /> {t('templates_tab', { defaultValue: 'Templates' })}
         </button>
         <button
           className={`tt-tab-btn${activeTab === 'ai-builder' ? ' active' : ''}`}
           onClick={() => setActiveTab('ai-builder')}
         >
-          <Sparkles size={13} /> AI Workflow Builder
+          <Sparkles size={13} /> {t('ai_workflow_builder_tab', { defaultValue: 'AI Workflow Builder' })}
         </button>
       </div>
 

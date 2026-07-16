@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, X, ShieldCheck, ShieldX, Clock, ArrowUpRight, Globe2, Plug } from 'lucide-react';
 import api from '../../api';
 import { UserPickerControl } from '../UserPickerControl/UserPickerControl';
@@ -103,6 +104,7 @@ function fmtDt(iso: string): string {
 /* ── Component ── */
 
 export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }: Props) => {
+  const { t } = useTranslation();
   const [items, setItems]             = useState<WorkflowItem[]>([]);
   const [loading, setLoading]         = useState(true);
   const [selectedId, setSelectedId]   = useState<number | null>(null);
@@ -243,23 +245,27 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
       ]);
       setItems(freshRes.data);
     } catch (err: any) {
-      setDecideError(err?.response?.data?.message || 'Failed to record decision');
+      setDecideError(err?.response?.data?.message || t('workflow_decision_record_failed', { defaultValue: 'Failed to record decision' }));
     } finally {
       setDeciding(false);
     }
   };
 
   const approverLabel = (d: ApprovalDecision) => {
-    if (d.approverGroupId != null) return groupNames[d.approverGroupId] ?? `Group #${d.approverGroupId}`;
-    if (d.approverUserId != null) return userNames[d.approverUserId] ?? `User #${d.approverUserId}`;
-    return 'Unassigned';
+    if (d.approverGroupId != null) {
+      return groupNames[d.approverGroupId] ?? t('workflow_approver_group_fallback', { defaultValue: 'Group #{{id}}', id: d.approverGroupId });
+    }
+    if (d.approverUserId != null) {
+      return userNames[d.approverUserId] ?? t('workflow_approver_user_fallback', { defaultValue: 'User #{{id}}', id: d.approverUserId });
+    }
+    return t('workflow_approver_unassigned', { defaultValue: 'Unassigned' });
   };
 
   const DECISION_META: Record<ApprovalDecision['decision'], { icon: React.ReactNode; label: string; cls: string }> = {
-    pending:   { icon: <Clock size={12} />,       label: 'Pending',   cls: 'pending' },
-    approved:  { icon: <ShieldCheck size={12} />, label: 'Approved',  cls: 'approved' },
-    rejected:  { icon: <ShieldX size={12} />,      label: 'Rejected',  cls: 'rejected' },
-    escalated: { icon: <ArrowUpRight size={12} />, label: 'Escalated', cls: 'escalated' },
+    pending:   { icon: <Clock size={12} />,       label: t('workflow_decision_pending', { defaultValue: 'Pending' }),   cls: 'pending' },
+    approved:  { icon: <ShieldCheck size={12} />, label: t('workflow_decision_approved', { defaultValue: 'Approved' }),  cls: 'approved' },
+    rejected:  { icon: <ShieldX size={12} />,      label: t('workflow_decision_rejected', { defaultValue: 'Rejected' }),  cls: 'rejected' },
+    escalated: { icon: <ArrowUpRight size={12} />, label: t('workflow_decision_escalated', { defaultValue: 'Escalated' }), cls: 'escalated' },
   };
 
   const canDecide = (d: ApprovalDecision) =>
@@ -361,9 +367,13 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
 
                 {selected.type === 'external_api' && (
                   <div className="wtp-field-group">
-                    <label className="wtp-field-label">External API Action</label>
+                    <label className="wtp-field-label">{t('workflow_external_api_action_label', { defaultValue: 'External API Action' })}</label>
                     <p className="wtp-approval-empty">
-                      {(selected.typeConfig?.calls?.length ?? 0)} call{(selected.typeConfig?.calls?.length ?? 0) !== 1 ? 's' : ''} configured — runs automatically, no manual status change needed.
+                      {t('workflow_calls_configured_count', {
+                        defaultValue: '{{count}} call{{s}} configured — runs automatically, no manual status change needed.',
+                        count: selected.typeConfig?.calls?.length ?? 0,
+                        s: (selected.typeConfig?.calls?.length ?? 0) !== 1 ? 's' : '',
+                      })}
                     </p>
                     {selected.status === 'blocked' && selected.lastError && (
                       <div className="wtp-approval-reason">{selected.lastError}</div>
@@ -373,9 +383,13 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
 
                 {selected.type === 'mcp_tool' && (
                   <div className="wtp-field-group">
-                    <label className="wtp-field-label">MCP Tool Action</label>
+                    <label className="wtp-field-label">{t('workflow_mcp_tool_action_label', { defaultValue: 'MCP Tool Action' })}</label>
                     <p className="wtp-approval-empty">
-                      {(selected.typeConfig?.calls?.length ?? 0)} tool call{(selected.typeConfig?.calls?.length ?? 0) !== 1 ? 's' : ''} configured — runs automatically, no manual status change needed.
+                      {t('workflow_tool_calls_configured_count', {
+                        defaultValue: '{{count}} tool call{{s}} configured — runs automatically, no manual status change needed.',
+                        count: selected.typeConfig?.calls?.length ?? 0,
+                        s: (selected.typeConfig?.calls?.length ?? 0) !== 1 ? 's' : '',
+                      })}
                     </p>
                     {selected.status === 'blocked' && selected.lastError && (
                       <div className="wtp-approval-reason">{selected.lastError}</div>
@@ -387,11 +401,11 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
                   <>
                     {/* Approval chain progress */}
                     <div className="wtp-field-group">
-                      <label className="wtp-field-label">Approval Chain</label>
+                      <label className="wtp-field-label">{t('workflow_approval_chain_label', { defaultValue: 'Approval Chain' })}</label>
                       {decisionsLoading ? (
-                        <div className="wtp-loading">Loading…</div>
+                        <div className="wtp-loading">{t('loading_ellipsis', { defaultValue: 'Loading…' })}</div>
                       ) : decisions.length === 0 ? (
-                        <p className="wtp-approval-empty">No decisions recorded yet.</p>
+                        <p className="wtp-approval-empty">{t('workflow_no_decisions_yet', { defaultValue: 'No decisions recorded yet.' })}</p>
                       ) : (
                         <div className="wtp-approval-chain">
                           {decisions.map(d => {
@@ -399,12 +413,12 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
                             return (
                               <div key={d.id} className={`wtp-approval-row wtp-approval-${meta.cls}`}>
                                 <div className="wtp-approval-row-top">
-                                  <span className="wtp-approval-level">Level {d.levelOrder + 1}</span>
+                                  <span className="wtp-approval-level">{t('workflow_level_label', { defaultValue: 'Level {{level}}', level: d.levelOrder + 1 })}</span>
                                   <span className="wtp-approval-badge">{meta.icon} {meta.label}</span>
                                 </div>
                                 <div className="wtp-approval-approver">{approverLabel(d)}</div>
                                 {d.decidedAt && (
-                                  <div className="wtp-approval-decided-at">on {fmtDt(d.decidedAt)}</div>
+                                  <div className="wtp-approval-decided-at">{t('workflow_decided_on', { defaultValue: 'on {{date}}', date: fmtDt(d.decidedAt) })}</div>
                                 )}
                                 {d.rejectionReason && (
                                   <div className="wtp-approval-reason">"{d.rejectionReason}"</div>
@@ -415,26 +429,26 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
                                       <div className="wtp-approval-reject-box">
                                         <textarea
                                           className="wtp-approval-reason-input"
-                                          placeholder="Reason for rejection (optional)…"
+                                          placeholder={t('workflow_rejection_reason_placeholder', { defaultValue: 'Reason for rejection (optional)…' }) as string}
                                           value={rejectReason}
                                           onChange={e => setRejectReason(e.target.value)}
                                         />
                                         <div className="wtp-approval-reject-btns">
                                           <button className="wtp-approval-btn-cancel" onClick={() => setShowRejectBox(false)} disabled={deciding}>
-                                            Cancel
+                                            {t('cancel_btn', { defaultValue: 'Cancel' })}
                                           </button>
                                           <button className="wtp-approval-btn-reject" onClick={() => handleDecision('rejected')} disabled={deciding}>
-                                            <ShieldX size={13} /> Confirm Reject
+                                            <ShieldX size={13} /> {t('workflow_confirm_reject_btn', { defaultValue: 'Confirm Reject' })}
                                           </button>
                                         </div>
                                       </div>
                                     ) : (
                                       <>
                                         <button className="wtp-approval-btn-approve" onClick={() => handleDecision('approved')} disabled={deciding}>
-                                          <ShieldCheck size={13} /> Approve
+                                          <ShieldCheck size={13} /> {t('workflow_approve_btn', { defaultValue: 'Approve' })}
                                         </button>
                                         <button className="wtp-approval-btn-reject" onClick={() => setShowRejectBox(true)} disabled={deciding}>
-                                          <ShieldX size={13} /> Reject
+                                          <ShieldX size={13} /> {t('workflow_reject_btn', { defaultValue: 'Reject' })}
                                         </button>
                                       </>
                                     )}

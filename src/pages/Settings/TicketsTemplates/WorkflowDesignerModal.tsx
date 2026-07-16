@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Plus, GitBranch, Trash2, Database, ArrowRight, Lock, ShieldCheck, Globe2, Plug, Play } from 'lucide-react';
 import { UserPickerControl } from '../../../components/UserPickerControl/UserPickerControl';
 import { ApprovalLevelsEditor, makeDefaultLevel, type ApprovalLevel } from './ApprovalLevelsEditor';
@@ -185,6 +186,7 @@ export const WorkflowDesignerModal = ({
   onSave,
   onClose,
 }: Props) => {
+  const { t } = useTranslation();
 
   // ── State ────────────────────────────────────────────────────────────────
 
@@ -529,21 +531,21 @@ export const WorkflowDesignerModal = ({
                       <div className="wfd-nmeta">
                         {n.type === 'approval' && (
                           <span className="wfd-pill wfd-pill-approval">
-                            {approvalLevelsOf(n).length} level{approvalLevelsOf(n).length !== 1 ? 's' : ''}
+                            {t('workflow_levels_count_pill', { defaultValue: '{{count}} level{{s}}', count: approvalLevelsOf(n).length, s: approvalLevelsOf(n).length !== 1 ? 's' : '' })}
                           </span>
                         )}
                         {n.type === 'external_api' && (
                           <span className="wfd-pill wfd-pill-approval">
-                            {externalApiCallsOf(n).length} call{externalApiCallsOf(n).length !== 1 ? 's' : ''}
+                            {t('workflow_calls_count_pill', { defaultValue: '{{count}} call{{s}}', count: externalApiCallsOf(n).length, s: externalApiCallsOf(n).length !== 1 ? 's' : '' })}
                           </span>
                         )}
                         {n.type === 'mcp_tool' && (
                           <span className="wfd-pill wfd-pill-approval">
-                            {mcpCallsOf(n).length} call{mcpCallsOf(n).length !== 1 ? 's' : ''}
+                            {t('workflow_calls_count_pill', { defaultValue: '{{count}} call{{s}}', count: mcpCallsOf(n).length, s: mcpCallsOf(n).length !== 1 ? 's' : '' })}
                           </span>
                         )}
-                        {n.activationCondition === 'approved' && <span className="wfd-pill wfd-pill-pull">on approved</span>}
-                        {n.activationCondition === 'rejected' && <span className="wfd-pill wfd-pill-push">on rejected</span>}
+                        {n.activationCondition === 'approved' && <span className="wfd-pill wfd-pill-pull">{t('workflow_pill_on_approved', { defaultValue: 'on approved' })}</span>}
+                        {n.activationCondition === 'rejected' && <span className="wfd-pill wfd-pill-push">{t('workflow_pill_on_rejected', { defaultValue: 'on rejected' })}</span>}
                         {n.customFieldKeys.length > 0 && (
                           <span className="wfd-pill">{n.customFieldKeys.length} field{n.customFieldKeys.length > 1 ? 's' : ''}</span>
                         )}
@@ -613,23 +615,23 @@ export const WorkflowDesignerModal = ({
 
                 {/* Type */}
                 <div className="wfd-sec">
-                  <div className="wfd-sec-lbl">ITEM TYPE</div>
+                  <div className="wfd-sec-lbl">{t('workflow_item_type_label', { defaultValue: 'ITEM TYPE' })}</div>
                   <select
                     className="wfd-sel"
                     value={selNode.type ?? 'task'}
                     onChange={e => setNodeType(selNode.id, e.target.value as WorkflowNodeType)}
                   >
-                    <option value="task">Task — manual checklist item</option>
-                    <option value="approval">Approval — requires a decision</option>
-                    <option value="external_api">External API — calls an outside system</option>
-                    <option value="mcp_tool">MCP Tool — calls an MCP server's tools</option>
+                    <option value="task">{t('workflow_node_type_task_option', { defaultValue: 'Task — manual checklist item' })}</option>
+                    <option value="approval">{t('workflow_node_type_approval_option', { defaultValue: 'Approval — requires a decision' })}</option>
+                    <option value="external_api">{t('workflow_node_type_external_api_option', { defaultValue: 'External API — calls an outside system' })}</option>
+                    <option value="mcp_tool">{t('workflow_node_type_mcp_tool_option', { defaultValue: "MCP Tool — calls an MCP server's tools" })}</option>
                   </select>
                 </div>
 
                 {/* Activation condition — only meaningful when the parent is an approval item */}
                 {selNode.parentId && nm[selNode.parentId]?.type === 'approval' && (
                   <div className="wfd-sec">
-                    <div className="wfd-sec-lbl">ACTIVATES ON</div>
+                    <div className="wfd-sec-lbl">{t('workflow_activates_on_label', { defaultValue: 'ACTIVATES ON' })}</div>
                     <select
                       className="wfd-sel"
                       value={selNode.activationCondition ?? ''}
@@ -637,9 +639,9 @@ export const WorkflowDesignerModal = ({
                         activationCondition: (e.target.value || undefined) as 'approved' | 'rejected' | undefined,
                       })}
                     >
-                      <option value="">Always (any outcome)</option>
-                      <option value="approved">Only if parent is Approved</option>
-                      <option value="rejected">Only if parent is Rejected</option>
+                      <option value="">{t('workflow_activation_always_option', { defaultValue: 'Always (any outcome)' })}</option>
+                      <option value="approved">{t('workflow_activation_only_approved_option', { defaultValue: 'Only if parent is Approved' })}</option>
+                      <option value="rejected">{t('workflow_activation_only_rejected_option', { defaultValue: 'Only if parent is Rejected' })}</option>
                     </select>
                   </div>
                 )}
@@ -648,7 +650,7 @@ export const WorkflowDesignerModal = ({
                 {selNode.type === 'approval' ? (
                   <div className="wfd-sec">
                     <div className="wfd-sec-row">
-                      <div className="wfd-sec-lbl"><ShieldCheck size={9} /> APPROVAL LEVELS</div>
+                      <div className="wfd-sec-lbl"><ShieldCheck size={9} /> {t('workflow_approval_levels_label', { defaultValue: 'APPROVAL LEVELS' })}</div>
                     </div>
                     <ApprovalLevelsEditor
                       levels={approvalLevelsOf(selNode)}
@@ -659,16 +661,17 @@ export const WorkflowDesignerModal = ({
                   <>
                     <div className="wfd-sec">
                       <div className="wfd-sec-row">
-                        <div className="wfd-sec-lbl"><Globe2 size={9} /> API CALLS</div>
+                        <div className="wfd-sec-lbl"><Globe2 size={9} /> {t('workflow_api_calls_label', { defaultValue: 'API CALLS' })}</div>
                         {externalApiCallsOf(selNode).length > 0 && (
                           <button className="wfd-add-flow-btn" onClick={() => setTestModalOpen(true)}>
-                            <Play size={10} /> Test this call now
+                            <Play size={10} /> {t('test_action_btn', { defaultValue: 'Test this call now' })}
                           </button>
                         )}
                       </div>
                       <p className="wfd-hint-xs">
-                        Runs automatically the moment this item activates — no human action needed.
-                        Use <code>{'{{placeholder}}'}</code> in URL/header/body templates.
+                        {t('workflow_api_calls_hint', { defaultValue: 'Runs automatically the moment this item activates — no human action needed.' })}
+                        {' '}
+                        {t('workflow_placeholder_usage_hint_prefix', { defaultValue: 'Use' })} <code>{'{{placeholder}}'}</code> {t('workflow_placeholder_usage_hint_suffix', { defaultValue: 'in URL/header/body templates.' })}
                       </p>
                       <ExternalApiCallsEditor
                         calls={externalApiCallsOf(selNode)}
@@ -686,15 +689,15 @@ export const WorkflowDesignerModal = ({
                   <>
                     <div className="wfd-sec">
                       <div className="wfd-sec-row">
-                        <div className="wfd-sec-lbl"><Plug size={9} /> MCP TOOL CALLS</div>
+                        <div className="wfd-sec-lbl"><Plug size={9} /> {t('workflow_mcp_tool_calls_label', { defaultValue: 'MCP TOOL CALLS' })}</div>
                         {mcpCallsOf(selNode).length > 0 && (
                           <button className="wfd-add-flow-btn" onClick={() => setTestModalOpen(true)}>
-                            <Play size={10} /> Test this call now
+                            <Play size={10} /> {t('test_action_btn', { defaultValue: 'Test this call now' })}
                           </button>
                         )}
                       </div>
                       <p className="wfd-hint-xs">
-                        Runs automatically the moment this item activates — no human action needed.
+                        {t('workflow_api_calls_hint', { defaultValue: 'Runs automatically the moment this item activates — no human action needed.' })}
                       </p>
                       <McpServerConnectionEditor
                         serverUrl={mcpServerUrlOf(selNode)}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Sparkles, ArrowLeft, ArrowRight, Check, AlertCircle, Loader2 } from 'lucide-react';
 import api from '../../../api';
 import {
@@ -39,6 +40,7 @@ type Step = 1 | 2 | 3;
 const emptyMappings: ExternalApiFieldMappings = { request: [], response: [] };
 
 export const AiWorkflowBuilderPage = () => {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>(1);
 
   // Step 1
@@ -123,10 +125,10 @@ export const AiWorkflowBuilderPage = () => {
         setDraftCalls(draft.calls ?? []);
         setDraftMappings(draft.fieldMappings ?? emptyMappings);
       }
-      setNodeTitle(intent.trim() ? intent.trim().slice(0, 60) : 'AI Workflow Action');
+      setNodeTitle(intent.trim() ? intent.trim().slice(0, 60) : t('awb_default_action_title', { defaultValue: 'AI Workflow Action' }));
       setStep(2);
     } catch (err: any) {
-      setGenError(err?.response?.data?.message || 'Failed to generate a draft — check that an AI provider is configured and active.');
+      setGenError(err?.response?.data?.message || t('awb_generate_failed', { defaultValue: 'Failed to generate a draft — check that an AI provider is configured and active.' }));
     } finally {
       setGenerating(false);
     }
@@ -143,7 +145,7 @@ export const AiWorkflowBuilderPage = () => {
       const allFields = (layout.tabs ?? []).flatMap((t: any) => t.fields ?? []);
       const wfField = allFields.find((f: any) => f.fieldType === 'workflow');
       if (!wfField) {
-        setSaveError('This template no longer has a Workflow field — add one in the Template Builder first.');
+        setSaveError(t('awb_no_workflow_field_error', { defaultValue: 'This template no longer has a Workflow field — add one in the Template Builder first.' }));
         setSaving(false);
         return;
       }
@@ -151,7 +153,7 @@ export const AiWorkflowBuilderPage = () => {
       const typeConfig = actionType === 'mcp_tool'
         ? { serverUrl: mcpServerUrl, auth: mcpAuth, calls: mcpDraftCalls, fieldMappings: { response: mcpDraftMappings } }
         : { calls: draftCalls, fieldMappings: draftMappings };
-      let finalTitle = nodeTitle.trim() || 'AI Workflow Action';
+      let finalTitle = nodeTitle.trim() || t('awb_default_action_title', { defaultValue: 'AI Workflow Action' });
 
       if (targetMode === 'existing' && targetNodeId) {
         const idx = nodes.findIndex(n => n.id === targetNodeId);
@@ -188,7 +190,7 @@ export const AiWorkflowBuilderPage = () => {
       setSavedNodeTitle(finalTitle);
       setStep(3);
     } catch (err: any) {
-      setSaveError(err?.response?.data?.message || 'Failed to save into the template.');
+      setSaveError(err?.response?.data?.message || t('awb_save_failed', { defaultValue: 'Failed to save into the template.' }));
     } finally {
       setSaving(false);
     }
@@ -220,7 +222,11 @@ export const AiWorkflowBuilderPage = () => {
     <div className="awb-wrap">
       {/* Step indicator */}
       <div className="awb-steps">
-        {(['Describe & Paste', 'Review & Refine', 'Done'] as const).map((label, i) => {
+        {[
+          t('awb_step_describe', { defaultValue: 'Describe & Paste' }),
+          t('awb_step_review', { defaultValue: 'Review & Refine' }),
+          t('awb_step_done', { defaultValue: 'Done' }),
+        ].map((label, i) => {
           const n = (i + 1) as Step;
           return (
             <div key={label} className={`awb-step${step === n ? ' active' : ''}${step > n ? ' done' : ''}`}>
@@ -238,49 +244,49 @@ export const AiWorkflowBuilderPage = () => {
           <div className="awb-card-intro">
             <Sparkles size={16} className="awb-intro-icon" />
             <p>{actionType === 'mcp_tool'
-              ? 'Point at an MCP server, discover its real tools, and describe what you want done — the AI picks the right tool and drafts the argument mapping from the server\'s actual schema. You review and refine everything before it\'s saved.'
-              : 'Paste a 3rd-party API\'s documentation and describe what you want it to do — the AI will draft the HTTP call sequence and field mappings. You review and refine everything (including entering real credentials) before it\'s saved.'}</p>
+              ? t('awb_intro_mcp', { defaultValue: "Point at an MCP server, discover its real tools, and describe what you want done — the AI picks the right tool and drafts the argument mapping from the server's actual schema. You review and refine everything before it's saved." })
+              : t('awb_intro_external_api', { defaultValue: "Paste a 3rd-party API's documentation and describe what you want it to do — the AI will draft the HTTP call sequence and field mappings. You review and refine everything (including entering real credentials) before it's saved." })}</p>
           </div>
 
           <div className="awb-field">
-            <label className="awb-label">Action type</label>
+            <label className="awb-label">{t('awb_action_type_label', { defaultValue: 'Action type' })}</label>
             <div className="awb-radio-row">
               <label className="awb-radio">
                 <input type="radio" checked={actionType === 'external_api'} onChange={() => setActionType('external_api')} />
-                External API (HTTP docs)
+                {t('awb_action_type_external_api_option', { defaultValue: 'External API (HTTP docs)' })}
               </label>
               <label className="awb-radio">
                 <input type="radio" checked={actionType === 'mcp_tool'} onChange={() => setActionType('mcp_tool')} />
-                MCP Tool (server + discovery)
+                {t('awb_action_type_mcp_tool_option', { defaultValue: 'MCP Tool (server + discovery)' })}
               </label>
             </div>
           </div>
 
           <div className="awb-field">
-            <label className="awb-label">Target template</label>
+            <label className="awb-label">{t('awb_target_template_label', { defaultValue: 'Target template' })}</label>
             <select className="wfd-sel" value={templateId ?? ''} onChange={e => handleTemplateChange(e.target.value)}>
-              <option value="">— Select a template —</option>
-              {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              <option value="">{t('select_template_placeholder', { defaultValue: '— Select a template —' })}</option>
+              {templates.map(tpl => <option key={tpl.id} value={tpl.id}>{tpl.name}</option>)}
             </select>
-            {loadingTemplate && <p className="awb-hint"><Loader2 size={11} className="awb-spin" /> Loading template…</p>}
+            {loadingTemplate && <p className="awb-hint"><Loader2 size={11} className="awb-spin" /> {t('awb_loading_template', { defaultValue: 'Loading template…' })}</p>}
             {hasWorkflowField === false && (
-              <p className="awb-warn"><AlertCircle size={12} /> This template has no Workflow field yet — add one in the Template Builder first.</p>
+              <p className="awb-warn"><AlertCircle size={12} /> {t('awb_no_workflow_field_warning', { defaultValue: 'This template has no Workflow field yet — add one in the Template Builder first.' })}</p>
             )}
           </div>
 
           <div className="awb-field">
-            <label className="awb-label">What should this action do?</label>
+            <label className="awb-label">{t('awb_intent_label', { defaultValue: 'What should this action do?' })}</label>
             <textarea
               className="wfd-inp awb-textarea-sm"
               value={intent}
               onChange={e => setIntent(e.target.value)}
-              placeholder="e.g. Order a new laptop for a new hire from our vendor's ordering API, and capture the order confirmation ID"
+              placeholder={t('awb_intent_placeholder', { defaultValue: "e.g. Order a new laptop for a new hire from our vendor's ordering API, and capture the order confirmation ID" }) as string}
             />
           </div>
 
           {actionType === 'mcp_tool' ? (
             <div className="awb-field">
-              <label className="awb-label">MCP server</label>
+              <label className="awb-label">{t('awb_mcp_server_label', { defaultValue: 'MCP server' })}</label>
               <McpServerConnectionEditor
                 serverUrl={mcpServerUrl}
                 onServerUrlChange={setMcpServerUrl}
@@ -289,17 +295,17 @@ export const AiWorkflowBuilderPage = () => {
                 onToolsDiscovered={setMcpDiscoveredTools}
               />
               {mcpDiscoveredTools.length > 0 && (
-                <p className="awb-hint">{mcpDiscoveredTools.length} tool{mcpDiscoveredTools.length !== 1 ? 's' : ''} discovered — ready to draft.</p>
+                <p className="awb-hint">{t('awb_tools_discovered_count', { defaultValue: '{{count}} tool{{s}} discovered — ready to draft.', count: mcpDiscoveredTools.length, s: mcpDiscoveredTools.length !== 1 ? 's' : '' })}</p>
               )}
             </div>
           ) : (
             <div className="awb-field">
-              <label className="awb-label">API documentation</label>
+              <label className="awb-label">{t('awb_api_documentation_label', { defaultValue: 'API documentation' })}</label>
               <textarea
                 className="wfd-inp awb-textarea-lg"
                 value={documentation}
                 onChange={e => setDocumentation(e.target.value)}
-                placeholder="Paste the vendor's API docs here — endpoint URLs, request/response examples, auth scheme, etc."
+                placeholder={t('awb_api_documentation_placeholder', { defaultValue: "Paste the vendor's API docs here — endpoint URLs, request/response examples, auth scheme, etc." }) as string}
               />
             </div>
           )}
@@ -315,7 +321,7 @@ export const AiWorkflowBuilderPage = () => {
               }
               onClick={handleGenerate}
             >
-              {generating ? <><Loader2 size={13} className="awb-spin" /> Generating…</> : <><Sparkles size={13} /> Generate Draft</>}
+              {generating ? <><Loader2 size={13} className="awb-spin" /> {t('awb_generating_ellipsis', { defaultValue: 'Generating…' })}</> : <><Sparkles size={13} /> {t('awb_generate_draft_btn', { defaultValue: 'Generate Draft' })}</>}
             </button>
           </div>
         </div>
@@ -325,14 +331,14 @@ export const AiWorkflowBuilderPage = () => {
       {step === 2 && (
         <div className="awb-card">
           <div className="awb-field">
-            <label className="awb-label">Action item title</label>
-            <input className="wfd-inp" value={nodeTitle} onChange={e => setNodeTitle(e.target.value)} placeholder="Order Laptop" />
+            <label className="awb-label">{t('awb_action_item_title_label', { defaultValue: 'Action item title' })}</label>
+            <input className="wfd-inp" value={nodeTitle} onChange={e => setNodeTitle(e.target.value)} placeholder={t('awb_action_item_title_placeholder', { defaultValue: 'Order Laptop' }) as string} />
           </div>
 
           {actionType === 'mcp_tool' ? (
             <>
               <div className="awb-field">
-                <label className="awb-label">Tool Calls</label>
+                <label className="awb-label">{t('awb_tool_calls_label', { defaultValue: 'Tool Calls' })}</label>
                 <McpToolPicker tools={mcpDiscoveredTools} onPick={tool => {
                   const properties = tool?.inputSchema?.properties ?? {};
                   setMcpDraftCalls(prev => [...prev, {
@@ -352,7 +358,7 @@ export const AiWorkflowBuilderPage = () => {
           ) : (
             <>
               <div className="awb-field">
-                <label className="awb-label">API Calls</label>
+                <label className="awb-label">{t('awb_api_calls_label', { defaultValue: 'API Calls' })}</label>
                 <ExternalApiCallsEditor calls={draftCalls} onChange={setDraftCalls} />
               </div>
               <ExternalApiFieldMappingsEditor
@@ -365,11 +371,11 @@ export const AiWorkflowBuilderPage = () => {
           )}
 
           <div className="awb-field">
-            <label className="awb-label">Save as</label>
+            <label className="awb-label">{t('awb_save_as_label', { defaultValue: 'Save as' })}</label>
             <div className="awb-radio-row">
               <label className="awb-radio">
                 <input type="radio" checked={targetMode === 'new'} onChange={() => setTargetMode('new')} />
-                New action item
+                {t('awb_new_action_item_option', { defaultValue: 'New action item' })}
               </label>
               <label className="awb-radio">
                 <input
@@ -378,12 +384,14 @@ export const AiWorkflowBuilderPage = () => {
                   onChange={() => setTargetMode('existing')}
                   disabled={existingTargetNodes.length === 0}
                 />
-                Overwrite existing {actionType} item{existingTargetNodes.length === 0 ? ' (none yet)' : ''}
+                {existingTargetNodes.length === 0
+                  ? t('awb_overwrite_existing_item_none_option', { defaultValue: 'Overwrite existing {{type}} item (none yet)', type: actionType })
+                  : t('awb_overwrite_existing_item_option', { defaultValue: 'Overwrite existing {{type}} item', type: actionType })}
               </label>
             </div>
             {targetMode === 'existing' && (
               <select className="wfd-sel" value={targetNodeId} onChange={e => setTargetNodeId(e.target.value)}>
-                <option value="">— Select item —</option>
+                <option value="">{t('select_item_placeholder', { defaultValue: '— Select item —' })}</option>
                 {existingTargetNodes.map(n => <option key={n.id} value={n.id}>{n.title}</option>)}
               </select>
             )}
@@ -392,13 +400,13 @@ export const AiWorkflowBuilderPage = () => {
           {saveError && <p className="awb-error">{saveError}</p>}
 
           <div className="awb-actions">
-            <button className="wfd-btn-ghost" onClick={() => setStep(1)}><ArrowLeft size={13} /> Back</button>
+            <button className="wfd-btn-ghost" onClick={() => setStep(1)}><ArrowLeft size={13} /> {t('back_btn', { defaultValue: 'Back' })}</button>
             <button
               className="wfd-btn-save"
               disabled={saving || (actionType === 'mcp_tool' ? mcpDraftCalls.length === 0 : draftCalls.length === 0) || (targetMode === 'existing' && !targetNodeId)}
               onClick={handleSave}
             >
-              {saving ? <><Loader2 size={13} className="awb-spin" /> Saving…</> : <>Save to Template <ArrowRight size={13} /></>}
+              {saving ? <><Loader2 size={13} className="awb-spin" /> {t('saving', { defaultValue: 'Saving…' })}</> : <>{t('awb_save_to_template_btn', { defaultValue: 'Save to Template' })} <ArrowRight size={13} /></>}
             </button>
           </div>
         </div>
@@ -408,11 +416,11 @@ export const AiWorkflowBuilderPage = () => {
       {step === 3 && (
         <div className="awb-card awb-success">
           <div className="awb-success-icon"><Check size={22} /></div>
-          <h3>Saved</h3>
-          <p>"{savedNodeTitle}" was saved into <strong>{savedTemplateName}</strong>. Open it from the
-            Templates tab and use the Workflow Designer to view it on the canvas or make further
-            changes.</p>
-          <button className="wfd-btn-save" onClick={startOver}><Sparkles size={13} /> Build another</button>
+          <h3>{t('awb_saved_heading', { defaultValue: 'Saved' })}</h3>
+          <p>
+            {t('awb_saved_body_prefix', { defaultValue: '"{{title}}" was saved into', title: savedNodeTitle })} <strong>{savedTemplateName}</strong>. {t('awb_saved_body_suffix', { defaultValue: 'Open it from the Templates tab and use the Workflow Designer to view it on the canvas or make further changes.' })}
+          </p>
+          <button className="wfd-btn-save" onClick={startOver}><Sparkles size={13} /> {t('awb_build_another_btn', { defaultValue: 'Build another' })}</button>
         </div>
       )}
     </div>

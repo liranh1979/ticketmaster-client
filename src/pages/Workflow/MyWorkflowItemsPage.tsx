@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Check, ShieldCheck, ArrowRight } from 'lucide-react';
 import api from '../../api';
 import './MyWorkflowItemsPage.css';
@@ -44,6 +45,7 @@ const FILTER_DEFS = [
 /* ── Component ── */
 
 export const MyWorkflowItemsPage = ({ onBack, onViewTicket }: Props) => {
+  const { t } = useTranslation();
   const [items, setItems]         = useState<WorkflowItem[]>([]);
   const [loading, setLoading]     = useState(true);
   const [filter, setFilter]       = useState('all');
@@ -149,7 +151,7 @@ export const MyWorkflowItemsPage = ({ onBack, onViewTicket }: Props) => {
                             className="mwi-status-chip"
                             style={{ color: s.text, background: s.bg }}
                           >
-                            {item.type === 'approval' && item.status === 'in_progress' ? 'Awaiting your decision' : s.label}
+                            {item.type === 'approval' && item.status === 'in_progress' ? t('workflow_item_awaiting_decision', { defaultValue: 'Awaiting your decision' }) : s.label}
                           </span>
                         </div>
                       </div>
@@ -161,7 +163,7 @@ export const MyWorkflowItemsPage = ({ onBack, onViewTicket }: Props) => {
                           className="mwi-approval-cta"
                           onClick={() => onViewTicket(item.ticketId)}
                         >
-                          Review &amp; Decide <ArrowRight size={12} />
+                          {t('workflow_item_review_decide_btn', { defaultValue: 'Review & Decide' })} <ArrowRight size={12} />
                         </button>
                       ) : isUpdating ? (
                         <span className="mwi-updating"><Check size={14} /></span>

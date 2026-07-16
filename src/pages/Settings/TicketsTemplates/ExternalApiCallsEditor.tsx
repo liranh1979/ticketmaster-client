@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, X, GripVertical, Lock, Unlock, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import {
   DndContext, closestCenter,
@@ -68,12 +69,13 @@ export function SecretInput({
   value: string | undefined;
   onChange: (v: string | undefined) => void;
 }) {
+  const { t } = useTranslation();
   const editing = value !== undefined;
   if (!editing && hasValue) {
     return (
       <div className="eae-secret-row">
-        <span className="eae-secret-set"><Lock size={10} /> {label} configured</span>
-        <button className="eae-secret-change" onClick={() => onChange('')}>Change</button>
+        <span className="eae-secret-set"><Lock size={10} /> {t('secret_configured_text', { defaultValue: '{{label}} configured', label })}</span>
+        <button className="eae-secret-change" onClick={() => onChange('')}>{t('change_btn', { defaultValue: 'Change' })}</button>
       </div>
     );
   }
@@ -82,13 +84,13 @@ export function SecretInput({
       <input
         className="wfd-inp"
         type="password"
-        placeholder={`${label}…`}
+        placeholder={t('secret_input_placeholder', { defaultValue: '{{label}}…', label }) as string}
         value={value ?? ''}
         onChange={e => onChange(e.target.value)}
         autoFocus={editing}
       />
       {hasValue && (
-        <button className="eae-secret-cancel" title="Keep existing" onClick={() => onChange(undefined)}>
+        <button className="eae-secret-cancel" title={t('keep_existing_title', { defaultValue: 'Keep existing' }) as string} onClick={() => onChange(undefined)}>
           <Unlock size={11} />
         </button>
       )}
@@ -106,6 +108,7 @@ function CallRow({
   onChange: (updated: ExternalApiCall) => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: call.id });
   const [expanded, setExpanded] = useState(index === 0);
 
@@ -137,7 +140,7 @@ function CallRow({
           className="wfd-inp eae-call-name"
           value={call.name}
           onChange={e => upd({ name: e.target.value })}
-          placeholder="call name (used as {{captureName}} namespace)"
+          placeholder={t('eae_call_name_placeholder', { defaultValue: 'call name (used as {{captureName}} namespace)' }) as string}
         />
         <button className="eae-toggle-btn" onClick={() => setExpanded(v => !v)}>{expanded ? '▾' : '▸'}</button>
         <button className="ale-rm-btn" onClick={onRemove}><X size={12} /></button>
@@ -153,21 +156,21 @@ function CallRow({
               className="wfd-inp"
               value={call.urlTemplate}
               onChange={e => upd({ urlTemplate: e.target.value })}
-              placeholder="https://api.example.com/users/{{employeeId}}"
+              placeholder={t('eae_url_template_placeholder', { defaultValue: 'https://api.example.com/users/{{employeeId}}' }) as string}
             />
           </div>
 
           {/* Auth */}
           <div className="eae-subsec">
-            <div className="eae-subsec-lbl">AUTH</div>
+            <div className="eae-subsec-lbl">{t('auth_section_label', { defaultValue: 'AUTH' })}</div>
             <select className="wfd-sel" value={call.auth.type} onChange={e => updAuth({ type: e.target.value as ExternalApiAuth['type'] })}>
-              <option value="none">None</option>
-              <option value="bearer">Bearer token</option>
-              <option value="api_key">API key header</option>
-              <option value="basic">Basic (username/password)</option>
+              <option value="none">{t('auth_none_option', { defaultValue: 'None' })}</option>
+              <option value="bearer">{t('auth_bearer_token_option', { defaultValue: 'Bearer token' })}</option>
+              <option value="api_key">{t('auth_api_key_header_option', { defaultValue: 'API key header' })}</option>
+              <option value="basic">{t('auth_basic_option', { defaultValue: 'Basic (username/password)' })}</option>
             </select>
             {call.auth.type === 'bearer' && (
-              <SecretInput label="Token" hasValue={call.auth.hasToken} value={call.auth.token} onChange={v => updAuth({ token: v })} />
+              <SecretInput label={t('secret_token_label', { defaultValue: 'Token' })} hasValue={call.auth.hasToken} value={call.auth.token} onChange={v => updAuth({ token: v })} />
             )}
             {call.auth.type === 'api_key' && (
               <>
@@ -175,15 +178,15 @@ function CallRow({
                   className="wfd-inp"
                   value={call.auth.headerName ?? ''}
                   onChange={e => updAuth({ headerName: e.target.value })}
-                  placeholder="Header name (default X-API-Key)"
+                  placeholder={t('eae_header_name_placeholder', { defaultValue: 'Header name (default X-API-Key)' }) as string}
                 />
-                <SecretInput label="API key" hasValue={call.auth.hasToken} value={call.auth.token} onChange={v => updAuth({ token: v })} />
+                <SecretInput label={t('secret_api_key_label', { defaultValue: 'API key' })} hasValue={call.auth.hasToken} value={call.auth.token} onChange={v => updAuth({ token: v })} />
               </>
             )}
             {call.auth.type === 'basic' && (
               <>
-                <SecretInput label="Username" hasValue={call.auth.hasUsername} value={call.auth.username} onChange={v => updAuth({ username: v })} />
-                <SecretInput label="Password" hasValue={call.auth.hasPassword} value={call.auth.password} onChange={v => updAuth({ password: v })} />
+                <SecretInput label={t('secret_username_label', { defaultValue: 'Username' })} hasValue={call.auth.hasUsername} value={call.auth.username} onChange={v => updAuth({ username: v })} />
+                <SecretInput label={t('secret_password_label', { defaultValue: 'Password' })} hasValue={call.auth.hasPassword} value={call.auth.password} onChange={v => updAuth({ password: v })} />
               </>
             )}
           </div>
@@ -191,13 +194,13 @@ function CallRow({
           {/* Headers */}
           <div className="eae-subsec">
             <div className="eae-subsec-row">
-              <div className="eae-subsec-lbl">HEADERS</div>
-              <button className="wfd-add-flow-btn" onClick={addHeader}><Plus size={10} /> Add</button>
+              <div className="eae-subsec-lbl">{t('headers_section_label', { defaultValue: 'HEADERS' })}</div>
+              <button className="wfd-add-flow-btn" onClick={addHeader}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
             </div>
             {call.headers.map((h, i) => (
               <div key={i} className="eae-kv-row">
-                <input className="wfd-inp" value={h.key} onChange={e => updHeader(i, { key: e.target.value })} placeholder="Header-Name" />
-                <input className="wfd-inp" value={h.valueTemplate} onChange={e => updHeader(i, { valueTemplate: e.target.value })} placeholder="value or {{placeholder}}" />
+                <input className="wfd-inp" value={h.key} onChange={e => updHeader(i, { key: e.target.value })} placeholder={t('eae_header_key_placeholder', { defaultValue: 'Header-Name' }) as string} />
+                <input className="wfd-inp" value={h.valueTemplate} onChange={e => updHeader(i, { valueTemplate: e.target.value })} placeholder={t('eae_header_value_placeholder', { defaultValue: 'value or {{placeholder}}' }) as string} />
                 <button className="ale-rm-btn" onClick={() => rmHeader(i)}><X size={11} /></button>
               </div>
             ))}
@@ -205,28 +208,28 @@ function CallRow({
 
           {/* Body */}
           <div className="eae-subsec">
-            <div className="eae-subsec-lbl">BODY TEMPLATE</div>
+            <div className="eae-subsec-lbl">{t('body_template_label', { defaultValue: 'BODY TEMPLATE' })}</div>
             <textarea
               className="wfd-inp eae-textarea"
               value={call.bodyTemplate}
               onChange={e => upd({ bodyTemplate: e.target.value })}
-              placeholder={'{"name": "{{employeeName}}", "email": "{{employeeEmail}}"}'}
+              placeholder={t('eae_body_template_placeholder', { defaultValue: '{"name": "{{employeeName}}", "email": "{{employeeEmail}}"}' }) as string}
             />
           </div>
 
           {/* Response captures */}
           <div className="eae-subsec">
             <div className="eae-subsec-row">
-              <div className="eae-subsec-lbl">RESPONSE CAPTURES</div>
-              <button className="wfd-add-flow-btn" onClick={addCapture}><Plus size={10} /> Add</button>
+              <div className="eae-subsec-lbl">{t('response_captures_label', { defaultValue: 'RESPONSE CAPTURES' })}</div>
+              <button className="wfd-add-flow-btn" onClick={addCapture}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
             </div>
             {call.responseCaptures.length === 0 && (
-              <p className="wfd-empty-txt">No values captured from this call's response yet</p>
+              <p className="wfd-empty-txt">{t('eae_no_response_captures_empty', { defaultValue: "No values captured from this call's response yet" })}</p>
             )}
             {call.responseCaptures.map((c, i) => (
               <div key={i} className="eae-kv-row">
-                <input className="wfd-inp" value={c.name} onChange={e => updCapture(i, { name: e.target.value })} placeholder="captureName" />
-                <input className="wfd-inp" value={c.jsonPath} onChange={e => updCapture(i, { jsonPath: e.target.value })} placeholder="$.data.id" />
+                <input className="wfd-inp" value={c.name} onChange={e => updCapture(i, { name: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} />
+                <input className="wfd-inp" value={c.jsonPath} onChange={e => updCapture(i, { jsonPath: e.target.value })} placeholder={t('json_path_placeholder', { defaultValue: '$.data.id' }) as string} />
                 <button className="ale-rm-btn" onClick={() => rmCapture(i)}><X size={11} /></button>
               </div>
             ))}
@@ -245,6 +248,7 @@ export const ExternalApiCallsEditor = ({
   calls: ExternalApiCall[];
   onChange: (calls: ExternalApiCall[]) => void;
 }) => {
+  const { t } = useTranslation();
   const sensors = useSensors(useSensor(PointerSensor));
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -263,7 +267,7 @@ export const ExternalApiCallsEditor = ({
   return (
     <div className="ale-wrap">
       {calls.length === 0 ? (
-        <p className="wfd-empty-txt">No API calls configured yet — add one to define what this item does.</p>
+        <p className="wfd-empty-txt">{t('eae_calls_empty', { defaultValue: 'No API calls configured yet — add one to define what this item does.' })}</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={calls.map(c => c.id)} strategy={verticalListSortingStrategy}>
@@ -273,7 +277,7 @@ export const ExternalApiCallsEditor = ({
           </SortableContext>
         </DndContext>
       )}
-      <button className="wfd-add-flow-btn ale-add-btn" onClick={addCall}><Plus size={10} /> Add call</button>
+      <button className="wfd-add-flow-btn ale-add-btn" onClick={addCall}><Plus size={10} /> {t('eae_add_call_btn', { defaultValue: 'Add call' })}</button>
     </div>
   );
 };
@@ -297,6 +301,7 @@ export const ExternalApiFieldMappingsEditor = ({
   ticketFieldKeys: string[];
   captureNames: string[];
 }) => {
+  const { t } = useTranslation();
   const ticketFieldOpts = [...TICKET_FIELD_BASE, ...ticketFieldKeys.filter(k => !TICKET_FIELD_BASE.includes(k))];
 
   const addReq = () => onChange({ ...mappings, request: [...mappings.request, { placeholder: '', ticketField: ticketFieldOpts[0] ?? 'title' }] });
@@ -313,17 +318,17 @@ export const ExternalApiFieldMappingsEditor = ({
     <>
       <div className="wfd-sec">
         <div className="wfd-sec-row">
-          <div className="wfd-sec-lbl"><ArrowDownToLine size={9} /> REQUEST DATA (ticket → placeholders)</div>
-          <button className="wfd-add-flow-btn" onClick={addReq}><Plus size={10} /> Add</button>
+          <div className="wfd-sec-lbl"><ArrowDownToLine size={9} /> {t('eae_request_data_label', { defaultValue: 'REQUEST DATA (ticket → placeholders)' })}</div>
+          <button className="wfd-add-flow-btn" onClick={addReq}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
         </div>
-        {mappings.request.length === 0 && <p className="wfd-empty-txt">No ticket fields wired in yet — calls will only see literal text</p>}
+        {mappings.request.length === 0 && <p className="wfd-empty-txt">{t('eae_request_mapping_empty', { defaultValue: 'No ticket fields wired in yet — calls will only see literal text' })}</p>}
         {mappings.request.map((r, i) => (
           <div key={i} className="eae-kv-row">
             <select className="wfd-sel" value={r.ticketField} onChange={e => updReq(i, { ticketField: e.target.value })}>
               {ticketFieldOpts.map(k => <option key={k} value={k}>ticket.{k}</option>)}
             </select>
             <span className="eae-arrow">→</span>
-            <input className="wfd-inp" value={r.placeholder} onChange={e => updReq(i, { placeholder: e.target.value })} placeholder="{{placeholder}}" />
+            <input className="wfd-inp" value={r.placeholder} onChange={e => updReq(i, { placeholder: e.target.value })} placeholder={t('placeholder_input_placeholder', { defaultValue: '{{placeholder}}' }) as string} />
             <button className="ale-rm-btn" onClick={() => rmReq(i)}><X size={11} /></button>
           </div>
         ))}
@@ -331,15 +336,15 @@ export const ExternalApiFieldMappingsEditor = ({
 
       <div className="wfd-sec">
         <div className="wfd-sec-row">
-          <div className="wfd-sec-lbl"><ArrowUpFromLine size={9} /> RESPONSE DATA (captures → fields)</div>
-          <button className="wfd-add-flow-btn" onClick={addResp}><Plus size={10} /> Add</button>
+          <div className="wfd-sec-lbl"><ArrowUpFromLine size={9} /> {t('response_data_mapping_label', { defaultValue: 'RESPONSE DATA (captures → fields)' })}</div>
+          <button className="wfd-add-flow-btn" onClick={addResp}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
         </div>
-        {mappings.response.length === 0 && <p className="wfd-empty-txt">No captured values are saved anywhere yet</p>}
+        {mappings.response.length === 0 && <p className="wfd-empty-txt">{t('response_mapping_empty', { defaultValue: 'No captured values are saved anywhere yet' })}</p>}
         {mappings.response.map((r, i) => (
           <div key={i} className="eae-kv-row">
-            <input className="wfd-inp" value={r.captureName} onChange={e => updResp(i, { captureName: e.target.value })} placeholder="captureName" list="eae-capture-names" />
+            <input className="wfd-inp" value={r.captureName} onChange={e => updResp(i, { captureName: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} list="eae-capture-names" />
             <span className="eae-arrow">→</span>
-            <input className="wfd-inp" value={r.target} onChange={e => updResp(i, { target: e.target.value })} placeholder="ticket.field or this.field" />
+            <input className="wfd-inp" value={r.target} onChange={e => updResp(i, { target: e.target.value })} placeholder={t('mapping_target_placeholder', { defaultValue: 'ticket.field or this.field' }) as string} />
             <button className="ale-rm-btn" onClick={() => rmResp(i)}><X size={11} /></button>
           </div>
         ))}

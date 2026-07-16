@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ShieldCheck, ShieldX, Clock, ArrowUpRight, Hourglass } from 'lucide-react';
 import api from '../../api';
 import './TicketApprovalStatusPanel.css';
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export const TicketApprovalStatusPanel = ({ ticketId }: Props) => {
+  const { t } = useTranslation();
   const [approvalItems, setApprovalItems] = useState<WorkflowItem[]>([]);
   const [decisionsByItem, setDecisionsByItem] = useState<Record<number, ApprovalDecision[]>>({});
   const [userNames, setUserNames] = useState<Record<number, string>>({});
@@ -73,9 +75,22 @@ export const TicketApprovalStatusPanel = ({ ticketId }: Props) => {
   if (approvalItems.length === 0) return null;
 
   const approverLabel = (d: ApprovalDecision) => {
-    if (d.approverGroupId != null) return groupNames[d.approverGroupId] ?? `Group #${d.approverGroupId}`;
-    if (d.approverUserId != null) return userNames[d.approverUserId] ?? `User #${d.approverUserId}`;
-    return 'Unassigned';
+    if (d.approverGroupId != null) {
+      return groupNames[d.approverGroupId] ?? t('workflow_approver_group_fallback', { defaultValue: 'Group #{{id}}', id: d.approverGroupId });
+    }
+    if (d.approverUserId != null) {
+      return userNames[d.approverUserId] ?? t('workflow_approver_user_fallback', { defaultValue: 'User #{{id}}', id: d.approverUserId });
+    }
+    return t('workflow_approver_unassigned', { defaultValue: 'Unassigned' });
+  };
+
+  const decisionLabel = (decision: ApprovalDecision['decision']) => {
+    switch (decision) {
+      case 'approved': return t('workflow_decision_approved', { defaultValue: 'Approved' });
+      case 'rejected': return t('workflow_decision_rejected', { defaultValue: 'Rejected' });
+      case 'escalated': return t('workflow_decision_escalated', { defaultValue: 'Escalated' });
+      default: return t('workflow_decision_pending', { defaultValue: 'Pending' });
+    }
   };
 
   return (
@@ -99,9 +114,9 @@ export const TicketApprovalStatusPanel = ({ ticketId }: Props) => {
               {!outcome && <Hourglass size={15} className="tap-header-icon" />}
               <span className="tap-header-title">{item.title}</span>
               <span className="tap-header-status">
-                {outcome === 'approved' && 'Approved'}
-                {outcome === 'rejected' && 'Rejected'}
-                {!outcome && `Step ${distinctLevelsReached} of ${totalLevels || '?'}`}
+                {outcome === 'approved' && t('workflow_decision_approved', { defaultValue: 'Approved' })}
+                {outcome === 'rejected' && t('workflow_decision_rejected', { defaultValue: 'Rejected' })}
+                {!outcome && t('workflow_approval_step_of', { defaultValue: 'Step {{current}} of {{total}}', current: distinctLevelsReached, total: totalLevels || '?' })}
               </span>
             </div>
 
@@ -120,9 +135,9 @@ export const TicketApprovalStatusPanel = ({ ticketId }: Props) => {
                       {d.decision === 'escalated' && <ArrowUpRight size={12} />}
                       {d.decision === 'pending' && <Clock size={12} />}
                     </span>
-                    <span className="tap-level-label">Level {d.levelOrder + 1} — {approverLabel(d)}</span>
+                    <span className="tap-level-label">{t('workflow_level_label_with_approver', { defaultValue: 'Level {{level}} — {{approver}}', level: d.levelOrder + 1, approver: approverLabel(d) })}</span>
                     <span className="tap-level-state">
-                      {d.decision === 'pending' && isLast ? 'Pending' : d.decision}
+                      {d.decision === 'pending' && isLast ? t('workflow_decision_pending', { defaultValue: 'Pending' }) : decisionLabel(d.decision)}
                     </span>
                   </div>
                 );
@@ -131,8 +146,8 @@ export const TicketApprovalStatusPanel = ({ ticketId }: Props) => {
               {totalLevels > distinctLevelsReached && Array.from({ length: totalLevels - distinctLevelsReached }).map((_, i) => (
                 <div key={`future-${i}`} className="tap-level tap-level--future">
                   <span className="tap-level-icon"><Clock size={12} /></span>
-                  <span className="tap-level-label">Level {distinctLevelsReached + i + 1}</span>
-                  <span className="tap-level-state">Not started</span>
+                  <span className="tap-level-label">{t('workflow_level_label', { defaultValue: 'Level {{level}}', level: distinctLevelsReached + i + 1 })}</span>
+                  <span className="tap-level-state">{t('workflow_level_not_started', { defaultValue: 'Not started' })}</span>
                 </div>
               ))}
             </div>
