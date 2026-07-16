@@ -25,6 +25,17 @@
 
 @keyframes te-spin { to { transform: rotate(360deg); } }
 
+.te-load-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #fca5a5;
+  font-size: 14px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
 /* ── Header ── */
 .te-header {
   display: flex;

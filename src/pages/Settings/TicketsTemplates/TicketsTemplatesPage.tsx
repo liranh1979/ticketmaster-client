@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Layers, Star, Sparkles } from 'lucide-react';
+import { Plus, Pencil, Trash2, Layers, Star, Sparkles, ClipboardList } from 'lucide-react';
 import api from '../../../api';
 import { TemplateBuilderPage } from './TemplateBuilderPage';
 import { AiWorkflowBuilderPage } from './AiWorkflowBuilderPage';
+import { ActionItemLibraryPage } from './ActionItemLibraryPage';
 import './TicketsTemplatesPage.css';
 
 interface TemplateSummary {
@@ -21,7 +22,7 @@ export const TicketsTemplatesPage = () => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [settingDefaultId, setSettingDefaultId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'templates' | 'ai-builder'>('templates');
+  const [activeTab, setActiveTab] = useState<'templates' | 'action-items' | 'ai-builder'>('templates');
 
   const load = async () => {
     setLoading(true);
@@ -93,6 +94,12 @@ export const TicketsTemplatesPage = () => {
           <Layers size={13} /> {t('templates_tab', { defaultValue: 'Templates' })}
         </button>
         <button
+          className={`tt-tab-btn${activeTab === 'action-items' ? ' active' : ''}`}
+          onClick={() => setActiveTab('action-items')}
+        >
+          <ClipboardList size={13} /> {t('action_items_tab', { defaultValue: 'Action Items' })}
+        </button>
+        <button
           className={`tt-tab-btn${activeTab === 'ai-builder' ? ' active' : ''}`}
           onClick={() => setActiveTab('ai-builder')}
         >
@@ -102,6 +109,8 @@ export const TicketsTemplatesPage = () => {
 
       {activeTab === 'ai-builder' ? (
         <AiWorkflowBuilderPage />
+      ) : activeTab === 'action-items' ? (
+        <ActionItemLibraryPage />
       ) : loading ? (
         <div className="tt-loading">Loading...</div>
       ) : templates.length === 0 ? (

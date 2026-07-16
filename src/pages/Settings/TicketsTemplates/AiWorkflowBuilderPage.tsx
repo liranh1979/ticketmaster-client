@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, ArrowLeft, ArrowRight, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowLeft, ArrowRight, Check, Loader2, Plus, Pencil, Trash2, Globe2, Plug } from 'lucide-react';
 import api from '../../../api';
 import {
   ExternalApiCallsEditor, ExternalApiFieldMappingsEditor,
@@ -11,45 +11,42 @@ import {
   type McpCall, type McpAuth, type McpResponseMapping,
 } from './McpToolCallsEditor';
 import './WorkflowDesignerModal.css';
+import './ActionItemLibraryPage.css';
 import './AiWorkflowBuilderPage.css';
 
 type TargetType = 'external_api' | 'mcp_tool';
 
-interface TemplateSummary {
+interface LibraryEntry {
   id: number;
   name: string;
+  type: string;
+  typeConfig: Record<string, unknown> | null;
+  source: string;
 }
 
-interface WorkflowNode {
-  id: string;
-  title: string;
-  type?: string;
-  typeConfig?: Record<string, unknown>;
-  activationCondition?: string;
-  parentId: string | null;
-  displayOrder: number;
-  defaultAssigneeUserId: number | null;
-  customFieldKeys: string[];
-  dataFlows: unknown[];
-  x?: number;
-  y?: number;
-}
-
+type Mode = 'list' | 'wizard';
 type Step = 1 | 2 | 3;
+
+const TYPE_ICON: Record<string, React.ReactNode> = {
+  external_api: <Globe2 size={16} />,
+  mcp_tool: <Plug size={16} />,
+};
 
 const emptyMappings: ExternalApiFieldMappings = { request: [], response: [] };
 
 export const AiWorkflowBuilderPage = () => {
   const { t } = useTranslation();
+  const [mode, setMode] = useState<Mode>('list');
   const [step, setStep] = useState<Step>(1);
+  // True when Step 2 was reached by picking "Edit" on an existing entry from the list (no AI call
+  // involved) rather than by generating a fresh draft — changes what the Back button returns to.
+  const [cameFromList, setCameFromList] = useState(false);
 
-  // Step 1
-  const [templates, setTemplates] = useState<TemplateSummary[]>([]);
-  const [templateId, setTemplateId] = useState<number | null>(null);
+  // Step 1 — the global ticket field catalog (cross-template, not scoped to any one template)
   const [ticketFieldKeys, setTicketFieldKeys] = useState<string[]>([]);
-  const [existingNodes, setExistingNodes] = useState<WorkflowNode[]>([]);
-  const [hasWorkflowField, setHasWorkflowField] = useState<boolean | null>(null);
-  const [loadingTemplate, setLoadingTemplate] = useState(false);
+  // Custom Workflow Fields (from Workflow Fields Manager) — used for "this.<key>" input/output
+  const [workflowFieldKeys, setWorkflowFieldKeys] = useState<string[]>([]);
+  const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [intent, setIntent] = useState('');
   const [documentation, setDocumentation] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -73,37 +70,54 @@ export const AiWorkflowBuilderPage = () => {
   const [saveError, setSaveError] = useState('');
 
   // Step 3
-  const [savedTemplateName, setSavedTemplateName] = useState('');
-  const [savedNodeTitle, setSavedNodeTitle] = useState('');
+  const [savedName, setSavedName] = useState('');
 
   useEffect(() => {
-    api.get('/templates').then(r => setTemplates(r.data)).catch(() => {});
+    api.get('/field-definitions', { params: { entityType: 'ticket' } })
+      .then(r => setTicketFieldKeys(r.data.map((f: any) => f.fieldKey)))
+      .catch(() => {});
+    // Only custom (non-system) workflow fields — the built-in title/workflow_status/assigned/
+    // attachments columns aren't generic "this.<key>" storage slots, they're the item's real columns.
+    api.get('/field-definitions', { params: { entityType: 'workflow' } })
+      .then(r => setWorkflowFieldKeys(r.data.filter((f: any) => !f.isSystem).map((f: any) => f.fieldKey)))
+      .catch(() => {});
+    reloadLibraryEntries();
   }, []);
 
-  const existingTargetNodes = existingNodes.filter(n => n.type === actionType);
+  const reloadLibraryEntries = () =>
+    api.get('/action-item-library').then(r => setLibraryEntries(r.data)).catch(() => {});
 
-  const loadTemplateContext = async (id: number) => {
-    setLoadingTemplate(true);
-    setHasWorkflowField(null);
-    try {
-      const res = await api.get(`/templates/${id}`);
-      const layout = res.data.layout;
-      const allFields = (layout.tabs ?? []).flatMap((t: any) => t.fields ?? []);
-      const wfField = allFields.find((f: any) => f.fieldType === 'workflow');
-      setTicketFieldKeys(allFields.filter((f: any) => f.fieldType !== 'workflow').map((f: any) => f.fieldKey));
-      setExistingNodes(wfField?.fieldConfig?.nodes ?? []);
-      setHasWorkflowField(!!wfField);
-    } finally {
-      setLoadingTemplate(false);
+  const existingLibraryEntries = libraryEntries.filter(e => e.type === actionType);
+  const aiLibraryEntries = libraryEntries.filter(e => e.source === 'ai');
+
+  const handleEditExisting = (entry: LibraryEntry) => {
+    setActionType(entry.type as TargetType);
+    setNodeTitle(entry.name);
+    if (entry.type === 'mcp_tool') {
+      const cfg = entry.typeConfig as { serverUrl?: string; auth?: McpAuth; calls?: McpCall[]; fieldMappings?: { response?: McpResponseMapping[] } } | null;
+      setMcpServerUrl(cfg?.serverUrl ?? '');
+      setMcpAuth(cfg?.auth ?? { type: 'none' });
+      setMcpDiscoveredTools([]);
+      setMcpDraftCalls(cfg?.calls ?? []);
+      setMcpDraftMappings(cfg?.fieldMappings?.response ?? []);
+    } else {
+      const cfg = entry.typeConfig as { calls?: ExternalApiCall[]; fieldMappings?: ExternalApiFieldMappings } | null;
+      setDraftCalls(cfg?.calls ?? []);
+      setDraftMappings(cfg?.fieldMappings ?? emptyMappings);
     }
+    setTargetMode('existing');
+    setTargetNodeId(String(entry.id));
+    setCameFromList(true);
+    setGenError('');
+    setSaveError('');
+    setMode('wizard');
+    setStep(2);
   };
 
-  const handleTemplateChange = (idStr: string) => {
-    const id = idStr ? Number(idStr) : null;
-    setTemplateId(id);
-    setTargetNodeId('');
-    setTargetMode('new');
-    if (id) loadTemplateContext(id);
+  const handleDeleteExisting = async (entry: LibraryEntry) => {
+    if (!window.confirm(t('action_item_library_delete_confirm', { defaultValue: 'Delete this action item from the library?' }))) return;
+    await api.delete(`/action-item-library/${entry.id}`);
+    await reloadLibraryEntries();
   };
 
   const handleGenerate = async () => {
@@ -112,20 +126,21 @@ export const AiWorkflowBuilderPage = () => {
     try {
       if (actionType === 'mcp_tool') {
         const res = await api.post('/templates/ai-suggest-mcp-action', {
-          intent, tools: mcpDiscoveredTools, ticketFieldKeys,
+          intent, tools: mcpDiscoveredTools, ticketFieldKeys, workflowFieldKeys,
         });
         const draft = res.data;
         setMcpDraftCalls(draft.calls ?? []);
         setMcpDraftMappings(draft.fieldMappings?.response ?? []);
       } else {
         const res = await api.post('/templates/ai-suggest-workflow-action', {
-          documentation, intent, ticketFieldKeys,
+          documentation, intent, ticketFieldKeys, workflowFieldKeys,
         });
         const draft = res.data;
         setDraftCalls(draft.calls ?? []);
         setDraftMappings(draft.fieldMappings ?? emptyMappings);
       }
       setNodeTitle(intent.trim() ? intent.trim().slice(0, 60) : t('awb_default_action_title', { defaultValue: 'AI Workflow Action' }));
+      setCameFromList(false);
       setStep(2);
     } catch (err: any) {
       setGenError(err?.response?.data?.message || t('awb_generate_failed', { defaultValue: 'Failed to generate a draft — check that an AI provider is configured and active.' }));
@@ -135,70 +150,34 @@ export const AiWorkflowBuilderPage = () => {
   };
 
   const handleSave = async () => {
-    if (!templateId) return;
     setSaveError('');
     setSaving(true);
     try {
-      const res = await api.get(`/templates/${templateId}`);
-      const templateName: string = res.data.name;
-      const layout = res.data.layout;
-      const allFields = (layout.tabs ?? []).flatMap((t: any) => t.fields ?? []);
-      const wfField = allFields.find((f: any) => f.fieldType === 'workflow');
-      if (!wfField) {
-        setSaveError(t('awb_no_workflow_field_error', { defaultValue: 'This template no longer has a Workflow field — add one in the Template Builder first.' }));
-        setSaving(false);
-        return;
-      }
-      const nodes: WorkflowNode[] = wfField.fieldConfig?.nodes ?? [];
       const typeConfig = actionType === 'mcp_tool'
         ? { serverUrl: mcpServerUrl, auth: mcpAuth, calls: mcpDraftCalls, fieldMappings: { response: mcpDraftMappings } }
         : { calls: draftCalls, fieldMappings: draftMappings };
-      let finalTitle = nodeTitle.trim() || t('awb_default_action_title', { defaultValue: 'AI Workflow Action' });
+      const finalName = nodeTitle.trim() || t('awb_default_action_title', { defaultValue: 'AI Workflow Action' });
+      const body = { name: finalName, type: actionType, typeConfig, source: 'ai' };
 
       if (targetMode === 'existing' && targetNodeId) {
-        const idx = nodes.findIndex(n => n.id === targetNodeId);
-        if (idx >= 0) {
-          nodes[idx] = { ...nodes[idx], type: actionType, typeConfig };
-          finalTitle = nodes[idx].title;
-        }
+        await api.put(`/action-item-library/${targetNodeId}`, body);
       } else {
-        const newNode: WorkflowNode = {
-          id: crypto.randomUUID(),
-          title: finalTitle,
-          type: actionType,
-          parentId: null,
-          displayOrder: nodes.length,
-          defaultAssigneeUserId: null,
-          customFieldKeys: [],
-          dataFlows: [],
-          typeConfig,
-          x: 100,
-          y: 130 + nodes.length * 160,
-        };
-        nodes.push(newNode);
+        await api.post('/action-item-library', body);
       }
-      wfField.fieldConfig.nodes = nodes;
 
-      await api.put(`/templates/${templateId}`, {
-        name: res.data.name,
-        description: res.data.description,
-        aiPurpose: res.data.aiPurpose,
-        layout,
-      });
-
-      setSavedTemplateName(templateName);
-      setSavedNodeTitle(finalTitle);
+      setSavedName(finalName);
+      await reloadLibraryEntries();
       setStep(3);
     } catch (err: any) {
-      setSaveError(err?.response?.data?.message || t('awb_save_failed', { defaultValue: 'Failed to save into the template.' }));
+      setSaveError(err?.response?.data?.message || t('awb_save_failed', { defaultValue: 'Failed to save into the library.' }));
     } finally {
       setSaving(false);
     }
   };
 
   const startOver = () => {
+    setMode('wizard');
     setStep(1);
-    setTemplateId(null);
     setIntent('');
     setDocumentation('');
     setDraftCalls([]);
@@ -211,12 +190,55 @@ export const AiWorkflowBuilderPage = () => {
     setNodeTitle('');
     setTargetMode('new');
     setTargetNodeId('');
+    setCameFromList(false);
     setGenError('');
     setSaveError('');
   };
 
+  const backToList = () => {
+    setMode('list');
+    reloadLibraryEntries();
+  };
+
   const captureNames = draftCalls.flatMap(c => c.responseCaptures.map(r => r.name).filter(Boolean));
   const mcpCaptureNames = mcpDraftCalls.flatMap(c => c.responseCaptures.map(r => r.name).filter(Boolean));
+
+  if (mode === 'list') {
+    return (
+      <div className="awb-wrap">
+        <div className="ail-toolbar">
+          <p className="ail-hint">
+            {t('awb_list_hint', { defaultValue: 'AI-built action items (external API calls or MCP tool calls). Add one to any template from the Workflow Designer.' })}
+          </p>
+          <button className="ail-add-btn" onClick={startOver}>
+            <Plus size={14} /> {t('awb_new_ai_item_btn', { defaultValue: 'New AI Action Item' })}
+          </button>
+        </div>
+
+        {aiLibraryEntries.length === 0 ? (
+          <div className="ail-state">{t('awb_ai_items_list_empty', { defaultValue: 'No AI action items yet — click "New AI Action Item" to build one.' })}</div>
+        ) : (
+          <div className="ail-list">
+            {aiLibraryEntries.map(entry => (
+              <div key={entry.id} className="ail-card-wrap">
+                <div className="ail-card">
+                  <span className="ail-card-icon">{TYPE_ICON[entry.type] ?? <Globe2 size={16} />}</span>
+                  <div className="ail-card-body">
+                    <span className="ail-card-name">{entry.name}</span>
+                    <span className="ail-source-badge ail-source-ai"><Sparkles size={10} /> {t('action_item_library_ai_badge', { defaultValue: 'AI' })}</span>
+                  </div>
+                  <div className="ail-card-actions">
+                    <button className="ail-icon-btn" onClick={() => handleEditExisting(entry)}><Pencil size={14} /></button>
+                    <button className="ail-icon-btn ail-icon-delete" onClick={() => handleDeleteExisting(entry)}><Trash2 size={14} /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="awb-wrap">
@@ -241,6 +263,9 @@ export const AiWorkflowBuilderPage = () => {
       {/* ── Step 1 ── */}
       {step === 1 && (
         <div className="awb-card">
+          <button className="wfd-btn-ghost awb-back-to-list-btn" onClick={backToList}>
+            <ArrowLeft size={13} /> {t('awb_back_to_list_btn', { defaultValue: 'Back to List' })}
+          </button>
           <div className="awb-card-intro">
             <Sparkles size={16} className="awb-intro-icon" />
             <p>{actionType === 'mcp_tool'
@@ -260,18 +285,6 @@ export const AiWorkflowBuilderPage = () => {
                 {t('awb_action_type_mcp_tool_option', { defaultValue: 'MCP Tool (server + discovery)' })}
               </label>
             </div>
-          </div>
-
-          <div className="awb-field">
-            <label className="awb-label">{t('awb_target_template_label', { defaultValue: 'Target template' })}</label>
-            <select className="wfd-sel" value={templateId ?? ''} onChange={e => handleTemplateChange(e.target.value)}>
-              <option value="">{t('select_template_placeholder', { defaultValue: '— Select a template —' })}</option>
-              {templates.map(tpl => <option key={tpl.id} value={tpl.id}>{tpl.name}</option>)}
-            </select>
-            {loadingTemplate && <p className="awb-hint"><Loader2 size={11} className="awb-spin" /> {t('awb_loading_template', { defaultValue: 'Loading template…' })}</p>}
-            {hasWorkflowField === false && (
-              <p className="awb-warn"><AlertCircle size={12} /> {t('awb_no_workflow_field_warning', { defaultValue: 'This template has no Workflow field yet — add one in the Template Builder first.' })}</p>
-            )}
           </div>
 
           <div className="awb-field">
@@ -316,7 +329,7 @@ export const AiWorkflowBuilderPage = () => {
             <button
               className="wfd-btn-save"
               disabled={
-                !templateId || hasWorkflowField === false || generating ||
+                generating ||
                 (actionType === 'mcp_tool' ? mcpDiscoveredTools.length === 0 : !documentation.trim())
               }
               onClick={handleGenerate}
@@ -338,6 +351,16 @@ export const AiWorkflowBuilderPage = () => {
           {actionType === 'mcp_tool' ? (
             <>
               <div className="awb-field">
+                <label className="awb-label">{t('awb_mcp_server_label', { defaultValue: 'MCP server' })}</label>
+                <McpServerConnectionEditor
+                  serverUrl={mcpServerUrl}
+                  onServerUrlChange={setMcpServerUrl}
+                  auth={mcpAuth}
+                  onAuthChange={setMcpAuth}
+                  onToolsDiscovered={setMcpDiscoveredTools}
+                />
+              </div>
+              <div className="awb-field">
                 <label className="awb-label">{t('awb_tool_calls_label', { defaultValue: 'Tool Calls' })}</label>
                 <McpToolPicker tools={mcpDiscoveredTools} onPick={tool => {
                   const properties = tool?.inputSchema?.properties ?? {};
@@ -347,12 +370,17 @@ export const AiWorkflowBuilderPage = () => {
                     responseCaptures: [],
                   }]);
                 }} />
-                <McpToolCallsEditor calls={mcpDraftCalls} onChange={setMcpDraftCalls} />
+                <McpToolCallsEditor
+                  calls={mcpDraftCalls} onChange={setMcpDraftCalls}
+                  ticketFieldKeys={ticketFieldKeys} workflowFieldKeys={workflowFieldKeys}
+                />
               </div>
               <McpResponseMappingsEditor
                 mappings={mcpDraftMappings}
                 onChange={setMcpDraftMappings}
                 captureNames={mcpCaptureNames}
+                ticketFieldKeys={ticketFieldKeys}
+                workflowFieldKeys={workflowFieldKeys}
               />
             </>
           ) : (
@@ -365,6 +393,7 @@ export const AiWorkflowBuilderPage = () => {
                 mappings={draftMappings}
                 onChange={setDraftMappings}
                 ticketFieldKeys={ticketFieldKeys}
+                workflowFieldKeys={workflowFieldKeys}
                 captureNames={captureNames}
               />
             </>
@@ -375,24 +404,24 @@ export const AiWorkflowBuilderPage = () => {
             <div className="awb-radio-row">
               <label className="awb-radio">
                 <input type="radio" checked={targetMode === 'new'} onChange={() => setTargetMode('new')} />
-                {t('awb_new_action_item_option', { defaultValue: 'New action item' })}
+                {t('awb_new_library_entry_option', { defaultValue: 'New library entry' })}
               </label>
               <label className="awb-radio">
                 <input
                   type="radio"
                   checked={targetMode === 'existing'}
                   onChange={() => setTargetMode('existing')}
-                  disabled={existingTargetNodes.length === 0}
+                  disabled={existingLibraryEntries.length === 0}
                 />
-                {existingTargetNodes.length === 0
-                  ? t('awb_overwrite_existing_item_none_option', { defaultValue: 'Overwrite existing {{type}} item (none yet)', type: actionType })
-                  : t('awb_overwrite_existing_item_option', { defaultValue: 'Overwrite existing {{type}} item', type: actionType })}
+                {existingLibraryEntries.length === 0
+                  ? t('awb_overwrite_existing_entry_none_option', { defaultValue: 'Overwrite existing {{type}} entry (none yet)', type: actionType })
+                  : t('awb_overwrite_existing_entry_option', { defaultValue: 'Overwrite existing {{type}} entry', type: actionType })}
               </label>
             </div>
             {targetMode === 'existing' && (
               <select className="wfd-sel" value={targetNodeId} onChange={e => setTargetNodeId(e.target.value)}>
                 <option value="">{t('select_item_placeholder', { defaultValue: '— Select item —' })}</option>
-                {existingTargetNodes.map(n => <option key={n.id} value={n.id}>{n.title}</option>)}
+                {existingLibraryEntries.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
               </select>
             )}
           </div>
@@ -400,13 +429,13 @@ export const AiWorkflowBuilderPage = () => {
           {saveError && <p className="awb-error">{saveError}</p>}
 
           <div className="awb-actions">
-            <button className="wfd-btn-ghost" onClick={() => setStep(1)}><ArrowLeft size={13} /> {t('back_btn', { defaultValue: 'Back' })}</button>
+            <button className="wfd-btn-ghost" onClick={cameFromList ? backToList : () => setStep(1)}><ArrowLeft size={13} /> {t('back_btn', { defaultValue: 'Back' })}</button>
             <button
               className="wfd-btn-save"
               disabled={saving || (actionType === 'mcp_tool' ? mcpDraftCalls.length === 0 : draftCalls.length === 0) || (targetMode === 'existing' && !targetNodeId)}
               onClick={handleSave}
             >
-              {saving ? <><Loader2 size={13} className="awb-spin" /> {t('saving', { defaultValue: 'Saving…' })}</> : <>{t('awb_save_to_template_btn', { defaultValue: 'Save to Template' })} <ArrowRight size={13} /></>}
+              {saving ? <><Loader2 size={13} className="awb-spin" /> {t('saving', { defaultValue: 'Saving…' })}</> : <>{t('awb_save_to_library_btn', { defaultValue: 'Save to Library' })} <ArrowRight size={13} /></>}
             </button>
           </div>
         </div>
@@ -418,9 +447,9 @@ export const AiWorkflowBuilderPage = () => {
           <div className="awb-success-icon"><Check size={22} /></div>
           <h3>{t('awb_saved_heading', { defaultValue: 'Saved' })}</h3>
           <p>
-            {t('awb_saved_body_prefix', { defaultValue: '"{{title}}" was saved into', title: savedNodeTitle })} <strong>{savedTemplateName}</strong>. {t('awb_saved_body_suffix', { defaultValue: 'Open it from the Templates tab and use the Workflow Designer to view it on the canvas or make further changes.' })}
+            {t('awb_saved_body_library', { defaultValue: '"{{title}}" was saved to the Action Item Library.', title: savedName })} {t('awb_saved_body_library_suffix', { defaultValue: 'Open the Action Items tab to manage it, or add it to any template from that template\'s Workflow Designer.' })}
           </p>
-          <button className="wfd-btn-save" onClick={startOver}><Sparkles size={13} /> {t('awb_build_another_btn', { defaultValue: 'Build another' })}</button>
+          <button className="wfd-btn-save" onClick={backToList}><Check size={13} /> {t('awb_back_to_list_btn', { defaultValue: 'Back to List' })}</button>
         </div>
       )}
     </div>

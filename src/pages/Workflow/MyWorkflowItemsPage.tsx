@@ -19,7 +19,7 @@ interface WorkflowItem {
 
 interface Props {
   onBack: () => void;
-  onViewTicket: (ticketId: number) => void;
+  onViewItem: (itemId: number) => void;
 }
 
 /* ── Config ── */
@@ -44,7 +44,7 @@ const FILTER_DEFS = [
 
 /* ── Component ── */
 
-export const MyWorkflowItemsPage = ({ onBack, onViewTicket }: Props) => {
+export const MyWorkflowItemsPage = ({ onBack, onViewItem }: Props) => {
   const { t } = useTranslation();
   const [items, setItems]         = useState<WorkflowItem[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -138,7 +138,7 @@ export const MyWorkflowItemsPage = ({ onBack, onViewTicket }: Props) => {
                 const isUpdating = updatingId === item.id;
                 return (
                   <div key={item.id} className="mwi-card">
-                    <div className="mwi-card-left" onClick={() => onViewTicket(item.ticketId)}>
+                    <div className="mwi-card-left" onClick={() => onViewItem(item.id)}>
                       <span className="mwi-card-dot" style={{ background: s.dot }} />
                       <div className="mwi-card-info">
                         <div className="mwi-card-title">
@@ -161,7 +161,7 @@ export const MyWorkflowItemsPage = ({ onBack, onViewTicket }: Props) => {
                       {item.type === 'approval' ? (
                         <button
                           className="mwi-approval-cta"
-                          onClick={() => onViewTicket(item.ticketId)}
+                          onClick={() => onViewItem(item.id)}
                         >
                           {t('workflow_item_review_decide_btn', { defaultValue: 'Review & Decide' })} <ArrowRight size={12} />
                         </button>

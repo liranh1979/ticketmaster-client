@@ -1,0 +1,53 @@
+.sif-wrap { display: flex; flex-direction: column; gap: 6px; }
+
+.sif-empty-txt { font: italic 10px/1.5 var(--sd-font); color: var(--sd-border-strong); margin: 0; }
+
+.sif-row {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--sd-bg); border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm); padding: 6px;
+}
+
+.sif-field-label {
+  flex: 1; color: var(--sd-fg);
+  font: var(--sd-text-xs)/1 var(--sd-font);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.sif-field-type-badge {
+  flex-shrink: 0; padding: 2px 7px;
+  background: var(--sd-surface-2); border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-pill);
+  font: 600 10px/1.6 var(--sd-font); color: var(--sd-fg-subtle);
+}
+
+.sif-picker-row { display: flex; align-items: center; gap: 6px; }
+
+.sif-sel {
+  width: 110px; flex-shrink: 0; padding: 6px 8px;
+  background: var(--sd-surface); border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm); color: var(--sd-fg-subtle);
+  font: var(--sd-text-xs)/1 var(--sd-font); font-family: inherit;
+  outline: none; cursor: pointer;
+}
+
+.sif-picker-sel { width: auto; flex: 1; }
+
+.sif-rm-btn {
+  background: transparent; border: none; color: var(--sd-border-strong);
+  cursor: pointer; display: flex; align-items: center; flex-shrink: 0;
+  padding: 4px; border-radius: 3px; transition: color 0.1s;
+}
+.sif-rm-btn:hover { color: oklch(0.75 0.18 25); }
+
+.sif-add-btn {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; background: transparent;
+  border: 1px dashed var(--sd-border-strong); border-radius: var(--sd-radius-sm);
+  color: var(--sd-fg-subtle);
+  font: 600 var(--sd-text-xs)/1 var(--sd-font); font-family: inherit;
+  cursor: pointer; transition: border-color var(--sd-dur-fast) var(--sd-ease), color var(--sd-dur-fast) var(--sd-ease);
+}
+.sif-add-btn:hover:not(:disabled) { border-color: var(--sd-brand); color: oklch(0.72 0.12 260); }
+.sif-add-btn:disabled { opacity: 0.5; cursor: default; }

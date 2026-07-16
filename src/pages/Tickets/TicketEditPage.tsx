@@ -39,6 +39,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
   const [fieldLabels, setFieldLabels] = useState<Record<string, string>>({});
   const [values, setValues]         = useState<Record<string, any>>({});
   const [loading, setLoading]       = useState(true);
+  const [loadError, setLoadError]   = useState('');
   const [saving, setSaving]         = useState(false);
   const [isDirty, setIsDirty]       = useState(false);
   const [conflict, setConflict]     = useState<TicketDetail | null>(null);
@@ -62,6 +63,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      setLoadError('');
       try {
         const { data: td }: { data: TicketDetail } = await api.get(`/tickets/${ticketId}`);
         setTicket(td);
@@ -83,6 +85,10 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
           vals.request_user = String(td.requestUserId);
         }
         setValues(vals);
+      } catch (err: any) {
+        setLoadError(err?.response?.status === 403
+          ? t('ticket_no_access', { defaultValue: "You don't have access to this ticket." })
+          : t('ticket_not_found', { defaultValue: 'This ticket could not be found.' }));
       } finally {
         setLoading(false);
       }
@@ -297,6 +303,17 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
         <div className="te-loading">
           <div className="te-spinner" />
         </div>
+      </div>
+    );
+  }
+
+  if (loadError || !ticket) {
+    return (
+      <div className="te-page">
+        <div className="te-header">
+          <button className="te-back-btn" onClick={handleBack}><ArrowLeft size={16} /></button>
+        </div>
+        <div className="te-load-error">{loadError}</div>
       </div>
     );
   }

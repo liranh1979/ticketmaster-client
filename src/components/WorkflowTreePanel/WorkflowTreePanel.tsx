@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Check, X, ShieldCheck, ShieldX, Clock, ArrowUpRight, Globe2, Plug } from 'lucide-react';
 import api from '../../api';
 import { UserPickerControl } from '../UserPickerControl/UserPickerControl';
+import { SimpleItemFieldsForm } from '../SimpleItemFieldsForm/SimpleItemFieldsForm';
+import type { SimpleItemField } from '../../pages/Settings/TicketsTemplates/SimpleItemFieldsEditor';
 import './WorkflowTreePanel.css';
 
 /* ── Types ── */
@@ -15,10 +17,11 @@ interface WorkflowItem {
   title: string;
   status: string;
   type?: string;
-  typeConfig?: { levels?: ApprovalLevelConfig[]; calls?: unknown[] } | null;
+  typeConfig?: { levels?: ApprovalLevelConfig[]; calls?: unknown[]; fields?: SimpleItemField[] } | null;
   assignedUserId: number | null;
   assignedUserDisplayName: string | null;
   assignedGroupId: number | null;
+  fieldValues?: Record<string, any> | null;
   lastError?: string | null;
   displayOrder: number;
   createdAt: string;
@@ -111,6 +114,7 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
 
   const [draftStatus, setDraftStatus]   = useState('');
   const [draftAssignee, setDraftAssignee] = useState('');
+  const [draftFieldValues, setDraftFieldValues] = useState<Record<string, any>>({});
   const [saving, setSaving]             = useState(false);
   const [savedFlash, setSavedFlash]     = useState(false);
   const [childActivated, setChildActivated] = useState<number | null>(null);
@@ -176,6 +180,7 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
     if (selected) {
       setDraftStatus(selected.status);
       setDraftAssignee(selected.assignedUserId?.toString() ?? '');
+      setDraftFieldValues(selected.fieldValues ?? {});
       setChildActivated(null);
       setSavedFlash(false);
       setDecideError('');
@@ -196,9 +201,11 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
     try {
       let res;
       if (isAdmin) {
+        const hasFields = (selected.typeConfig?.fields?.length ?? 0) > 0;
         res = await api.patch(`/workflow/items/${selected.id}`, {
           status: draftStatus,
           assignedUserId: draftAssignee ? Number(draftAssignee) : null,
+          ...(hasFields ? { fieldValues: draftFieldValues } : {}),
         });
       } else {
         res = await api.patch(`/workflow/items/${selected.id}/status`, { status: draftStatus });
@@ -487,6 +494,18 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
                           value={draftAssignee}
                           onChange={v => setDraftAssignee(v)}
                           compact
+                        />
+                      </div>
+                    )}
+
+                    {/* Item's own mini-fields (from the Action Item Library / Workflow Designer) */}
+                    {isAdmin && (selected.typeConfig?.fields?.length ?? 0) > 0 && (
+                      <div className="wtp-field-group">
+                        <label className="wtp-field-label">{t('simple_item_fields_label', { defaultValue: 'FIELDS (optional)' })}</label>
+                        <SimpleItemFieldsForm
+                          fields={selected.typeConfig!.fields!}
+                          values={draftFieldValues}
+                          onChange={(key, value) => setDraftFieldValues(prev => ({ ...prev, [key]: value }))}
                         />
                       </div>
                     )}

@@ -1,8 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Plus, GitBranch, Trash2, Database, ArrowRight, Lock, ShieldCheck, Globe2, Plug, Play } from 'lucide-react';
+import { X, Plus, GitBranch, Trash2, Database, ArrowRight, Lock, ShieldCheck, Globe2, Plug, Play, LibraryBig, ClipboardList, Sparkles } from 'lucide-react';
+import api from '../../../api';
 import { UserPickerControl } from '../../../components/UserPickerControl/UserPickerControl';
 import { ApprovalLevelsEditor, makeDefaultLevel, type ApprovalLevel } from './ApprovalLevelsEditor';
+import { SimpleItemFieldsEditor, type SimpleItemField } from './SimpleItemFieldsEditor';
 import {
   ExternalApiCallsEditor, ExternalApiFieldMappingsEditor,
   type ExternalApiCall, type ExternalApiFieldMappings,
@@ -48,6 +50,17 @@ export interface WorkflowNodeDef {
 
 export interface WorkflowFieldConfig {
   nodes: WorkflowNodeDef[];
+}
+
+// A reusable, cross-template action item — see ActionItemLibraryPage.tsx / AiWorkflowBuilderPage.tsx.
+// "Add from Library" copies name/type/typeConfig into a brand-new node; editing the node afterward
+// never changes this catalog entry, and vice versa.
+interface LibraryEntry {
+  id: number;
+  name: string;
+  type: WorkflowNodeType;
+  typeConfig: Record<string, unknown> | null;
+  source: 'manual' | 'ai';
 }
 
 // ── Canvas constants ──────────────────────────────────────────────────────────
@@ -208,6 +221,9 @@ export const WorkflowDesignerModal = ({
   const [selId, setSelId] = useState<string | null>(null);
   const [mcpDiscoveredTools, setMcpDiscoveredTools] = useState<any[]>([]);
   const [testModalOpen, setTestModalOpen] = useState(false);
+  const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
+  const [libraryPickerOpen, setLibraryPickerOpen] = useState(false);
+  const [workflowFieldKeys, setWorkflowFieldKeys] = useState<string[]>([]);
 
   // Drag-to-move
   const [dragMove, setDragMove] = useState<{
@@ -235,6 +251,14 @@ export const WorkflowDesignerModal = ({
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
   }, [onClose]);
+
+  useEffect(() => {
+    api.get('/action-item-library').then(r => setLibraryEntries(r.data)).catch(() => {});
+    // Only custom (non-system) workflow fields — see AiWorkflowBuilderPage's identical fetch for why.
+    api.get('/field-definitions', { params: { entityType: 'workflow' } })
+      .then(r => setWorkflowFieldKeys(r.data.filter((f: any) => !f.isSystem).map((f: any) => f.fieldKey)))
+      .catch(() => {});
+  }, []);
 
   // Discovered MCP tools and any open test-run panel are transient per-editing-session state
   useEffect(() => { setMcpDiscoveredTools([]); setTestModalOpen(false); }, [selId]);
@@ -307,7 +331,7 @@ export const WorkflowDesignerModal = ({
 
   // ── CRUD ─────────────────────────────────────────────────────────────────
 
-  const addNode = () => {
+  const addNode = (overrides?: Partial<FullNode>) => {
     const id = crypto.randomUUID();
     const par = selId ? nm[selId] : null;
     const newN: FullNode = {
@@ -315,9 +339,15 @@ export const WorkflowDesignerModal = ({
       defaultAssigneeUserId: null, customFieldKeys: [], dataFlows: [],
       x: par ? Math.min(par.x + NODE_W + 52, CANVAS_W - NODE_W - 20) : CANVAS_W / 2 - NODE_W / 2,
       y: par ? par.y + LEVEL_H : TRIGGER_Y + TRIGGER_H + 72,
+      ...overrides,
     };
     setNodes(prev => [...prev, newN]);
     setSelId(id);
+  };
+
+  const addNodeFromLibrary = (entry: LibraryEntry) => {
+    addNode({ title: entry.name, type: entry.type, typeConfig: entry.typeConfig ?? undefined });
+    setLibraryPickerOpen(false);
   };
 
   const delNode = (id: string) => {
@@ -349,6 +379,14 @@ export const WorkflowDesignerModal = ({
   const setApprovalLevels = (id: string, levels: ApprovalLevel[]) => {
     const n = nm[id]; if (!n) return;
     upd(id, { typeConfig: { ...n.typeConfig, levels } });
+  };
+
+  const taskFieldsOf = (n: FullNode): SimpleItemField[] =>
+    (n.typeConfig?.fields as SimpleItemField[] | undefined) ?? [];
+
+  const setTaskFields = (id: string, fields: SimpleItemField[]) => {
+    const n = nm[id]; if (!n) return;
+    upd(id, { typeConfig: { ...n.typeConfig, fields } });
   };
 
   const externalApiCallsOf = (n: FullNode): ExternalApiCall[] =>
@@ -569,7 +607,29 @@ export const WorkflowDesignerModal = ({
           <aside className="wfd-insp">
             <div className="wfd-insp-top">
               <span className="wfd-sec-lbl">NODE INSPECTOR</span>
-              <button className="wfd-add-btn" onClick={addNode}><Plus size={11} /> Add item</button>
+              <div className="wfd-insp-top-btns">
+                <div className="wfd-library-picker-wrap">
+                  <button className="wfd-add-btn" onClick={() => setLibraryPickerOpen(v => !v)}>
+                    <LibraryBig size={11} /> {t('workflow_add_from_library_btn', { defaultValue: 'Add from Library' })}
+                  </button>
+                  {libraryPickerOpen && (
+                    <div className="wfd-library-picker">
+                      {libraryEntries.length === 0 ? (
+                        <p className="wfd-empty-txt">{t('workflow_library_empty', { defaultValue: 'No action items in the library yet — build one in the Action Items tab.' })}</p>
+                      ) : (
+                        libraryEntries.map(entry => (
+                          <button key={entry.id} className="wfd-library-entry" onClick={() => addNodeFromLibrary(entry)}>
+                            {entry.type === 'task' ? <ClipboardList size={13} /> : entry.type === 'mcp_tool' ? <Plug size={13} /> : <Globe2 size={13} />}
+                            <span className="wfd-library-entry-name">{entry.name}</span>
+                            {entry.source === 'ai' && <Sparkles size={11} className="wfd-library-entry-ai" />}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+                <button className="wfd-add-btn" onClick={() => addNode()}><Plus size={11} /> Add item</button>
+              </div>
             </div>
 
             {!selNode ? (
@@ -580,7 +640,7 @@ export const WorkflowDesignerModal = ({
                   Click any node on the canvas,<br />or click "Add item" to start
                 </p>
                 {nodes.length === 0 && (
-                  <button className="wfd-btn-save wfd-mt16" onClick={addNode}><Plus size={12} /> Add first item</button>
+                  <button className="wfd-btn-save wfd-mt16" onClick={() => addNode()}><Plus size={12} /> Add first item</button>
                 )}
               </div>
             ) : (
@@ -682,6 +742,7 @@ export const WorkflowDesignerModal = ({
                       mappings={externalApiMappingsOf(selNode)}
                       onChange={m => setExternalApiMappings(selNode.id, m)}
                       ticketFieldKeys={ticketFieldKeys}
+                      workflowFieldKeys={workflowFieldKeys}
                       captureNames={externalApiCallsOf(selNode).flatMap(c => c.responseCaptures.map(r => r.name).filter(Boolean))}
                     />
                   </>
@@ -710,12 +771,16 @@ export const WorkflowDesignerModal = ({
                       <McpToolCallsEditor
                         calls={mcpCallsOf(selNode)}
                         onChange={calls => setMcpCalls(selNode.id, calls)}
+                        ticketFieldKeys={ticketFieldKeys}
+                        workflowFieldKeys={workflowFieldKeys}
                       />
                     </div>
                     <McpResponseMappingsEditor
                       mappings={mcpResponseMappingsOf(selNode)}
                       onChange={m => setMcpResponseMappings(selNode.id, m)}
                       captureNames={mcpCallsOf(selNode).flatMap(c => c.responseCaptures.map(r => r.name).filter(Boolean))}
+                      ticketFieldKeys={ticketFieldKeys}
+                      workflowFieldKeys={workflowFieldKeys}
                     />
                   </>
                 ) : (
@@ -740,6 +805,16 @@ export const WorkflowDesignerModal = ({
                           <span className="wfd-locked-badge">LOCKED</span>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Item's own mini-fields — same concept as the Action Item Library builder;
+                        this template's copy can be freely tweaked without affecting the library entry. */}
+                    <div className="wfd-sec">
+                      <div className="wfd-sec-lbl">{t('simple_item_fields_label', { defaultValue: 'FIELDS (optional)' })}</div>
+                      <SimpleItemFieldsEditor
+                        fields={taskFieldsOf(selNode)}
+                        onChange={fields => setTaskFields(selNode.id, fields)}
+                      />
                     </div>
                   </>
                 )}

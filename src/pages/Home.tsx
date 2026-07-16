@@ -10,6 +10,7 @@ import { TicketEditPage } from './Tickets/TicketEditPage';
 import { EndUserPortal } from './EndUser/EndUserPortal';
 import { MyTicketsPage } from './EndUser/MyTicketsPage';
 import { MyWorkflowItemsPage } from './Workflow/MyWorkflowItemsPage';
+import { ActionItemPage } from './Workflow/ActionItemPage';
 import { hasPermission, isSuperAdmin, PERMISSIONS } from '../utils/permissions';
 import { TicketsDashboard } from './Dashboards/TicketsDashboard/TicketsDashboard';
 import { AboutModal } from '../components/AboutModal/AboutModal';
@@ -26,12 +27,13 @@ interface HomeProps {
   onUserUpdate?: (partial: Record<string, any>) => void;
 }
 
-type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks';
+type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks' | 'action-item';
 
 export const Home = ({ user, onUserUpdate }: HomeProps) => {
   const { t } = useTranslation();
   const [currentView, setCurrentView] = useState<HomeView>('welcome');
   const [editTicketId, setEditTicketId] = useState<number | null>(null);
+  const [actionItemId, setActionItemId] = useState<number | null>(null);
   const [settingsInitialView, setSettingsInitialView] = useState<string>('menu');
   const [ticketCount, setTicketCount] = useState<number | undefined>(undefined);
   const [hasMoreTickets, setHasMoreTickets] = useState(false);
@@ -46,6 +48,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
   const goToMyTasks      = () => setCurrentView('my-tasks');
   const goToCreateTicket = () => setCurrentView('create-ticket');
   const goToEditTicket   = (id: number) => { setEditTicketId(id); setCurrentView('edit-ticket'); };
+  const goToActionItem   = (id: number) => { setActionItemId(id); setCurrentView('action-item'); };
 
   // Deep-link: ?ticket=NNN
   useEffect(() => {
@@ -167,7 +170,14 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
         {currentView === 'my-tasks' && (
           <MyWorkflowItemsPage
             onBack={() => setCurrentView('welcome')}
-            onViewTicket={goToEditTicket}
+            onViewItem={goToActionItem}
+          />
+        )}
+
+        {currentView === 'action-item' && actionItemId !== null && (
+          <ActionItemPage
+            itemId={actionItemId}
+            onBack={goToMyTasks}
           />
         )}
       </div>

@@ -291,20 +291,47 @@ export interface ExternalApiFieldMappings {
   response: FieldMappingResponse[];
 }
 
-const TICKET_FIELD_BASE = ['title', 'description', 'status', 'priority'];
+export const TICKET_FIELD_BASE = ['title', 'description', 'status', 'priority'];
+
+// Shared by both the request source picker and the response target picker — "ticket.<field>" (this
+// template's ticket fields) or "this.<field>" (this action item's own data, sourced from Workflow
+// Fields Manager's field_definitions catalog — see SimpleItemFieldsEditor for the same catalog used
+// by Simple items' mini-fields). Renders as a plain <select> with two optgroups.
+export const FieldRefSelect = ({
+  value, onChange, ticketFieldOpts, workflowFieldKeys,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  ticketFieldOpts: string[];
+  workflowFieldKeys: string[];
+}) => {
+  const { t } = useTranslation();
+  return (
+    <select className="wfd-sel" value={value} onChange={e => onChange(e.target.value)}>
+      <optgroup label={t('eae_ticket_fields_optgroup', { defaultValue: 'Ticket Fields' }) as string}>
+        {ticketFieldOpts.map(k => <option key={k} value={`ticket.${k}`}>ticket.{k}</option>)}
+      </optgroup>
+      <optgroup label={t('eae_workflow_fields_optgroup', { defaultValue: 'Workflow Fields' }) as string}>
+        {workflowFieldKeys.length === 0 && <option value="" disabled>{t('eae_workflow_fields_none', { defaultValue: '(none defined yet)' })}</option>}
+        {workflowFieldKeys.map(k => <option key={k} value={`this.${k}`}>this.{k}</option>)}
+      </optgroup>
+    </select>
+  );
+};
 
 export const ExternalApiFieldMappingsEditor = ({
-  mappings, onChange, ticketFieldKeys, captureNames,
+  mappings, onChange, ticketFieldKeys, workflowFieldKeys, captureNames,
 }: {
   mappings: ExternalApiFieldMappings;
   onChange: (m: ExternalApiFieldMappings) => void;
   ticketFieldKeys: string[];
+  workflowFieldKeys: string[];
   captureNames: string[];
 }) => {
   const { t } = useTranslation();
   const ticketFieldOpts = [...TICKET_FIELD_BASE, ...ticketFieldKeys.filter(k => !TICKET_FIELD_BASE.includes(k))];
 
-  const addReq = () => onChange({ ...mappings, request: [...mappings.request, { placeholder: '', ticketField: ticketFieldOpts[0] ?? 'title' }] });
+  const addReq = () => onChange({ ...mappings, request: [...mappings.request, { placeholder: '', ticketField: `ticket.${ticketFieldOpts[0] ?? 'title'}` }] });
   const updReq = (i: number, patch: Partial<FieldMappingRequest>) =>
     onChange({ ...mappings, request: mappings.request.map((r, idx) => idx === i ? { ...r, ...patch } : r) });
   const rmReq = (i: number) => onChange({ ...mappings, request: mappings.request.filter((_, idx) => idx !== i) });
@@ -324,9 +351,12 @@ export const ExternalApiFieldMappingsEditor = ({
         {mappings.request.length === 0 && <p className="wfd-empty-txt">{t('eae_request_mapping_empty', { defaultValue: 'No ticket fields wired in yet — calls will only see literal text' })}</p>}
         {mappings.request.map((r, i) => (
           <div key={i} className="eae-kv-row">
-            <select className="wfd-sel" value={r.ticketField} onChange={e => updReq(i, { ticketField: e.target.value })}>
-              {ticketFieldOpts.map(k => <option key={k} value={k}>ticket.{k}</option>)}
-            </select>
+            <FieldRefSelect
+              value={r.ticketField.includes('.') ? r.ticketField : `ticket.${r.ticketField}`}
+              onChange={v => updReq(i, { ticketField: v })}
+              ticketFieldOpts={ticketFieldOpts}
+              workflowFieldKeys={workflowFieldKeys}
+            />
             <span className="eae-arrow">→</span>
             <input className="wfd-inp" value={r.placeholder} onChange={e => updReq(i, { placeholder: e.target.value })} placeholder={t('placeholder_input_placeholder', { defaultValue: '{{placeholder}}' }) as string} />
             <button className="ale-rm-btn" onClick={() => rmReq(i)}><X size={11} /></button>
@@ -344,7 +374,12 @@ export const ExternalApiFieldMappingsEditor = ({
           <div key={i} className="eae-kv-row">
             <input className="wfd-inp" value={r.captureName} onChange={e => updResp(i, { captureName: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} list="eae-capture-names" />
             <span className="eae-arrow">→</span>
-            <input className="wfd-inp" value={r.target} onChange={e => updResp(i, { target: e.target.value })} placeholder={t('mapping_target_placeholder', { defaultValue: 'ticket.field or this.field' }) as string} />
+            <FieldRefSelect
+              value={r.target || `ticket.${ticketFieldOpts[0] ?? 'title'}`}
+              onChange={v => updResp(i, { target: v })}
+              ticketFieldOpts={ticketFieldOpts}
+              workflowFieldKeys={workflowFieldKeys}
+            />
             <button className="ale-rm-btn" onClick={() => rmResp(i)}><X size={11} /></button>
           </div>
         ))}

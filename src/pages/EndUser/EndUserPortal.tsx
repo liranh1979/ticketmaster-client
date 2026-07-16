@@ -5,6 +5,7 @@ import api from '../../api';
 import { AiChatPage } from './AiChatPage';
 import { MyTicketsPage } from './MyTicketsPage';
 import { MyWorkflowItemsPage } from '../Workflow/MyWorkflowItemsPage';
+import { ActionItemPage } from '../Workflow/ActionItemPage';
 import { CreateTicketPage } from '../Tickets/CreateTicketPage';
 import { TicketEditPage } from '../Tickets/TicketEditPage';
 import { formatRelativeTime } from '../Tickets/ticketTypes';
@@ -12,7 +13,7 @@ import { PersonalSettingsModal } from '../../components/PersonalSettings/Persona
 import { UserNotificationBell } from '../../components/UserNotificationBell/UserNotificationBell';
 import './EndUserPortal.css';
 
-type PortalView = 'home' | 'ai-chat' | 'my-tickets' | 'create-ticket' | 'view-ticket' | 'my-tasks';
+type PortalView = 'home' | 'ai-chat' | 'my-tickets' | 'create-ticket' | 'view-ticket' | 'my-tasks' | 'action-item';
 
 interface RecentTicket { id: number; title: string; status: string; updatedAt: string; }
 
@@ -27,6 +28,7 @@ export const EndUserPortal = ({ user, onUserUpdate }: Props) => {
   const { t } = useTranslation();
   const [view, setView]           = useState<PortalView>('home');
   const [viewTicketId, setViewTicketId] = useState<number | null>(null);
+  const [actionItemId, setActionItemId] = useState<number | null>(null);
   const [recentTickets, setRecentTickets] = useState<RecentTicket[]>([]);
   const [showPersonalSettings, setShowPersonalSettings] = useState(false);
 
@@ -48,6 +50,7 @@ export const EndUserPortal = ({ user, onUserUpdate }: Props) => {
   }, []);
 
   const openTicket = (id: number) => { setViewTicketId(id); setView('view-ticket'); };
+  const openActionItem = (id: number) => { setActionItemId(id); setView('action-item'); };
 
   const handleLogout = async () => {
     await api.post('/auth/logout').catch(() => {});
@@ -86,7 +89,16 @@ export const EndUserPortal = ({ user, onUserUpdate }: Props) => {
       return (
         <MyWorkflowItemsPage
           onBack={() => setView('home')}
-          onViewTicket={openTicket}
+          onViewItem={openActionItem}
+        />
+      );
+    }
+
+    if (view === 'action-item' && actionItemId !== null) {
+      return (
+        <ActionItemPage
+          itemId={actionItemId}
+          onBack={() => setView('my-tasks')}
         />
       );
     }

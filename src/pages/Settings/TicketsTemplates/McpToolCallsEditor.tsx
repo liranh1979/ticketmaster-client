@@ -10,7 +10,7 @@ import {
   SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SecretInput } from './ExternalApiCallsEditor';
+import { SecretInput, FieldRefSelect, TICKET_FIELD_BASE } from './ExternalApiCallsEditor';
 import api from '../../../api';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -133,14 +133,17 @@ export const McpToolPicker = ({
 // ── Call row ──────────────────────────────────────────────────────────────
 
 function ArgMappingRow({
-  mapping, onChange, onRemove,
+  mapping, onChange, onRemove, ticketFieldKeys, workflowFieldKeys,
 }: {
   mapping: McpArgumentMapping;
   onChange: (m: McpArgumentMapping) => void;
   onRemove: () => void;
+  ticketFieldKeys: string[];
+  workflowFieldKeys: string[];
 }) {
   const { t } = useTranslation();
   const sourceKind = mapping.captureName !== undefined ? 'capture' : 'ticket';
+  const ticketFieldOpts = [...TICKET_FIELD_BASE, ...ticketFieldKeys.filter(k => !TICKET_FIELD_BASE.includes(k))];
   return (
     <div className="eae-kv-row">
       <input className="wfd-inp" value={mapping.toolArgument} onChange={e => onChange({ ...mapping, toolArgument: e.target.value })} placeholder={t('mcp_argument_name_placeholder', { defaultValue: 'argument name' }) as string} />
@@ -149,7 +152,7 @@ function ArgMappingRow({
         value={sourceKind}
         onChange={e => onChange(e.target.value === 'capture'
           ? { toolArgument: mapping.toolArgument, captureName: '' }
-          : { toolArgument: mapping.toolArgument, ticketField: '' })}
+          : { toolArgument: mapping.toolArgument, ticketField: `ticket.${ticketFieldOpts[0] ?? 'title'}` })}
       >
         <option value="ticket">{t('mcp_arg_from_ticket_field_option', { defaultValue: 'from ticket field' })}</option>
         <option value="capture">{t('mcp_arg_from_capture_option', { defaultValue: 'from earlier capture' })}</option>
@@ -157,7 +160,12 @@ function ArgMappingRow({
       {sourceKind === 'capture' ? (
         <input className="wfd-inp" value={mapping.captureName ?? ''} onChange={e => onChange({ toolArgument: mapping.toolArgument, captureName: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} />
       ) : (
-        <input className="wfd-inp" value={mapping.ticketField ?? ''} onChange={e => onChange({ toolArgument: mapping.toolArgument, ticketField: e.target.value })} placeholder={t('mcp_ticket_field_example_placeholder', { defaultValue: 'title' }) as string} />
+        <FieldRefSelect
+          value={mapping.ticketField && mapping.ticketField.includes('.') ? mapping.ticketField : `ticket.${mapping.ticketField || 'title'}`}
+          onChange={v => onChange({ toolArgument: mapping.toolArgument, ticketField: v })}
+          ticketFieldOpts={ticketFieldOpts}
+          workflowFieldKeys={workflowFieldKeys}
+        />
       )}
       <button className="ale-rm-btn" onClick={onRemove}><X size={11} /></button>
     </div>
@@ -165,12 +173,14 @@ function ArgMappingRow({
 }
 
 function CallRow({
-  call, index, onChange, onRemove,
+  call, index, onChange, onRemove, ticketFieldKeys, workflowFieldKeys,
 }: {
   call: McpCall;
   index: number;
   onChange: (updated: McpCall) => void;
   onRemove: () => void;
+  ticketFieldKeys: string[];
+  workflowFieldKeys: string[];
 }) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: call.id });
@@ -217,7 +227,10 @@ function CallRow({
             </div>
             {call.argumentMappings.length === 0 && <p className="wfd-empty-txt">{t('mcp_no_arguments_empty', { defaultValue: 'No arguments mapped — the tool will be called with an empty argument set' })}</p>}
             {call.argumentMappings.map((m, i) => (
-              <ArgMappingRow key={i} mapping={m} onChange={updated => updArg(i, updated)} onRemove={() => rmArg(i)} />
+              <ArgMappingRow
+                key={i} mapping={m} onChange={updated => updArg(i, updated)} onRemove={() => rmArg(i)}
+                ticketFieldKeys={ticketFieldKeys} workflowFieldKeys={workflowFieldKeys}
+              />
             ))}
           </div>
 
@@ -244,10 +257,12 @@ function CallRow({
 // ── Calls list editor ─────────────────────────────────────────────────────
 
 export const McpToolCallsEditor = ({
-  calls, onChange,
+  calls, onChange, ticketFieldKeys, workflowFieldKeys,
 }: {
   calls: McpCall[];
   onChange: (calls: McpCall[]) => void;
+  ticketFieldKeys: string[];
+  workflowFieldKeys: string[];
 }) => {
   const { t } = useTranslation();
   const sensors = useSensors(useSensor(PointerSensor));
@@ -273,7 +288,10 @@ export const McpToolCallsEditor = ({
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={calls.map(c => c.id)} strategy={verticalListSortingStrategy}>
             {calls.map((call, i) => (
-              <CallRow key={call.id} call={call} index={i} onChange={updated => updateCall(i, updated)} onRemove={() => removeCall(i)} />
+              <CallRow
+                key={call.id} call={call} index={i} onChange={updated => updateCall(i, updated)} onRemove={() => removeCall(i)}
+                ticketFieldKeys={ticketFieldKeys} workflowFieldKeys={workflowFieldKeys}
+              />
             ))}
           </SortableContext>
         </DndContext>
@@ -286,14 +304,17 @@ export const McpToolCallsEditor = ({
 // ── Response field mappings ────────────────────────────────────────────────
 
 export const McpResponseMappingsEditor = ({
-  mappings, onChange, captureNames,
+  mappings, onChange, captureNames, ticketFieldKeys, workflowFieldKeys,
 }: {
   mappings: McpResponseMapping[];
   onChange: (m: McpResponseMapping[]) => void;
   captureNames: string[];
+  ticketFieldKeys: string[];
+  workflowFieldKeys: string[];
 }) => {
   const { t } = useTranslation();
-  const add = () => onChange([...mappings, { captureName: captureNames[0] ?? '', target: 'ticket.' }]);
+  const ticketFieldOpts = [...TICKET_FIELD_BASE, ...ticketFieldKeys.filter(k => !TICKET_FIELD_BASE.includes(k))];
+  const add = () => onChange([...mappings, { captureName: captureNames[0] ?? '', target: `ticket.${ticketFieldOpts[0] ?? 'title'}` }]);
   const upd = (i: number, patch: Partial<McpResponseMapping>) => onChange(mappings.map((m, idx) => idx === i ? { ...m, ...patch } : m));
   const rm = (i: number) => onChange(mappings.filter((_, idx) => idx !== i));
 
@@ -308,7 +329,12 @@ export const McpResponseMappingsEditor = ({
         <div key={i} className="eae-kv-row">
           <input className="wfd-inp" value={m.captureName} onChange={e => upd(i, { captureName: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} list="mte-capture-names" />
           <span className="eae-arrow">→</span>
-          <input className="wfd-inp" value={m.target} onChange={e => upd(i, { target: e.target.value })} placeholder={t('mapping_target_placeholder', { defaultValue: 'ticket.field or this.field' }) as string} />
+          <FieldRefSelect
+            value={m.target || `ticket.${ticketFieldOpts[0] ?? 'title'}`}
+            onChange={v => upd(i, { target: v })}
+            ticketFieldOpts={ticketFieldOpts}
+            workflowFieldKeys={workflowFieldKeys}
+          />
           <button className="ale-rm-btn" onClick={() => rm(i)}><X size={11} /></button>
         </div>
       ))}

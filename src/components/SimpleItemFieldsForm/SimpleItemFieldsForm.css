@@ -1,0 +1,18 @@
+.sitf-wrap { display: flex; flex-direction: column; gap: 10px; }
+
+.sitf-field { display: flex; flex-direction: column; gap: 4px; }
+
+.sitf-label {
+  font-size: 12px; font-weight: 700; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+
+.sitf-inp {
+  font-size: 13px; font-family: inherit;
+  background: #0f172a; border: 1px solid #1e293b;
+  border-radius: 6px; color: #e2e8f0;
+  padding: 8px 10px; outline: none;
+  transition: border-color 0.15s;
+}
+.sitf-inp:focus { border-color: #4f46e5; }
+.sitf-inp:disabled { opacity: 0.6; cursor: default; }
