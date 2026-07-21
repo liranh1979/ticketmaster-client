@@ -31,7 +31,8 @@ export interface McpCall {
 }
 
 export interface McpAuth {
-  type: 'none' | 'bearer';
+  type: 'none' | 'bearer' | 'api_key';
+  headerName?: string;
   hasToken?: boolean;
   token?: string;
 }
@@ -69,7 +70,9 @@ export const McpServerConnectionEditor = ({
     try {
       const res = await api.post('/mcp/discover-tools', {
         serverUrl,
-        token: auth.type === 'bearer' ? auth.token : undefined,
+        type: auth.type,
+        headerName: auth.type === 'api_key' ? auth.headerName : undefined,
+        token: (auth.type === 'bearer' || auth.type === 'api_key') ? auth.token : undefined,
       });
       onToolsDiscovered(res.data);
     } catch (err: any) {
@@ -91,15 +94,27 @@ export const McpServerConnectionEditor = ({
       <select className="wfd-sel" value={auth.type} onChange={e => onAuthChange({ ...auth, type: e.target.value as McpAuth['type'] })}>
         <option value="none">{t('mcp_no_auth_option', { defaultValue: 'No auth' })}</option>
         <option value="bearer">{t('auth_bearer_token_option', { defaultValue: 'Bearer token' })}</option>
+        <option value="api_key">{t('auth_api_key_header_option', { defaultValue: 'API key header' })}</option>
       </select>
       {auth.type === 'bearer' && (
         <SecretInput label={t('secret_token_label', { defaultValue: 'Token' })} hasValue={auth.hasToken} value={auth.token} onChange={v => onAuthChange({ ...auth, token: v })} />
+      )}
+      {auth.type === 'api_key' && (
+        <>
+          <input
+            className="wfd-inp"
+            value={auth.headerName ?? ''}
+            onChange={e => onAuthChange({ ...auth, headerName: e.target.value })}
+            placeholder={t('eae_header_name_placeholder', { defaultValue: 'Header name (default X-API-Key)' }) as string}
+          />
+          <SecretInput label={t('secret_api_key_label', { defaultValue: 'API key' })} hasValue={auth.hasToken} value={auth.token} onChange={v => onAuthChange({ ...auth, token: v })} />
+        </>
       )}
       <button className="wfd-add-flow-btn" onClick={handleDiscover} disabled={!serverUrl || discovering}>
         {discovering ? <><Loader2 size={10} className="mte-spin" /> {t('mcp_connecting_ellipsis', { defaultValue: 'Connecting…' })}</> : <><Search size={10} /> {t('mcp_discover_tools_btn', { defaultValue: 'Discover Tools' })}</>}
       </button>
       {discoverError && <p className="mte-error"><AlertCircle size={11} /> {discoverError}</p>}
-      {auth.type === 'bearer' && !auth.token && (
+      {(auth.type === 'bearer' || auth.type === 'api_key') && !auth.token && (
         <p className="wfd-hint-xs">{t('mcp_discover_token_hint', { defaultValue: "Discovery uses the token you type above this session — a previously saved token can't be read back to test with; re-enter it here if the server requires auth." })}</p>
       )}
     </div>

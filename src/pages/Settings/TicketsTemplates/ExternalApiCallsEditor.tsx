@@ -306,13 +306,23 @@ export const FieldRefSelect = ({
   workflowFieldKeys: string[];
 }) => {
   const { t } = useTranslation();
+  // A draft can reference "this.<key>" for a key the AI just suggested creating (see
+  // WorkflowFieldSuggestions.tsx) before the admin has actually created it — without this, the
+  // <select> would have no matching <option> for its own value and silently look unselected.
+  const pendingKey = value.startsWith('this.') && value.length > 5 && !workflowFieldKeys.includes(value.slice(5))
+    ? value.slice(5) : null;
   return (
     <select className="wfd-sel" value={value} onChange={e => onChange(e.target.value)}>
       <optgroup label={t('eae_ticket_fields_optgroup', { defaultValue: 'Ticket Fields' }) as string}>
         {ticketFieldOpts.map(k => <option key={k} value={`ticket.${k}`}>ticket.{k}</option>)}
       </optgroup>
       <optgroup label={t('eae_workflow_fields_optgroup', { defaultValue: 'Workflow Fields' }) as string}>
-        {workflowFieldKeys.length === 0 && <option value="" disabled>{t('eae_workflow_fields_none', { defaultValue: '(none defined yet)' })}</option>}
+        {workflowFieldKeys.length === 0 && !pendingKey && <option value="" disabled>{t('eae_workflow_fields_none', { defaultValue: '(none defined yet)' })}</option>}
+        {pendingKey && (
+          <option value={value} className="eae-pending-field-opt">
+            {t('eae_pending_field_option', { defaultValue: 'this.{{key}} (pending — create it below)', key: pendingKey })}
+          </option>
+        )}
         {workflowFieldKeys.map(k => <option key={k} value={`this.${k}`}>this.{k}</option>)}
       </optgroup>
     </select>

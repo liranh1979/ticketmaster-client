@@ -382,7 +382,7 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
                         s: (selected.typeConfig?.calls?.length ?? 0) !== 1 ? 's' : '',
                       })}
                     </p>
-                    {selected.status === 'blocked' && selected.lastError && (
+                    {(selected.status === 'blocked' || selected.status === 'done') && selected.lastError && (
                       <div className="wtp-approval-reason">{selected.lastError}</div>
                     )}
                   </div>
@@ -398,7 +398,7 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
                         s: (selected.typeConfig?.calls?.length ?? 0) !== 1 ? 's' : '',
                       })}
                     </p>
-                    {selected.status === 'blocked' && selected.lastError && (
+                    {(selected.status === 'blocked' || selected.status === 'done') && selected.lastError && (
                       <div className="wtp-approval-reason">{selected.lastError}</div>
                     )}
                   </div>

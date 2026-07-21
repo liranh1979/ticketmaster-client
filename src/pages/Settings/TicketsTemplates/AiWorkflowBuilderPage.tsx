@@ -10,6 +10,7 @@ import {
   McpServerConnectionEditor, McpToolPicker, McpToolCallsEditor, McpResponseMappingsEditor,
   type McpCall, type McpAuth, type McpResponseMapping,
 } from './McpToolCallsEditor';
+import { WorkflowFieldSuggestions, type WorkflowFieldSuggestion } from './WorkflowFieldSuggestions';
 import './WorkflowDesignerModal.css';
 import './ActionItemLibraryPage.css';
 import './AiWorkflowBuilderPage.css';
@@ -46,6 +47,11 @@ export const AiWorkflowBuilderPage = () => {
   const [ticketFieldKeys, setTicketFieldKeys] = useState<string[]>([]);
   // Custom Workflow Fields (from Workflow Fields Manager) — used for "this.<key>" input/output
   const [workflowFieldKeys, setWorkflowFieldKeys] = useState<string[]>([]);
+  // Same catalog, but with each field's type — only needed for the AI-suggest POST body (name+type
+  // matching) and FieldRefSelect/McpToolCallsEditor/etc. keep using the plain-keys state above.
+  const [workflowFieldCatalog, setWorkflowFieldCatalog] = useState<{ fieldKey: string; fieldType: string }[]>([]);
+  // AI-suggested workflow fields with no existing match — see WorkflowFieldSuggestions.tsx.
+  const [missingWorkflowFields, setMissingWorkflowFields] = useState<WorkflowFieldSuggestion[]>([]);
   const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [intent, setIntent] = useState('');
   const [documentation, setDocumentation] = useState('');
@@ -72,15 +78,22 @@ export const AiWorkflowBuilderPage = () => {
   // Step 3
   const [savedName, setSavedName] = useState('');
 
+  const reloadWorkflowFields = () =>
+    // Only custom (non-system) workflow fields — the built-in title/workflow_status/assigned/
+    // attachments columns aren't generic "this.<key>" storage slots, they're the item's real columns.
+    api.get('/field-definitions', { params: { entityType: 'workflow' } })
+      .then(r => {
+        const custom = r.data.filter((f: any) => !f.isSystem);
+        setWorkflowFieldKeys(custom.map((f: any) => f.fieldKey));
+        setWorkflowFieldCatalog(custom.map((f: any) => ({ fieldKey: f.fieldKey, fieldType: f.fieldType })));
+      })
+      .catch(() => {});
+
   useEffect(() => {
     api.get('/field-definitions', { params: { entityType: 'ticket' } })
       .then(r => setTicketFieldKeys(r.data.map((f: any) => f.fieldKey)))
       .catch(() => {});
-    // Only custom (non-system) workflow fields — the built-in title/workflow_status/assigned/
-    // attachments columns aren't generic "this.<key>" storage slots, they're the item's real columns.
-    api.get('/field-definitions', { params: { entityType: 'workflow' } })
-      .then(r => setWorkflowFieldKeys(r.data.filter((f: any) => !f.isSystem).map((f: any) => f.fieldKey)))
-      .catch(() => {});
+    reloadWorkflowFields();
     reloadLibraryEntries();
   }, []);
 
@@ -110,6 +123,8 @@ export const AiWorkflowBuilderPage = () => {
     setCameFromList(true);
     setGenError('');
     setSaveError('');
+    // Editing an existing library entry has no fresh AI draft, so no pending suggestions apply.
+    setMissingWorkflowFields([]);
     setMode('wizard');
     setStep(2);
   };
@@ -124,20 +139,23 @@ export const AiWorkflowBuilderPage = () => {
     setGenError('');
     setGenerating(true);
     try {
+      const workflowFields = workflowFieldCatalog.map(f => ({ key: f.fieldKey, type: f.fieldType }));
       if (actionType === 'mcp_tool') {
         const res = await api.post('/templates/ai-suggest-mcp-action', {
-          intent, tools: mcpDiscoveredTools, ticketFieldKeys, workflowFieldKeys,
+          intent, tools: mcpDiscoveredTools, ticketFieldKeys, workflowFields,
         });
         const draft = res.data;
         setMcpDraftCalls(draft.calls ?? []);
         setMcpDraftMappings(draft.fieldMappings?.response ?? []);
+        setMissingWorkflowFields(draft.missingWorkflowFields ?? []);
       } else {
         const res = await api.post('/templates/ai-suggest-workflow-action', {
-          documentation, intent, ticketFieldKeys, workflowFieldKeys,
+          documentation, intent, ticketFieldKeys, workflowFields,
         });
         const draft = res.data;
         setDraftCalls(draft.calls ?? []);
         setDraftMappings(draft.fieldMappings ?? emptyMappings);
+        setMissingWorkflowFields(draft.missingWorkflowFields ?? []);
       }
       setNodeTitle(intent.trim() ? intent.trim().slice(0, 60) : t('awb_default_action_title', { defaultValue: 'AI Workflow Action' }));
       setCameFromList(false);
@@ -193,6 +211,7 @@ export const AiWorkflowBuilderPage = () => {
     setCameFromList(false);
     setGenError('');
     setSaveError('');
+    setMissingWorkflowFields([]);
   };
 
   const backToList = () => {
@@ -202,6 +221,29 @@ export const AiWorkflowBuilderPage = () => {
 
   const captureNames = draftCalls.flatMap(c => c.responseCaptures.map(r => r.name).filter(Boolean));
   const mcpCaptureNames = mcpDraftCalls.flatMap(c => c.responseCaptures.map(r => r.name).filter(Boolean));
+
+  // Where a suggested "this.<key>" is actually referenced in the active draft — shown alongside
+  // each suggestion so the admin can see why it was proposed, without the backend needing to send
+  // a redundant pointer back.
+  const missingFieldUsedBy = (key: string): string[] => {
+    const needle = `this.${key}`;
+    const hits: string[] = [];
+    if (actionType === 'mcp_tool') {
+      mcpDraftCalls.forEach(c => c.argumentMappings.forEach(a => {
+        if (a.ticketField === needle) hits.push(`${c.toolName}.${a.toolArgument}`);
+      }));
+      mcpDraftMappings.forEach(m => { if (m.target === needle) hits.push(`response: ${m.captureName}`); });
+    } else {
+      draftMappings.request.forEach(r => { if (r.ticketField === needle) hits.push(`{{${r.placeholder}}}`); });
+      draftMappings.response.forEach(r => { if (r.target === needle) hits.push(`response: ${r.captureName}`); });
+    }
+    return hits;
+  };
+
+  const handleFieldCreated = (key: string) => {
+    setMissingWorkflowFields(prev => prev.filter(s => s.suggestedFieldKey !== key));
+    reloadWorkflowFields();
+  };
 
   if (mode === 'list') {
     return (
@@ -347,6 +389,12 @@ export const AiWorkflowBuilderPage = () => {
             <label className="awb-label">{t('awb_action_item_title_label', { defaultValue: 'Action item title' })}</label>
             <input className="wfd-inp" value={nodeTitle} onChange={e => setNodeTitle(e.target.value)} placeholder={t('awb_action_item_title_placeholder', { defaultValue: 'Order Laptop' }) as string} />
           </div>
+
+          <WorkflowFieldSuggestions
+            suggestions={missingWorkflowFields}
+            usedBy={missingFieldUsedBy}
+            onCreated={handleFieldCreated}
+          />
 
           {actionType === 'mcp_tool' ? (
             <>

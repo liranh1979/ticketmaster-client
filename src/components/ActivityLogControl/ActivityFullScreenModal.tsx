@@ -219,13 +219,25 @@ export const ActivityFullScreenModal = ({ ticketId, ticketTitle, onClose }: Prop
                           {formatDateTime(entry.createdAt)}
                         </span>
                       </div>
-                      <div className={`afm-entry-body${entry.operation === 'FIELD_UPDATE' || entry.operation === 'ACCELERATION_APPLIED' ? ' afm-entry-body--bare' : ''}`}>
+                      <div className={`afm-entry-body${entry.operation === 'FIELD_UPDATE' || entry.operation === 'ACCELERATION_APPLIED' || entry.operation === 'WORKFLOW_ACTION_APPLIED' ? ' afm-entry-body--bare' : ''}`}>
                         {entry.operation === 'FIELD_UPDATE' ? (
                           <FieldUpdateCard changes={entry.changes} />
                         ) : entry.operation === 'ACCELERATION_APPLIED' ? (
                           <div className="alc-rule-card">
                             <span className="alc-rule-label">
                               <Zap size={11} /> {t('activity_rule_applied', { defaultValue: 'Rule applied' })}: <strong>{String(entry.metadata?.ruleName ?? `#${entry.metadata?.ruleId}`)}</strong>
+                            </span>
+                            <FieldUpdateCard changes={entry.changes} />
+                          </div>
+                        ) : entry.operation === 'WORKFLOW_ACTION_APPLIED' ? (
+                          <div className="alc-rule-card">
+                            <span className="alc-rule-label">
+                              <Zap size={11} /> {t('activity_workflow_action_applied', {
+                                defaultValue: '{{itemType}} action applied',
+                                itemType: entry.metadata?.itemType === 'mcp_tool'
+                                  ? t('workflow_mcp_tool_action_label', { defaultValue: 'MCP Tool Action' })
+                                  : t('workflow_external_api_action_label', { defaultValue: 'External API Action' }),
+                              })}: <strong>{String(entry.metadata?.itemTitle ?? `#${entry.metadata?.itemId}`)}</strong>
                             </span>
                             <FieldUpdateCard changes={entry.changes} />
                           </div>

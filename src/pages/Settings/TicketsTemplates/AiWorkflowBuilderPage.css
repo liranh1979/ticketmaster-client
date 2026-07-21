@@ -70,6 +70,39 @@
 }
 .awb-radio input[type="radio"]:disabled + * { opacity: 0.5; }
 
+/* ── Missing workflow field suggestions (Step 2) ── */
+.awb-suggestions {
+  display: flex; flex-direction: column; gap: 8px;
+  background: oklch(0.22 0.06 260 / 0.1); border: 1px solid oklch(0.40 0.12 260 / 0.25);
+  border-radius: var(--sd-radius-sm); padding: 12px 14px;
+}
+.awb-suggestion-list { display: flex; flex-direction: column; gap: 8px; }
+.awb-suggestion-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--sd-surface); border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm); padding: 8px 10px;
+}
+.awb-suggestion-type-badge {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 22px; height: 22px; border-radius: 6px;
+  font: 700 var(--sd-text-xs)/1 var(--sd-font);
+}
+.awb-suggestion-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.awb-suggestion-label { font: 600 var(--sd-text-sm)/1.2 var(--sd-font); color: var(--sd-fg); }
+.awb-suggestion-key {
+  font: var(--sd-text-xs)/1.2 var(--sd-font-mono, monospace); color: var(--sd-fg-subtle);
+  background: var(--sd-surface-2); border-radius: 4px; padding: 1px 5px; width: fit-content;
+}
+.awb-suggestion-usedby { font: var(--sd-text-xs)/1.3 var(--sd-font); color: var(--sd-fg-subtle); }
+.awb-suggestion-create-btn {
+  display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+  border: 1px solid var(--sd-border); border-radius: var(--sd-radius-sm);
+  padding: 5px 10px; font: 600 var(--sd-text-xs)/1 var(--sd-font);
+}
+
+/* Pending (not-yet-created) workflow field option in FieldRefSelect */
+.eae-pending-field-opt { font-style: italic; color: var(--sd-fg-subtle); }
+
 /* ── Success state ── */
 .awb-success { align-items: center; text-align: center; padding: 40px 32px; gap: 10px; }
 .awb-success-icon {
