@@ -26,6 +26,7 @@ export interface ActionItemLibraryEntry {
     auth?: McpAuth;
   } & Record<string, unknown>) | null;
   source: 'manual' | 'ai';
+  status: 'draft' | 'complete';
   updatedAt: string;
 }
 
@@ -207,6 +208,9 @@ export const ActionItemLibraryPage = () => {
                   )}
                   <span className={`ail-source-badge ail-source-${entry.source}`}>
                     {entry.source === 'ai' ? <><Sparkles size={10} /> {t('action_item_library_ai_badge', { defaultValue: 'AI' })}</> : t('action_item_library_simple_badge', { defaultValue: 'Simple' })}
+                  </span>
+                  <span className={`ail-source-badge ${entry.status === 'draft' ? 'ail-status-draft' : 'ail-status-complete'}`}>
+                    {entry.status === 'draft' ? t('awb_status_draft_badge', { defaultValue: 'Draft' }) : t('awb_status_complete_badge', { defaultValue: 'Complete' })}
                   </span>
                 </div>
                 <div className="ail-card-actions">

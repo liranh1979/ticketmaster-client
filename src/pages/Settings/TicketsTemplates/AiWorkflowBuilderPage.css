@@ -62,6 +62,12 @@
 
 .awb-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .awb-actions:has(> :only-child) { justify-content: flex-end; }
+.awb-actions-group { display: flex; align-items: center; gap: 10px; }
+
+/* ── "Map Fields with AI" trigger (Field Mapping step, external_api) ── */
+.awb-match-row { display: flex; align-items: center; gap: 10px; }
+
+/* ── Draft/Complete status badges reuse .ail-source-badge's base pill (see ActionItemLibraryPage.css) ── */
 
 .awb-radio-row { display: flex; gap: 16px; flex-wrap: wrap; }
 .awb-radio {
@@ -70,7 +76,38 @@
 }
 .awb-radio input[type="radio"]:disabled + * { opacity: 0.5; }
 
-/* ── Missing workflow field suggestions (Step 2) ── */
+/* ── Select Endpoint step (external_api) ── */
+.awb-endpoint-list { display: flex; flex-direction: column; gap: 8px; }
+.awb-endpoint-card {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--sd-surface-2); border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm); padding: 10px 12px; cursor: pointer;
+}
+.awb-endpoint-card.selected { border-color: var(--sd-brand); background: oklch(0.22 0.06 260 / 0.12); }
+.awb-endpoint-card input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+.awb-endpoint-card-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.awb-endpoint-card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.awb-endpoint-method {
+  font: 700 11px/1 var(--sd-font-mono, monospace); color: var(--sd-brand);
+  background: oklch(0.22 0.06 260 / 0.18); border-radius: 4px; padding: 2px 6px;
+}
+.awb-endpoint-title { font: 600 var(--sd-text-sm)/1.2 var(--sd-font); color: var(--sd-fg); }
+.awb-endpoint-badge {
+  font: 700 10px/1 var(--sd-font); color: oklch(0.75 0.16 150);
+  background: oklch(0.25 0.09 150 / 0.25); border-radius: var(--sd-radius-pill); padding: 2px 8px;
+}
+.awb-endpoint-summary { margin: 0; font: var(--sd-text-xs)/1.4 var(--sd-font); color: var(--sd-fg-subtle); }
+
+/* ── Live URL/body preview (Field Mapping step, external_api) — never executed, preview only ── */
+.awb-preview-box {
+  background: var(--sd-surface-2); border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm); padding: 8px 10px;
+  font: var(--sd-text-xs)/1.5 var(--sd-font-mono, monospace); color: var(--sd-fg);
+  word-break: break-all; white-space: pre-wrap;
+}
+.awb-preview-box-pre { margin: 0; white-space: pre-wrap; }
+
+/* ── Missing workflow field suggestions ── */
 .awb-suggestions {
   display: flex; flex-direction: column; gap: 8px;
   background: oklch(0.22 0.06 260 / 0.1); border: 1px solid oklch(0.40 0.12 260 / 0.25);

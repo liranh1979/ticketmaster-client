@@ -17,7 +17,12 @@ interface WorkflowItem {
   title: string;
   status: string;
   type?: string;
-  typeConfig?: { levels?: ApprovalLevelConfig[]; calls?: unknown[]; fields?: SimpleItemField[] } | null;
+  typeConfig?: {
+    levels?: ApprovalLevelConfig[];
+    calls?: unknown[];
+    fields?: SimpleItemField[];
+    fieldMappings?: { response?: { captureName: string; target: string }[] };
+  } | null;
   assignedUserId: number | null;
   assignedUserDisplayName: string | null;
   assignedGroupId: number | null;
@@ -124,6 +129,9 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
   const [decisionsLoading, setDecisionsLoading] = useState(false);
   const [userNames, setUserNames]         = useState<Record<number, string>>({});
   const [groupNames, setGroupNames]       = useState<Record<number, string>>({});
+  // Workflow field labels (entity_type='workflow' field_definitions) — used to show a human label
+  // for external_api/mcp_tool "this.<key>" captured values instead of the raw key.
+  const [workflowFieldLabels, setWorkflowFieldLabels] = useState<Record<string, string>>({});
   const [deciding, setDeciding]           = useState(false);
   const [decideError, setDecideError]     = useState('');
   const [rejectReason, setRejectReason]   = useState('');
@@ -157,6 +165,9 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
       (r.data as NameLookup[]).forEach(g => { map[g.id] = g.display_name; });
       setGroupNames(map);
     }).catch(() => {});
+    api.get('/field-definitions/translations/en', { params: { translationType: 'workflow_fields' } })
+      .then(r => setWorkflowFieldLabels(r.data))
+      .catch(() => {});
   }, []);
 
   const loadDecisions = useCallback(async (itemId: number) => {
@@ -387,6 +398,40 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
                     )}
                   </div>
                 )}
+
+                {/* Fields this action item is configured to write to (every "this.<key>" response
+                    target), shown even before the item has ever successfully run — previously
+                    nothing was shown at all for external_api/mcp_tool items, unlike task-type
+                    items' own mini-fields (SimpleItemFieldsForm below). Gating this on
+                    fieldValues alone (an earlier version of this fix) still showed nothing for an
+                    item stuck "blocked"/never-yet-successful — which is exactly the case an admin
+                    most wants visibility into, so the configured target list is the primary
+                    source, with fieldValues only supplying each row's current value if any. */}
+                {(selected.type === 'external_api' || selected.type === 'mcp_tool') && (() => {
+                  const configuredKeys = (selected.typeConfig?.fieldMappings?.response ?? [])
+                    .map(m => m.target)
+                    .filter((target): target is string => !!target && target.startsWith('this.'))
+                    .map(target => target.substring('this.'.length));
+                  const capturedKeys = Object.keys(selected.fieldValues ?? {});
+                  const allKeys = Array.from(new Set([...configuredKeys, ...capturedKeys]));
+                  if (allKeys.length === 0) return null;
+                  return (
+                    <div className="wtp-field-group">
+                      <label className="wtp-field-label">{t('workflow_captured_data_label', { defaultValue: 'Captured Data' })}</label>
+                      <div className="wtp-captured-fields">
+                        {allKeys.map(key => {
+                          const value = selected.fieldValues?.[key];
+                          return (
+                            <div key={key} className="wtp-captured-field-row">
+                              <span className="wtp-captured-field-label">{workflowFieldLabels[key] ?? key}</span>
+                              <span className="wtp-captured-field-value">{value === null || value === undefined || value === '' ? '—' : String(value)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {selected.type === 'mcp_tool' && (
                   <div className="wtp-field-group">

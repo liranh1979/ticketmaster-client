@@ -253,7 +253,10 @@ export const WorkflowDesignerModal = ({
   }, [onClose]);
 
   useEffect(() => {
-    api.get('/action-item-library').then(r => setLibraryEntries(r.data)).catch(() => {});
+    // status=complete — a draft (still mid-wizard, no response mapping yet) would silently do
+    // nothing useful if copied into a live template node, so this picker only ever offers finished
+    // entries. Drafts remain visible in AiWorkflowBuilderPage's own list, where resuming happens.
+    api.get('/action-item-library', { params: { status: 'complete' } }).then(r => setLibraryEntries(r.data)).catch(() => {});
     // Only custom (non-system) workflow fields — see AiWorkflowBuilderPage's identical fetch for why.
     api.get('/field-definitions', { params: { entityType: 'workflow' } })
       .then(r => setWorkflowFieldKeys(r.data.filter((f: any) => !f.isSystem).map((f: any) => f.fieldKey)))

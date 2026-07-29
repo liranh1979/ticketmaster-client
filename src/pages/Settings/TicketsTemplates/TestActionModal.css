@@ -24,6 +24,11 @@
 
 .tam-body { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
 
+/* AiWorkflowBuilderPage's Step 2 embeds this component directly in page flow (see the `inline`
+   prop) instead of as a floating modal — no fixed width/height/overlay chrome, just normal block
+   layout matching the wizard card it's rendered inside. */
+.tam-inline { display: flex; flex-direction: column; gap: 12px; }
+
 .tam-sec { display: flex; flex-direction: column; gap: 6px; }
 .tam-sec-lbl {
   font: 800 8px/1 var(--sd-font-mono); letter-spacing: 0.14em; text-transform: uppercase;
@@ -76,3 +81,16 @@
   flex: 1; min-width: 0; font: var(--sd-text-xs)/1.4 var(--sd-font-mono, monospace);
   color: var(--sd-fg); overflow-wrap: break-word;
 }
+
+.tam-automap-btn { width: 100%; justify-content: center; display: flex; align-items: center; gap: 6px; }
+
+.tam-fix-instructions { min-height: 52px; resize: vertical; margin-bottom: 8px; }
+.tam-fix-btn { width: 100%; justify-content: center; display: flex; align-items: center; gap: 6px; }
+
+.tam-proposal {
+  display: flex; flex-direction: column; gap: 6px; margin-top: 6px;
+  background: oklch(0.22 0.06 260 / 0.12); border: 1px solid oklch(0.40 0.12 260 / 0.3);
+  border-radius: var(--sd-radius-sm); padding: 10px;
+}
+.tam-proposal-call { display: flex; flex-direction: column; gap: 4px; }
+.tam-apply-btn { width: 100%; justify-content: center; margin-top: 4px; }

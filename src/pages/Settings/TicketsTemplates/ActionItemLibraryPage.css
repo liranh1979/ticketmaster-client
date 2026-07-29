@@ -137,6 +137,16 @@
   border: 1px solid oklch(0.55 0.16 290 / 0.5);
   color: oklch(0.82 0.14 290);
 }
+.ail-status-draft {
+  background: oklch(0.30 0.10 75 / 0.30);
+  border: 1px solid oklch(0.60 0.16 75 / 0.5);
+  color: oklch(0.82 0.15 75);
+}
+.ail-status-complete {
+  background: oklch(0.25 0.09 150 / 0.30);
+  border: 1px solid oklch(0.55 0.15 150 / 0.5);
+  color: oklch(0.75 0.16 150);
+}
 
 .ail-card-actions {
   display: flex;

@@ -18,6 +18,12 @@ export interface ExternalApiCapture { name: string; jsonPath: string; }
 
 export interface ExternalApiAuth {
   type: 'none' | 'bearer' | 'api_key' | 'basic';
+  // api_key only — where the key gets placed. Defaults to 'header' (undefined == 'header', for
+  // backward compat with every entry saved before this existed). Some real APIs (e.g. SerpAPI)
+  // require the key as a query parameter, not a header — without this, the only way to
+  // authenticate one of those was a this.<key> request-mapping placeholder with no admin-facing
+  // UI anywhere to ever fill in a value, or hardcoding the real secret in plaintext in the URL.
+  location?: 'header' | 'query';
   headerName?: string;
   // Server-computed, read-only — never carries the actual secret.
   hasToken?: boolean;
@@ -166,7 +172,7 @@ function CallRow({
             <select className="wfd-sel" value={call.auth.type} onChange={e => updAuth({ type: e.target.value as ExternalApiAuth['type'] })}>
               <option value="none">{t('auth_none_option', { defaultValue: 'None' })}</option>
               <option value="bearer">{t('auth_bearer_token_option', { defaultValue: 'Bearer token' })}</option>
-              <option value="api_key">{t('auth_api_key_header_option', { defaultValue: 'API key header' })}</option>
+              <option value="api_key">{t('auth_api_key_header_option', { defaultValue: 'API key' })}</option>
               <option value="basic">{t('auth_basic_option', { defaultValue: 'Basic (username/password)' })}</option>
             </select>
             {call.auth.type === 'bearer' && (
@@ -174,11 +180,23 @@ function CallRow({
             )}
             {call.auth.type === 'api_key' && (
               <>
+                <select
+                  className="wfd-sel"
+                  value={call.auth.location ?? 'header'}
+                  onChange={e => updAuth({ location: e.target.value as 'header' | 'query' })}
+                >
+                  <option value="header">{t('auth_api_key_location_header_option', { defaultValue: 'Send as header' })}</option>
+                  <option value="query">{t('auth_api_key_location_query_option', { defaultValue: 'Send as query parameter' })}</option>
+                </select>
                 <input
                   className="wfd-inp"
                   value={call.auth.headerName ?? ''}
                   onChange={e => updAuth({ headerName: e.target.value })}
-                  placeholder={t('eae_header_name_placeholder', { defaultValue: 'Header name (default X-API-Key)' }) as string}
+                  placeholder={
+                    (call.auth.location === 'query'
+                      ? t('eae_query_param_name_placeholder', { defaultValue: 'Parameter name (default api_key)' })
+                      : t('eae_header_name_placeholder', { defaultValue: 'Header name (default X-API-Key)' })) as string
+                  }
                 />
                 <SecretInput label={t('secret_api_key_label', { defaultValue: 'API key' })} hasValue={call.auth.hasToken} value={call.auth.token} onChange={v => updAuth({ token: v })} />
               </>
@@ -330,13 +348,19 @@ export const FieldRefSelect = ({
 };
 
 export const ExternalApiFieldMappingsEditor = ({
-  mappings, onChange, ticketFieldKeys, workflowFieldKeys, captureNames,
+  mappings, onChange, ticketFieldKeys, workflowFieldKeys, captureNames, showRequest = true, showResponse = true,
 }: {
   mappings: ExternalApiFieldMappings;
   onChange: (m: ExternalApiFieldMappings) => void;
   ticketFieldKeys: string[];
   workflowFieldKeys: string[];
   captureNames: string[];
+  // Field Mapping step only needs the request half (nothing's been captured yet); Response
+  // Mapping step only needs the response half (request mapping was already finished in an earlier
+  // step — re-showing it there is confusing clutter, a real complaint from live use). Review &
+  // Save shows both (the defaults) for a final full look.
+  showRequest?: boolean;
+  showResponse?: boolean;
 }) => {
   const { t } = useTranslation();
   const ticketFieldOpts = [...TICKET_FIELD_BASE, ...ticketFieldKeys.filter(k => !TICKET_FIELD_BASE.includes(k))];
@@ -353,50 +377,54 @@ export const ExternalApiFieldMappingsEditor = ({
 
   return (
     <>
-      <div className="wfd-sec">
-        <div className="wfd-sec-row">
-          <div className="wfd-sec-lbl"><ArrowDownToLine size={9} /> {t('eae_request_data_label', { defaultValue: 'REQUEST DATA (ticket → placeholders)' })}</div>
-          <button className="wfd-add-flow-btn" onClick={addReq}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
-        </div>
-        {mappings.request.length === 0 && <p className="wfd-empty-txt">{t('eae_request_mapping_empty', { defaultValue: 'No ticket fields wired in yet — calls will only see literal text' })}</p>}
-        {mappings.request.map((r, i) => (
-          <div key={i} className="eae-kv-row">
-            <FieldRefSelect
-              value={r.ticketField.includes('.') ? r.ticketField : `ticket.${r.ticketField}`}
-              onChange={v => updReq(i, { ticketField: v })}
-              ticketFieldOpts={ticketFieldOpts}
-              workflowFieldKeys={workflowFieldKeys}
-            />
-            <span className="eae-arrow">→</span>
-            <input className="wfd-inp" value={r.placeholder} onChange={e => updReq(i, { placeholder: e.target.value })} placeholder={t('placeholder_input_placeholder', { defaultValue: '{{placeholder}}' }) as string} />
-            <button className="ale-rm-btn" onClick={() => rmReq(i)}><X size={11} /></button>
+      {showRequest && (
+        <div className="wfd-sec">
+          <div className="wfd-sec-row">
+            <div className="wfd-sec-lbl"><ArrowDownToLine size={9} /> {t('eae_request_data_label', { defaultValue: 'REQUEST DATA (ticket → placeholders)' })}</div>
+            <button className="wfd-add-flow-btn" onClick={addReq}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
           </div>
-        ))}
-      </div>
+          {mappings.request.length === 0 && <p className="wfd-empty-txt">{t('eae_request_mapping_empty', { defaultValue: 'No ticket fields wired in yet — calls will only see literal text' })}</p>}
+          {mappings.request.map((r, i) => (
+            <div key={i} className="eae-kv-row">
+              <FieldRefSelect
+                value={r.ticketField.includes('.') ? r.ticketField : `ticket.${r.ticketField}`}
+                onChange={v => updReq(i, { ticketField: v })}
+                ticketFieldOpts={ticketFieldOpts}
+                workflowFieldKeys={workflowFieldKeys}
+              />
+              <span className="eae-arrow">→</span>
+              <input className="wfd-inp" value={r.placeholder} onChange={e => updReq(i, { placeholder: e.target.value })} placeholder={t('placeholder_input_placeholder', { defaultValue: '{{placeholder}}' }) as string} />
+              <button className="ale-rm-btn" onClick={() => rmReq(i)}><X size={11} /></button>
+            </div>
+          ))}
+        </div>
+      )}
 
-      <div className="wfd-sec">
-        <div className="wfd-sec-row">
-          <div className="wfd-sec-lbl"><ArrowUpFromLine size={9} /> {t('response_data_mapping_label', { defaultValue: 'RESPONSE DATA (captures → fields)' })}</div>
-          <button className="wfd-add-flow-btn" onClick={addResp}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
-        </div>
-        {mappings.response.length === 0 && <p className="wfd-empty-txt">{t('response_mapping_empty', { defaultValue: 'No captured values are saved anywhere yet' })}</p>}
-        {mappings.response.map((r, i) => (
-          <div key={i} className="eae-kv-row">
-            <input className="wfd-inp" value={r.captureName} onChange={e => updResp(i, { captureName: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} list="eae-capture-names" />
-            <span className="eae-arrow">→</span>
-            <FieldRefSelect
-              value={r.target || `ticket.${ticketFieldOpts[0] ?? 'title'}`}
-              onChange={v => updResp(i, { target: v })}
-              ticketFieldOpts={ticketFieldOpts}
-              workflowFieldKeys={workflowFieldKeys}
-            />
-            <button className="ale-rm-btn" onClick={() => rmResp(i)}><X size={11} /></button>
+      {showResponse && (
+        <div className="wfd-sec">
+          <div className="wfd-sec-row">
+            <div className="wfd-sec-lbl"><ArrowUpFromLine size={9} /> {t('response_data_mapping_label', { defaultValue: 'RESPONSE DATA (captures → fields)' })}</div>
+            <button className="wfd-add-flow-btn" onClick={addResp}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
           </div>
-        ))}
-        <datalist id="eae-capture-names">
-          {captureNames.map(n => <option key={n} value={n} />)}
-        </datalist>
-      </div>
+          {mappings.response.length === 0 && <p className="wfd-empty-txt">{t('response_mapping_empty', { defaultValue: 'No captured values are saved anywhere yet' })}</p>}
+          {mappings.response.map((r, i) => (
+            <div key={i} className="eae-kv-row">
+              <input className="wfd-inp" value={r.captureName} onChange={e => updResp(i, { captureName: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} list="eae-capture-names" />
+              <span className="eae-arrow">→</span>
+              <FieldRefSelect
+                value={r.target || `ticket.${ticketFieldOpts[0] ?? 'title'}`}
+                onChange={v => updResp(i, { target: v })}
+                ticketFieldOpts={ticketFieldOpts}
+                workflowFieldKeys={workflowFieldKeys}
+              />
+              <button className="ale-rm-btn" onClick={() => rmResp(i)}><X size={11} /></button>
+            </div>
+          ))}
+          <datalist id="eae-capture-names">
+            {captureNames.map(n => <option key={n} value={n} />)}
+          </datalist>
+        </div>
+      )}
     </>
   );
 };
