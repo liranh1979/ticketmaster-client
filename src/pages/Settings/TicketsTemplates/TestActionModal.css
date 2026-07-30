@@ -76,6 +76,8 @@
   background: var(--sd-surface-2); border-radius: 4px; padding: 6px 8px;
   white-space: pre-wrap; word-break: break-word;
 }
+.tam-trace-resp--expanded { max-height: 600px; }
+.tam-trace-expand-btn { align-self: flex-start; font-size: var(--sd-text-xs); padding: 3px 8px; }
 
 .tam-captured-val {
   flex: 1; min-width: 0; font: var(--sd-text-xs)/1.4 var(--sd-font-mono, monospace);

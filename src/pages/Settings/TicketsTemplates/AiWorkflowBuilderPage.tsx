@@ -158,6 +158,10 @@ export const AiWorkflowBuilderPage = () => {
   const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('list');
   const [step, setStep] = useState<Step>(1);
+  // Which Step 5 "Captured response" row (by index) is showing its full text instead of the
+  // compact 140px scroll box — same fix as TestActionModal's expand toggle, for the same reason:
+  // a real API response is often much longer than fits comfortably in that box.
+  const [expandedResponseIndex, setExpandedResponseIndex] = useState<number | null>(null);
   // True when the wizard was reached by picking an existing entry from the list (draft or
   // complete) rather than by starting fresh — changes what the earliest reachable step's Back
   // button returns to.
@@ -1244,17 +1248,32 @@ export const AiWorkflowBuilderPage = () => {
           {lastTestResult?.callTrace && lastTestResult.callTrace.length > 0 && (
             <div className="awb-field">
               <label className="awb-label">{t('awb_captured_response_label', { defaultValue: 'Captured response (from the Test step)' })}</label>
-              {lastTestResult.callTrace.map((c: any, i: number) => (
-                <div key={i} className="tam-trace-row">
-                  <div className="tam-trace-top">
-                    <span className="tam-trace-name">{c.name}</span>
-                    <span className="tam-trace-status">{String(c.status ?? '')}</span>
+              {lastTestResult.callTrace.map((c: any, i: number) => {
+                const fullResponse = c.rawResponse || c.rawResult || c.responsePreview || '';
+                const expanded = expandedResponseIndex === i;
+                return (
+                  <div key={i} className="tam-trace-row">
+                    <div className="tam-trace-top">
+                      <span className="tam-trace-name">{c.name}</span>
+                      <span className="tam-trace-status">{String(c.status ?? '')}</span>
+                    </div>
+                    {fullResponse && (
+                      <>
+                        <pre className={`tam-trace-resp${expanded ? ' tam-trace-resp--expanded' : ''}`}>{fullResponse}</pre>
+                        <button
+                          className="wfd-btn-ghost tam-trace-expand-btn"
+                          type="button"
+                          onClick={() => setExpandedResponseIndex(expanded ? null : i)}
+                        >
+                          {expanded
+                            ? t('test_action_show_less_btn', { defaultValue: 'Show less' })
+                            : t('test_action_show_full_response_btn', { defaultValue: 'Show full response' })}
+                        </button>
+                      </>
+                    )}
                   </div>
-                  {(c.rawResponse || c.responsePreview) && (
-                    <pre className="tam-trace-resp">{c.rawResponse ?? c.responsePreview}</pre>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

@@ -135,6 +135,13 @@ export const TestActionModal = ({
   );
 
   const [running, setRunning] = useState(false);
+  // Which CALL TRACE row (by index) is showing its full response instead of the compact scroll
+  // box — a real bug found live: the box only ever rendered `responsePreview`, which the backend
+  // caps at 2000 chars mid-string (no regard for JSON structure), so any real API response bigger
+  // than that showed up looking "broken" (a dangling key, no closing braces) even though the AI's
+  // own "Map Response Fields" call already grounds on the much fuller `rawResponse` (up to 200,000
+  // chars) — the admin just had no way to see that same fuller text to verify it themselves.
+  const [expandedTraceIndex, setExpandedTraceIndex] = useState<number | null>(null);
 
   const [autoMapping, setAutoMapping] = useState(false);
   const [autoMapError, setAutoMapError] = useState('');
@@ -276,16 +283,35 @@ export const TestActionModal = ({
           {result.callTrace && result.callTrace.length > 0 && (
             <div className="tam-sec">
               <div className="tam-sec-lbl">{t('call_trace_label', { defaultValue: 'CALL TRACE' })}</div>
-              {result.callTrace.map((c, i) => (
-                <div key={i} className="tam-trace-row">
-                  <div className="tam-trace-top">
-                    <span className="tam-trace-name">{c.name}</span>
-                    <span className="tam-trace-status">{String(c.status ?? '')}</span>
+              {result.callTrace.map((c, i) => {
+                // The full (up to 200,000-char) body — the same text the AI's own "Map Response
+                // Fields" step grounds on — falling back to the short, possibly-mid-string-cut
+                // responsePreview only if nothing fuller was captured at all.
+                const fullResponse = c.rawResponse || c.rawResult || c.responsePreview || '';
+                const expanded = expandedTraceIndex === i;
+                return (
+                  <div key={i} className="tam-trace-row">
+                    <div className="tam-trace-top">
+                      <span className="tam-trace-name">{c.name}</span>
+                      <span className="tam-trace-status">{String(c.status ?? '')}</span>
+                    </div>
+                    {c.request && <div className="tam-trace-req">{c.request}</div>}
+                    {fullResponse && (
+                      <>
+                        <pre className={`tam-trace-resp${expanded ? ' tam-trace-resp--expanded' : ''}`}>{fullResponse}</pre>
+                        <button
+                          className="wfd-btn-ghost tam-trace-expand-btn"
+                          onClick={() => setExpandedTraceIndex(expanded ? null : i)}
+                        >
+                          {expanded
+                            ? t('test_action_show_less_btn', { defaultValue: 'Show less' })
+                            : t('test_action_show_full_response_btn', { defaultValue: 'Show full response' })}
+                        </button>
+                      </>
+                    )}
                   </div>
-                  {c.request && <div className="tam-trace-req">{c.request}</div>}
-                  {c.responsePreview && <pre className="tam-trace-resp">{c.responsePreview}</pre>}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
