@@ -74,7 +74,7 @@ export interface TestResult {
 // own draft state — never applied automatically, only ever handed to onApplyMapping after the
 // admin explicitly reviews and clicks "Apply to draft".
 export interface AutoMapProposal {
-  calls: { id: string; responseCaptures: { name: string; jsonPath?: string; resultPath?: string }[] }[];
+  calls: { id: string; responseCaptures: { name: string; jsonPath?: string; resultPath?: string; summary?: string }[] }[];
   fieldMappingsResponse: { captureName: string; target: string }[];
   missingWorkflowFields: WorkflowFieldSuggestion[];
 }
@@ -346,9 +346,12 @@ export const TestActionModal = ({
                   {autoMapProposal.calls.map(c => (
                     <div key={c.id} className="tam-proposal-call">
                       {c.responseCaptures.map((cap, i) => (
-                        <div key={i} className="tam-field-row">
-                          <span className="tam-field-key">{cap.name}</span>
-                          <span className="tam-captured-val">{cap.jsonPath ?? cap.resultPath}</span>
+                        <div key={i} className="tam-proposal-capture">
+                          <div className="tam-field-row">
+                            <span className="tam-field-key">{cap.name}</span>
+                            <span className="tam-captured-val">{cap.jsonPath ?? cap.resultPath}</span>
+                          </div>
+                          {cap.summary && <p className="wfd-hint-xs">{cap.summary}</p>}
                         </div>
                       ))}
                     </div>

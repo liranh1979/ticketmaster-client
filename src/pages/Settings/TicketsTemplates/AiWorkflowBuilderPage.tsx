@@ -4,7 +4,8 @@ import { Sparkles, ArrowLeft, ArrowRight, Check, Loader2, Plus, Pencil, Trash2, 
 import api from '../../../api';
 import {
   ExternalApiCallsEditor, ExternalApiFieldMappingsEditor,
-  type ExternalApiCall, type ExternalApiFieldMappings, type FieldMappingRequest,
+  FieldRefSelect, TICKET_FIELD_BASE,
+  type ExternalApiCall, type ExternalApiFieldMappings, type FieldMappingRequest, type FieldMappingResponse,
 } from './ExternalApiCallsEditor';
 import {
   McpServerConnectionEditor, McpToolPicker, McpToolCallsEditor, McpResponseMappingsEditor,
@@ -82,7 +83,11 @@ function mergeCapturesById<T extends { id: string; responseCaptures: any[] }>(
 ): T[] {
   return calls.map(c => {
     const p = proposalCalls.find(pc => pc.id === c.id);
-    return p ? { ...c, responseCaptures: p.responseCaptures } : c;
+    if (!p) return c;
+    // "summary" is a review-only aid for the proposal preview — strip it before it's persisted,
+    // so the saved ExternalApiCapture/McpCall shape never carries it.
+    const responseCaptures = p.responseCaptures.map(({ summary, ...rest }: any) => rest);
+    return { ...c, responseCaptures };
   });
 }
 
@@ -153,6 +158,180 @@ function removePlaceholderFromCall(call: ExternalApiCall, placeholder: string): 
     new RegExp(`,?\\s*"[^"]+"\\s*:\\s*"\\{\\{\\s*${escaped}\\s*\\}\\}"`), '');
   return { ...call, urlTemplate, bodyTemplate };
 }
+
+// Response Mapping (Step 5) redesign — a real admin complaint found live: the previous UI split
+// "define a capture" (name + JSONPath/instruction) and "map a capture to a field" into two separate
+// lists an admin had to cross-reference. This collapses both into ONE row per field: pick the
+// target field first, describe what the AI should pull for it, test that one row immediately. The
+// admin never sees/manages the underlying capture "name" directly — it's auto-derived from the
+// target field they picked, uniqued against whatever else already exists on the same call.
+function deriveCaptureName(target: string, existingNames: string[]): string {
+  const base = target.startsWith('ticket.') ? target.slice('ticket.'.length)
+    : target.startsWith('this.') ? target.slice('this.'.length) : target;
+  const safeBase = base.replace(/[^a-zA-Z0-9_]/g, '_') || 'value';
+  if (!existingNames.includes(safeBase)) return safeBase;
+  let i = 2;
+  while (existingNames.includes(`${safeBase}_${i}`)) i++;
+  return `${safeBase}_${i}`;
+}
+
+// One row: field picker -> AI instruction -> Test (against the response already captured in Step
+// 4, no page-level "Verify Captures" round trip needed) -> remove. Owns its own Test result/loading
+// state — ephemeral UI feedback, not part of the wizard's persisted draft state.
+const ResponseFieldRow = ({
+  target, instruction, ticketFieldOpts, workflowFieldKeys, rawResponse, callId, captureName,
+  onChangeTarget, onChangeInstruction, onRemove,
+}: {
+  target: string;
+  instruction: string;
+  ticketFieldOpts: string[];
+  workflowFieldKeys: string[];
+  rawResponse: string;
+  callId: string;
+  captureName: string;
+  onChangeTarget: (v: string) => void;
+  onChangeInstruction: (v: string) => void;
+  onRemove: () => void;
+}) => {
+  const { t } = useTranslation();
+  const [testing, setTesting] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState('');
+
+  const runTest = async () => {
+    setTesting(true);
+    setError('');
+    setResult(null);
+    try {
+      const res = await api.post('/templates/evaluate-response-captures', {
+        calls: [{
+          id: callId,
+          name: captureName,
+          existingResponseCaptures: [{ name: captureName, mode: 'llm', llmInstruction: instruction }],
+          rawResponse,
+        }],
+      });
+      if (res.data.success) {
+        const value = res.data.capturedValues?.[captureName];
+        if (value === undefined) {
+          setError(res.data.error || t('awb_field_test_empty', { defaultValue: 'No value found.' }));
+        } else {
+          setResult(String(value));
+        }
+      } else {
+        setError(res.data.error || t('awb_field_test_failed', { defaultValue: 'Test failed.' }));
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.message || t('awb_field_test_failed', { defaultValue: 'Test failed.' }));
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="awb-response-field-row">
+      <div className="eae-kv-row">
+        <FieldRefSelect value={target} onChange={onChangeTarget} ticketFieldOpts={ticketFieldOpts} workflowFieldKeys={workflowFieldKeys} />
+        <textarea
+          className="wfd-inp eae-textarea-sm"
+          value={instruction}
+          onChange={e => onChangeInstruction(e.target.value)}
+          placeholder={t('capture_llm_instruction_placeholder', { defaultValue: "e.g. the cheapest flight's total price" }) as string}
+        />
+        <button className="wfd-btn-ghost awb-field-test-btn" type="button" onClick={runTest} disabled={testing || !rawResponse || !instruction.trim()}>
+          {testing ? <Loader2 size={13} className="awb-spin" /> : <Play size={13} />} {t('test_btn', { defaultValue: 'Test' })}
+        </button>
+        <button className="ale-rm-btn" onClick={onRemove}><Trash2 size={11} /></button>
+      </div>
+      {result !== null && <p className="wfd-hint-xs awb-field-test-result">→ {result}</p>}
+      {error && <p className="awb-error">{error}</p>}
+    </div>
+  );
+};
+
+// One call's whole set of rows — joins that call's LLM-mode responseCaptures against
+// draftMappings.response by name, and keeps the two arrays in sync on every add/edit/remove.
+// JSONPath-mode captures (e.g. from "Map Response with AI") are deliberately NOT shown here — they
+// stay fully functional, just editable via Step 3's unchanged capture list instead, so this stays a
+// focused "manually add a field + AI instruction" editor without mixing row shapes.
+const ResponseFieldMappingSection = ({
+  call, lastTestResult, ticketFieldOpts, workflowFieldKeys, mappingsResponse, onChangeCalls, onChangeMappings,
+}: {
+  call: ExternalApiCall;
+  lastTestResult: TestResult | null;
+  ticketFieldOpts: string[];
+  workflowFieldKeys: string[];
+  mappingsResponse: FieldMappingResponse[];
+  onChangeCalls: (updated: ExternalApiCall) => void;
+  onChangeMappings: (updated: FieldMappingResponse[]) => void;
+}) => {
+  const { t } = useTranslation();
+  const trace = (lastTestResult?.callTrace as any[] | undefined)?.find(tr => tr.callId === call.id);
+  const rawResponse = trace?.rawResponse ?? trace?.rawResult ?? '';
+
+  const llmCaptures = call.responseCaptures
+    .map((c, idx) => ({ c, idx }))
+    .filter(({ c }) => (c.mode ?? 'jsonpath') === 'llm');
+  const allNames = call.responseCaptures.map(c => c.name);
+  const defaultTarget = `ticket.${ticketFieldOpts[0] ?? 'title'}`;
+
+  const addRow = () => {
+    const name = deriveCaptureName(defaultTarget, allNames);
+    onChangeCalls({ ...call, responseCaptures: [...call.responseCaptures, { name, mode: 'llm', llmInstruction: '' }] });
+    onChangeMappings([...mappingsResponse, { captureName: name, target: defaultTarget }]);
+  };
+
+  const changeTarget = (captureIdx: number, oldName: string, newTarget: string) => {
+    const newName = deriveCaptureName(newTarget, allNames.filter(n => n !== oldName));
+    onChangeCalls({
+      ...call,
+      responseCaptures: call.responseCaptures.map((c, idx) => idx === captureIdx ? { ...c, name: newName } : c),
+    });
+    onChangeMappings(mappingsResponse.map(m => m.captureName === oldName ? { captureName: newName, target: newTarget } : m));
+  };
+
+  const changeInstruction = (captureIdx: number, text: string) => {
+    onChangeCalls({
+      ...call,
+      responseCaptures: call.responseCaptures.map((c, idx) => idx === captureIdx ? { ...c, llmInstruction: text } : c),
+    });
+  };
+
+  const removeRow = (captureIdx: number, name: string) => {
+    onChangeCalls({ ...call, responseCaptures: call.responseCaptures.filter((_, idx) => idx !== captureIdx) });
+    onChangeMappings(mappingsResponse.filter(m => m.captureName !== name));
+  };
+
+  return (
+    <div className="awb-field">
+      <div className="eae-subsec-row">
+        <label className="awb-label">{t('awb_response_fields_label', { defaultValue: 'Response fields for "{{name}}"', name: call.name })}</label>
+        <button className="wfd-add-flow-btn" onClick={addRow}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
+      </div>
+      {llmCaptures.length === 0 && (
+        <p className="wfd-empty-txt">{t('awb_response_fields_empty', { defaultValue: 'No fields defined yet — add one to pull a value from this response.' })}</p>
+      )}
+      {llmCaptures.map(({ c, idx }) => {
+        const mapping = mappingsResponse.find(m => m.captureName === c.name);
+        return (
+          <ResponseFieldRow
+            key={c.name || idx}
+            target={mapping?.target ?? defaultTarget}
+            instruction={c.llmInstruction ?? ''}
+            ticketFieldOpts={ticketFieldOpts}
+            workflowFieldKeys={workflowFieldKeys}
+            rawResponse={rawResponse}
+            callId={call.id}
+            captureName={c.name}
+            onChangeTarget={v => changeTarget(idx, c.name, v)}
+            onChangeInstruction={v => changeInstruction(idx, v)}
+            onRemove={() => removeRow(idx, c.name)}
+          />
+        );
+      })}
+    </div>
+  );
+};
 
 export const AiWorkflowBuilderPage = () => {
   const { t } = useTranslation();
@@ -230,6 +409,10 @@ export const AiWorkflowBuilderPage = () => {
   const [mappingResponseLoading, setMappingResponseLoading] = useState(false);
   const [mappingResponseError, setMappingResponseError] = useState('');
   const [responseMapProposal, setResponseMapProposal] = useState<AutoMapProposal | null>(null);
+  // Optional, per-run refinement on top of Step 1's broad "intent" — e.g. re-running "Map Response
+  // with AI" after seeing the real response and realizing only one particular value matters.
+  // Deliberately NOT cleared after a run — the admin may want to re-run again with the same ask.
+  const [specificAsk, setSpecificAsk] = useState('');
   // "Verify Captures" — re-checks JsonPaths against Step 4's already-fetched response instead of
   // re-invoking the (possibly non-idempotent) live API a second time just to confirm they resolve.
   const [verifyingCaptures, setVerifyingCaptures] = useState(false);
@@ -475,6 +658,7 @@ export const AiWorkflowBuilderPage = () => {
       const res = await api.post('/templates/ai-refine-response-mapping', {
         type: 'external_api',
         intent, documentation,
+        specificAsk: specificAsk.trim(),
         ticketFields: ticketFieldCatalog.map(f => ({ key: f.fieldKey, type: f.fieldType })),
         workflowFields: workflowFieldCatalog.map(f => ({ key: f.fieldKey, type: f.fieldType })),
         calls: rawCalls,
@@ -700,6 +884,7 @@ export const AiWorkflowBuilderPage = () => {
     setMappingResponseLoading(false);
     setMappingResponseError('');
     setResponseMapProposal(null);
+    setSpecificAsk('');
   };
 
   const backToList = () => {
@@ -1277,6 +1462,32 @@ export const AiWorkflowBuilderPage = () => {
             </div>
           )}
 
+          {draftCalls.map(c => (
+            <ResponseFieldMappingSection
+              key={c.id}
+              call={c}
+              lastTestResult={lastTestResult}
+              ticketFieldOpts={[...TICKET_FIELD_BASE, ...ticketFieldKeys.filter(k => !TICKET_FIELD_BASE.includes(k))]}
+              workflowFieldKeys={workflowFieldKeys}
+              mappingsResponse={draftMappings.response}
+              onChangeCalls={updated => setDraftCalls(prev => prev.map(pc => pc.id === updated.id ? updated : pc))}
+              onChangeMappings={updatedResponse => {
+                setDraftMappings(prev => ({ ...prev, response: updatedResponse }));
+                setResponseMapped(updatedResponse.length > 0);
+              }}
+            />
+          ))}
+
+          <div className="awb-field">
+            <label className="awb-label">{t('awb_specific_ask_label', { defaultValue: 'Anything specific to look for? (optional)' })}</label>
+            <textarea
+              className="wfd-inp awb-textarea-sm"
+              value={specificAsk}
+              onChange={e => setSpecificAsk(e.target.value)}
+              placeholder={t('awb_specific_ask_placeholder', { defaultValue: "e.g. I want the cheapest flight's total price and departure time" }) as string}
+            />
+          </div>
+
           <div className="awb-field">
             <button className="wfd-btn-ghost" type="button" onClick={handleMapResponse} disabled={mappingResponseLoading || !lastTestResult?.callTrace}>
               {mappingResponseLoading
@@ -1291,9 +1502,12 @@ export const AiWorkflowBuilderPage = () => {
                 {responseMapProposal.calls.map(c => (
                   <div key={c.id} className="tam-proposal-call">
                     {c.responseCaptures.map((cap, i) => (
-                      <div key={i} className="tam-field-row">
-                        <span className="tam-field-key">{cap.name}</span>
-                        <span className="tam-captured-val">{cap.jsonPath ?? cap.resultPath}</span>
+                      <div key={i} className="tam-proposal-capture">
+                        <div className="tam-field-row">
+                          <span className="tam-field-key">{cap.name}</span>
+                          <span className="tam-captured-val">{cap.jsonPath ?? cap.resultPath}</span>
+                        </div>
+                        {cap.summary && <p className="wfd-hint-xs">{cap.summary}</p>}
                       </div>
                     ))}
                   </div>
@@ -1311,19 +1525,10 @@ export const AiWorkflowBuilderPage = () => {
             )}
           </div>
 
-          <ExternalApiFieldMappingsEditor
-            mappings={draftMappings}
-            onChange={handleMappingsChange}
-            ticketFieldKeys={ticketFieldKeys}
-            workflowFieldKeys={workflowFieldKeys}
-            captureNames={captureNames}
-            showRequest={false}
-          />
-
           {responseMapped && (
             <div className="awb-field">
               <label className="awb-label">{t('awb_verify_captures_label', { defaultValue: 'Verify Captures' })}</label>
-              <p className="awb-hint">{t('awb_verify_captures_hint', { defaultValue: 'Re-checks your JSONPaths against the response already captured in the Test step — no new live call is made.' })}</p>
+              <p className="awb-hint">{t('awb_verify_captures_hint', { defaultValue: 'Re-checks your captures against the response already captured in the Test step — no new live API call is made, but an "AI: describe what to extract" capture does call your configured AI provider.' })}</p>
               <button className="wfd-btn-ghost" type="button" onClick={handleVerifyCaptures} disabled={verifyingCaptures}>
                 {verifyingCaptures
                   ? <><Loader2 size={13} className="awb-spin" /> {t('awb_verifying_captures_ellipsis', { defaultValue: 'Verifying…' })}</>

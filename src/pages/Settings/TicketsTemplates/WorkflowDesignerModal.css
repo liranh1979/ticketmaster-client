@@ -412,6 +412,9 @@
   min-height: 64px; resize: vertical; font-family: var(--sd-font-mono, monospace); font-size: 11px;
 }
 
+.eae-capture-block { display: flex; flex-direction: column; gap: 5px; }
+.eae-textarea-sm { min-height: 40px; resize: vertical; }
+
 .eae-secret-row { display: flex; align-items: center; gap: 6px; }
 .eae-secret-set {
   flex: 1; display: inline-flex; align-items: center; gap: 4px;

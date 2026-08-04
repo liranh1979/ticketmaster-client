@@ -14,7 +14,16 @@ import { CSS } from '@dnd-kit/utilities';
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface ExternalApiHeader { key: string; valueTemplate: string; }
-export interface ExternalApiCapture { name: string; jsonPath: string; }
+export interface ExternalApiCapture {
+  name: string;
+  // Absent/undefined behaves exactly as 'jsonpath' — every already-saved capture predates this
+  // field and must keep resolving identically. 'llm' captures the admin's own plain-language
+  // instruction instead of a path — the backend calls the currently-active AI provider live, per
+  // field, at both "Verify Captures"/"Test this call now" and real ticket-execution time.
+  mode?: 'jsonpath' | 'llm';
+  jsonPath?: string;
+  llmInstruction?: string;
+}
 
 export interface ExternalApiAuth {
   type: 'none' | 'bearer' | 'api_key' | 'basic';
@@ -132,11 +141,6 @@ function CallRow({
     upd({ headers: call.headers.map((h, idx) => idx === i ? { ...h, ...patch } : h) });
   const rmHeader = (i: number) => upd({ headers: call.headers.filter((_, idx) => idx !== i) });
 
-  const addCapture = () => upd({ responseCaptures: [...call.responseCaptures, { name: '', jsonPath: '$.' }] });
-  const updCapture = (i: number, patch: Partial<ExternalApiCapture>) =>
-    upd({ responseCaptures: call.responseCaptures.map((c, idx) => idx === i ? { ...c, ...patch } : c) });
-  const rmCapture = (i: number) => upd({ responseCaptures: call.responseCaptures.filter((_, idx) => idx !== i) });
-
   return (
     <div ref={setNodeRef} style={style} className="eae-call">
       <div className="eae-call-top">
@@ -236,27 +240,79 @@ function CallRow({
           </div>
 
           {/* Response captures */}
-          <div className="eae-subsec">
-            <div className="eae-subsec-row">
-              <div className="eae-subsec-lbl">{t('response_captures_label', { defaultValue: 'RESPONSE CAPTURES' })}</div>
-              <button className="wfd-add-flow-btn" onClick={addCapture}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
-            </div>
-            {call.responseCaptures.length === 0 && (
-              <p className="wfd-empty-txt">{t('eae_no_response_captures_empty', { defaultValue: "No values captured from this call's response yet" })}</p>
-            )}
-            {call.responseCaptures.map((c, i) => (
-              <div key={i} className="eae-kv-row">
-                <input className="wfd-inp" value={c.name} onChange={e => updCapture(i, { name: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} />
-                <input className="wfd-inp" value={c.jsonPath} onChange={e => updCapture(i, { jsonPath: e.target.value })} placeholder={t('json_path_placeholder', { defaultValue: '$.data.id' }) as string} />
-                <button className="ale-rm-btn" onClick={() => rmCapture(i)}><X size={11} /></button>
-              </div>
-            ))}
-          </div>
+          <ResponseCapturesEditor call={call} onChange={onChange} />
         </div>
       )}
     </div>
   );
 }
+
+// ── Response captures editor ──────────────────────────────────────────────
+// Extracted out of CallRow so the exact same "select a field, choose JSONPath or write an AI
+// instruction" UI can also be rendered directly in Step 5 ("Response Mapping") — a real admin
+// complaint found live: this used to live ONLY inside Step 3's per-call editor (buried below
+// Auth/Headers/Body), so an admin landing on the step literally named "Response Mapping" had no
+// way to see or define a capture there at all, even though that's exactly where they expect to
+// find "select a field, tell the AI what to look for."
+export const ResponseCapturesEditor = ({
+  call, onChange,
+}: {
+  call: ExternalApiCall;
+  onChange: (updated: ExternalApiCall) => void;
+}) => {
+  const { t } = useTranslation();
+  const addCapture = () => onChange({ ...call, responseCaptures: [...call.responseCaptures, { name: '', mode: 'jsonpath', jsonPath: '$.' }] });
+  const updCapture = (i: number, patch: Partial<ExternalApiCapture>) =>
+    onChange({ ...call, responseCaptures: call.responseCaptures.map((c, idx) => idx === i ? { ...c, ...patch } : c) });
+  const rmCapture = (i: number) => onChange({ ...call, responseCaptures: call.responseCaptures.filter((_, idx) => idx !== i) });
+
+  return (
+    <div className="eae-subsec">
+      <div className="eae-subsec-row">
+        <div className="eae-subsec-lbl">{t('response_captures_label', { defaultValue: 'RESPONSE CAPTURES' })}</div>
+        <button className="wfd-add-flow-btn" onClick={addCapture}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
+      </div>
+      {call.responseCaptures.length === 0 && (
+        <p className="wfd-empty-txt">{t('eae_no_response_captures_empty', { defaultValue: "No values captured from this call's response yet" })}</p>
+      )}
+      {call.responseCaptures.map((c, i) => {
+        const mode = c.mode ?? 'jsonpath';
+        return (
+          <div key={i} className="eae-capture-block">
+            <div className="eae-kv-row">
+              <input className="wfd-inp" value={c.name} onChange={e => updCapture(i, { name: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} />
+              <select
+                className="wfd-sel"
+                value={mode}
+                onChange={e => {
+                  const newMode = e.target.value as 'jsonpath' | 'llm';
+                  updCapture(i, newMode === 'llm'
+                    ? { mode: 'llm', jsonPath: undefined }
+                    : { mode: 'jsonpath', llmInstruction: undefined, jsonPath: c.jsonPath ?? '$.' });
+                }}
+              >
+                <option value="jsonpath">{t('capture_mode_jsonpath', { defaultValue: 'JSONPath' })}</option>
+                <option value="llm">{t('capture_mode_llm', { defaultValue: 'AI: describe what to extract' })}</option>
+              </select>
+              {mode === 'jsonpath' && (
+                <input className="wfd-inp" value={c.jsonPath ?? ''} onChange={e => updCapture(i, { jsonPath: e.target.value })} placeholder={t('json_path_placeholder', { defaultValue: '$.data.id' }) as string} />
+              )}
+              <button className="ale-rm-btn" onClick={() => rmCapture(i)}><X size={11} /></button>
+            </div>
+            {mode === 'llm' && (
+              <textarea
+                className="wfd-inp eae-textarea-sm"
+                value={c.llmInstruction ?? ''}
+                onChange={e => updCapture(i, { llmInstruction: e.target.value })}
+                placeholder={t('capture_llm_instruction_placeholder', { defaultValue: "e.g. the cheapest flight's total price" }) as string}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 // ── Calls list editor ─────────────────────────────────────────────────────
 
