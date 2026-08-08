@@ -24,6 +24,7 @@ import { SslCertPage } from './SslCert/SslCertPage';
 import { AccelerationRulesPage } from './AccelerationRules/AccelerationRulesPage';
 import { SlaPoliciesPage } from './SlaPolicies/SlaPoliciesPage';
 import { DashboardManagerPage } from './DashboardManager/DashboardManagerPage';
+import { RecurringTicketsPage } from './RecurringTickets/RecurringTicketsPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -56,7 +57,8 @@ type ViewState =
   | 'ssl-manager'
   | 'acceleration-rules'
   | 'sla-policies'
-  | 'dashboard-manager';
+  | 'dashboard-manager'
+  | 'recurring-tickets';
 
 export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: SettingsPageProps) => {
   const { t } = useTranslation();
@@ -117,6 +119,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   const canNotifications  = hasPermission(user, PERMISSIONS.MANAGE_NOTIFICATIONS);
   const canAcceleration   = hasPermission(user, PERMISSIONS.TICKET_MANAGER);
   const canSla            = hasPermission(user, PERMISSIONS.MANAGE_FIELDS);
+  const canRecurring      = hasPermission(user, PERMISSIONS.MANAGE_RECURRING_TICKETS);
 
   // ── Active sidebar group ─────────────────────────────────────────────────
   const activeGroup = (() => {
@@ -135,6 +138,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'acceleration-rules') return 'acceleration-rules';
     if (currentView === 'sla-policies') return 'sla-policies';
     if (currentView === 'dashboard-manager') return 'dashboard-manager';
+    if (currentView === 'recurring-tickets') return 'recurring-tickets';
     return '';
   })();
 
@@ -152,7 +156,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   const renderContent = () => {
     // Settings overview (card grid)
     if (currentView === 'menu') {
-      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications || canAcceleration || canSla;
+      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications || canAcceleration || canSla || canRecurring;
       return (
         <div className="settings-grid">
           {!hasAnyAccess && (
@@ -253,6 +257,13 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
               <span className="settings-text">{t('sla_settings_nav_item', { defaultValue: 'SLA' })}</span>
             </div>
           )}
+
+          {canRecurring && (
+            <div className="settings-card" onClick={() => setCurrentView('recurring-tickets')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🔁</div></div>
+              <span className="settings-text">{t('recurring_tickets_card_label', { defaultValue: 'Recurring Tickets' })}</span>
+            </div>
+          )}
         </div>
       );
     }
@@ -271,6 +282,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'acceleration-rules') return <AccelerationRulesPage />;
     if (currentView === 'sla-policies') return <SlaPoliciesPage />;
     if (currentView === 'dashboard-manager') return <DashboardManagerPage />;
+    if (currentView === 'recurring-tickets') return <RecurringTicketsPage />;
     if (currentView === 'selection') return <FieldEntityList onSelectEntity={handleEntitySelection} />;
     if (currentView === 'users-groups-hub') return <UsersGroupsHub user={user} onSelect={(entity) => setCurrentView(entity)} />;
 
@@ -360,6 +372,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
         {canNotifications && navBtn('notifications', t('settings_notification_manager', { defaultValue: 'Notifications' }), () => setCurrentView('notification-manager'))}
         {canAcceleration  && navBtn('acceleration-rules', t('acceleration_nav_label'), () => setCurrentView('acceleration-rules'))}
         {canSla           && navBtn('sla-policies', t('sla_settings_nav_item', { defaultValue: 'SLA' }), () => setCurrentView('sla-policies'))}
+        {canRecurring     && navBtn('recurring-tickets', t('recurring_tickets_nav_item', { defaultValue: 'Recurring Tickets' }), () => setCurrentView('recurring-tickets'))}
 
         {isSuperAdminUser && <div className="stg-nav__divider" />}
         {isSuperAdminUser && navBtn('setup-guide', t('setup_guide_card_label'),  () => setCurrentView('setup-guide'))}
