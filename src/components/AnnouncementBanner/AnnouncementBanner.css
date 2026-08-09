@@ -1,0 +1,49 @@
+.ann-banner-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem 0;
+}
+
+.ann-banner {
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border: 1px solid var(--sd-border);
+  background: var(--sd-surface-2);
+}
+
+.ann-critical { background: var(--priority-critical-bg); border-color: var(--priority-critical-dot); }
+.ann-high     { background: var(--priority-high-bg);     border-color: var(--priority-high-dot); }
+.ann-medium   { background: var(--priority-medium-bg);   border-color: var(--priority-medium-dot); }
+.ann-low      { background: var(--priority-low-bg);      border-color: var(--priority-low-dot); }
+.ann-info     { background: var(--status-open-bg, var(--sd-surface-2)); border-color: var(--sd-brand); }
+.ann-neutral  { background: var(--sd-surface-2); border-color: var(--sd-border); }
+
+.ann-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.ann-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--sd-fg);
+  margin-bottom: 0.15rem;
+}
+
+.ann-body {
+  font-size: 0.75rem;
+  color: var(--sd-fg-muted);
+  line-height: 1.5;
+}
+
+.ann-meta {
+  font-size: 0.6875rem;
+  color: var(--sd-fg-subtle, var(--sd-fg-muted));
+  margin-top: 0.3rem;
+}

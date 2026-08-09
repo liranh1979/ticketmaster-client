@@ -25,6 +25,8 @@ import { AccelerationRulesPage } from './AccelerationRules/AccelerationRulesPage
 import { SlaPoliciesPage } from './SlaPolicies/SlaPoliciesPage';
 import { DashboardManagerPage } from './DashboardManager/DashboardManagerPage';
 import { RecurringTicketsPage } from './RecurringTickets/RecurringTicketsPage';
+import { AlertTypesManager } from './AlertTypes/AlertTypesManager';
+import { AnnouncementsPage } from './Announcements/AnnouncementsPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -58,7 +60,9 @@ type ViewState =
   | 'acceleration-rules'
   | 'sla-policies'
   | 'dashboard-manager'
-  | 'recurring-tickets';
+  | 'recurring-tickets'
+  | 'alert-types-management'
+  | 'announcements';
 
 export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: SettingsPageProps) => {
   const { t } = useTranslation();
@@ -88,6 +92,8 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
       setCurrentView('labels-management');
     } else if (entity === 'workflow') {
       setCurrentView('workflow-fields');
+    } else if (entity === 'alert-type') {
+      setCurrentView('alert-types-management');
     } else {
       setCurrentView('custom-fields');
     }
@@ -120,6 +126,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   const canAcceleration   = hasPermission(user, PERMISSIONS.TICKET_MANAGER);
   const canSla            = hasPermission(user, PERMISSIONS.MANAGE_FIELDS);
   const canRecurring      = hasPermission(user, PERMISSIONS.MANAGE_RECURRING_TICKETS);
+  const canAnnouncements  = hasPermission(user, PERMISSIONS.MANAGE_ANNOUNCEMENTS);
 
   // ── Active sidebar group ─────────────────────────────────────────────────
   const activeGroup = (() => {
@@ -129,7 +136,8 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'system-settings') return 'system-settings';
     if (currentView === 'ssl-manager') return 'ssl-manager';
     if (['selection','system-fields','custom-fields','group-custom-fields',
-         'ticket-custom-fields','labels-management','workflow-fields'].includes(currentView)) return 'fields';
+         'ticket-custom-fields','labels-management','workflow-fields',
+         'alert-types-management'].includes(currentView)) return 'fields';
     if (currentView === 'tickets-templates') return 'templates';
     if (currentView === 'ai-manager') return 'ai';
     if (currentView === 'email-manager') return 'email';
@@ -139,6 +147,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'sla-policies') return 'sla-policies';
     if (currentView === 'dashboard-manager') return 'dashboard-manager';
     if (currentView === 'recurring-tickets') return 'recurring-tickets';
+    if (currentView === 'announcements') return 'announcements';
     return '';
   })();
 
@@ -156,7 +165,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   const renderContent = () => {
     // Settings overview (card grid)
     if (currentView === 'menu') {
-      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications || canAcceleration || canSla || canRecurring;
+      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications || canAcceleration || canSla || canRecurring || canAnnouncements;
       return (
         <div className="settings-grid">
           {!hasAnyAccess && (
@@ -264,6 +273,13 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
               <span className="settings-text">{t('recurring_tickets_card_label', { defaultValue: 'Recurring Tickets' })}</span>
             </div>
           )}
+
+          {canAnnouncements && (
+            <div className="settings-card" onClick={() => setCurrentView('announcements')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">📣</div></div>
+              <span className="settings-text">{t('announcements_card_label', { defaultValue: 'Announcements' })}</span>
+            </div>
+          )}
         </div>
       );
     }
@@ -283,6 +299,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'sla-policies') return <SlaPoliciesPage />;
     if (currentView === 'dashboard-manager') return <DashboardManagerPage />;
     if (currentView === 'recurring-tickets') return <RecurringTicketsPage />;
+    if (currentView === 'announcements') return <AnnouncementsPage />;
     if (currentView === 'selection') return <FieldEntityList onSelectEntity={handleEntitySelection} />;
     if (currentView === 'users-groups-hub') return <UsersGroupsHub user={user} onSelect={(entity) => setCurrentView(entity)} />;
 
@@ -309,6 +326,10 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
 
     if (currentView === 'labels-management') return (
       <>{back(handleBackToSelection)}<LabelsManagementPage /></>
+    );
+
+    if (currentView === 'alert-types-management') return (
+      <>{back(handleBackToSelection)}<AlertTypesManager /></>
     );
 
     if (currentView === 'users') return (
@@ -373,6 +394,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
         {canAcceleration  && navBtn('acceleration-rules', t('acceleration_nav_label'), () => setCurrentView('acceleration-rules'))}
         {canSla           && navBtn('sla-policies', t('sla_settings_nav_item', { defaultValue: 'SLA' }), () => setCurrentView('sla-policies'))}
         {canRecurring     && navBtn('recurring-tickets', t('recurring_tickets_nav_item', { defaultValue: 'Recurring Tickets' }), () => setCurrentView('recurring-tickets'))}
+        {canAnnouncements && navBtn('announcements', t('announcements_nav_item', { defaultValue: 'Announcements' }), () => setCurrentView('announcements'))}
 
         {isSuperAdminUser && <div className="stg-nav__divider" />}
         {isSuperAdminUser && navBtn('setup-guide', t('setup_guide_card_label'),  () => setCurrentView('setup-guide'))}

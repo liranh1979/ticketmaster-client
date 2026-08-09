@@ -51,6 +51,13 @@ export const FieldEntityList = ({ onSelectEntity }: FieldEntityListProps) => {
       icon: '⚙️',
       description: 'Built-in and custom fields for workflow entities',
     },
+    {
+      entity: 'alert-type',
+      category: 'custom' as const,
+      label: t('field_group_alerts', { defaultValue: 'Alert Types' }),
+      icon: '🚨',
+      description: t('alert_types_defined_fields', { defaultValue: 'Types used for announcement severity banners' }),
+    },
   ];
 
   return (

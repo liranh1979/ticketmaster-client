@@ -11,6 +11,7 @@ import { TicketEditPage } from '../Tickets/TicketEditPage';
 import { formatRelativeTime } from '../Tickets/ticketTypes';
 import { PersonalSettingsModal } from '../../components/PersonalSettings/PersonalSettingsModal';
 import { UserNotificationBell } from '../../components/UserNotificationBell/UserNotificationBell';
+import { AnnouncementBanner } from '../../components/AnnouncementBanner/AnnouncementBanner';
 import './EndUserPortal.css';
 
 type PortalView = 'home' | 'ai-chat' | 'my-tickets' | 'create-ticket' | 'view-ticket' | 'my-tasks' | 'action-item';
@@ -207,6 +208,8 @@ export const EndUserPortal = ({ user, onUserUpdate }: Props) => {
           </button>
         </div>
       </header>
+
+      <AnnouncementBanner placement={view === 'create-ticket' ? 'ticket-create' : 'portal'} />
 
       {showPersonalSettings && (
         <PersonalSettingsModal

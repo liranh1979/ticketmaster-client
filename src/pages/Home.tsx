@@ -14,6 +14,7 @@ import { ActionItemPage } from './Workflow/ActionItemPage';
 import { hasPermission, isSuperAdmin, PERMISSIONS } from '../utils/permissions';
 import { TicketsDashboard } from './Dashboards/TicketsDashboard/TicketsDashboard';
 import { AboutModal } from '../components/AboutModal/AboutModal';
+import { AnnouncementBanner } from '../components/AnnouncementBanner/AnnouncementBanner';
 import api from '../api';
 
 interface HomeProps {
@@ -107,6 +108,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
       />
 
       <div className="sd-app-content">
+        <AnnouncementBanner placement="agent-dashboard" />
         {currentView === 'welcome' && (
           canManageTickets ? (
             <TicketsDashboard onEditTicket={goToEditTicket} />
