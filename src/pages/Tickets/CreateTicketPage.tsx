@@ -31,6 +31,19 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
   const [aiLoading, setAiLoading]         = useState(false);
   const [submitting, setSubmitting]       = useState(false);
   const [templateLoading, setTemplateLoading] = useState(false);
+  const [suggestedArticles, setSuggestedArticles] = useState<{ id: number; title: string }[]>([]);
+  const [dismissedForTitle, setDismissedForTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    const title = (values.title ?? '').trim();
+    if (!title || title === dismissedForTitle) { setSuggestedArticles([]); return; }
+    const timer = setTimeout(() => {
+      api.get('/kb-articles/suggest', { params: { q: title } })
+        .then(r => setSuggestedArticles(r.data))
+        .catch(() => setSuggestedArticles([]));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [values.title, dismissedForTitle]);
 
   useEffect(() => {
     api.get('/templates').then(r => {
@@ -327,6 +340,34 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
                   </button>
                   <button className="cp-ai-banner-btn" onClick={handleClearAi}>
                     {t('ai_clear_values')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {suggestedArticles.length > 0 && (
+              <div className="cp-kb-suggest-panel">
+                <div className="cp-kb-suggest-title">
+                  💡 {t('kb_suggest_title', { defaultValue: 'Before you submit — these articles might help:' })}
+                </div>
+                {suggestedArticles.map(a => (
+                  <div key={a.id} className="cp-kb-suggest-item">
+                    <span className="cp-kb-suggest-dot" />
+                    {a.title}
+                  </div>
+                ))}
+                <div className="cp-kb-suggest-actions">
+                  <button
+                    className="cp-kb-suggest-btn cp-kb-suggest-btn-primary"
+                    onClick={() => { setDismissedForTitle(values.title ?? ''); onBack(); }}
+                  >
+                    {t('kb_suggest_helped_btn', { defaultValue: "Yes, this helped — don't submit" })}
+                  </button>
+                  <button
+                    className="cp-kb-suggest-btn"
+                    onClick={() => setDismissedForTitle(values.title ?? '')}
+                  >
+                    {t('kb_suggest_not_helped_btn', { defaultValue: 'None helped — submit anyway' })}
                   </button>
                 </div>
               </div>

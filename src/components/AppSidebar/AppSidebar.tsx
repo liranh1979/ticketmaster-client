@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, Inbox, Plus, CheckSquare, Settings, Info } from 'lucide-react';
+import { LayoutDashboard, Inbox, Plus, CheckSquare, Settings, Info, BookOpen } from 'lucide-react';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import './AppSidebar.css';
 
-type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks' | 'action-item';
+type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks' | 'action-item' | 'knowledge-base' | 'kb-categories';
 
 interface Props {
   user: any;
@@ -12,6 +12,7 @@ interface Props {
   onDashboard: () => void;
   onServiceDesk: () => void;
   onMyTasks?: () => void;
+  onKnowledgeBase?: () => void;
   onSettings: () => void;
   onAbout?: () => void;
   ticketCount?: number;
@@ -25,6 +26,7 @@ export const AppSidebar = ({
   onDashboard,
   onServiceDesk,
   onMyTasks,
+  onKnowledgeBase,
   onSettings,
   onAbout,
   ticketCount,
@@ -70,6 +72,16 @@ export const AppSidebar = ({
           >
             <CheckSquare size={15} strokeWidth={1.75} />
             My Tasks
+          </button>
+        )}
+
+        {onKnowledgeBase && (
+          <button
+            className={`sd-nav__item${(currentView === 'knowledge-base' || currentView === 'kb-categories') ? ' sd-nav__item--active' : ''}`}
+            onClick={onKnowledgeBase}
+          >
+            <BookOpen size={15} strokeWidth={1.75} />
+            {t('kb_nav_item', { defaultValue: 'Knowledge Base' })}
           </button>
         )}
 

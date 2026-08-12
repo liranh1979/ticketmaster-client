@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Sparkles, AlertCircle, RefreshCw, MessageSquare, Link2, Copy } from 'lucide-react';
+import { ArrowLeft, Sparkles, AlertCircle, RefreshCw, MessageSquare, Link2, Copy, Search } from 'lucide-react';
 import api from '../../api';
 import { TicketFormRenderer } from '../../components/TicketFormRenderer/TicketFormRenderer';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import { ActivityLogControl } from '../../components/ActivityLogControl/ActivityLogControl';
 import { AiTicketConsultPanel } from '../../components/AiTicketConsultPanel/AiTicketConsultPanel';
+import { KbSearchPanel } from '../../components/KbSearchPanel/KbSearchPanel';
 import { ParentIncidentBanner } from '../../components/TicketRelationsPanel/ParentIncidentBanner';
 import { TicketApprovalStatusPanel } from '../../components/TicketApprovalStatusPanel/TicketApprovalStatusPanel';
 import { useTicketRelationships } from '../../hooks/useTicketRelationships';
@@ -23,6 +24,7 @@ interface Props {
   onBack: () => void;
   onCloned?: (newTicketId: number) => void;
   onNavigateTicket?: (ticketId: number) => void;
+  onCreateKbFromTicket?: (ticketId: number) => void;
 }
 
 interface PresenceUser {
@@ -31,7 +33,7 @@ interface PresenceUser {
   expiresAt: number;
 }
 
-export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTicket }: Props) => {
+export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTicket, onCreateKbFromTicket }: Props) => {
   const { t, i18n } = useTranslation();
 
   const [ticket, setTicket]         = useState<TicketDetail | null>(null);
@@ -48,6 +50,13 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
   const [syncedToast, setSyncedToast]     = useState(false);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [consultOpen, setConsultOpen]     = useState(false);
+  const [kbSearchOpen, setKbSearchOpen]   = useState(false);
+  const [kbLinkCount, setKbLinkCount]     = useState(0);
+  const [linkedArticles, setLinkedArticles] = useState<{ id: number; title: string }[]>([]);
+
+  useEffect(() => {
+    api.get(`/tickets/${ticketId}/kb-links`).then(r => setLinkedArticles(r.data)).catch(() => {});
+  }, [ticketId, kbLinkCount]);
   const [linkCopied, setLinkCopied]       = useState(false);
   const [solutionSavedCount, setSolutionSavedCount] = useState(0);
   const [saveCount, setSaveCount] = useState(0);
@@ -383,8 +392,24 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
               <MessageSquare size={14} /> {t('ai_consult_btn', { defaultValue: 'Consult AI' })}
             </button>
           )}
+          <button className="te-consult-btn" onClick={() => setKbSearchOpen(true)}>
+            <Search size={14} /> {t('kb_search_panel_title', { defaultValue: 'Search Knowledge Base' })}
+          </button>
+          {/* Create KB article from a wrapped-up ticket — admins/ticket managers only */}
+          {isAdmin && onCreateKbFromTicket && ['completed', 'closed'].includes(ticket?.status ?? '') && (
+            <button className="te-consult-btn" onClick={() => onCreateKbFromTicket(ticketId)}>
+              <Sparkles size={14} /> {t('kb_create_from_ticket_btn', { defaultValue: 'Create KB Article' })}
+            </button>
+          )}
         </div>
       </div>
+
+      <KbSearchPanel
+        ticketId={ticketId}
+        open={kbSearchOpen}
+        onClose={() => setKbSearchOpen(false)}
+        onArticleLinked={() => setKbLinkCount(c => c + 1)}
+      />
 
       {isAdmin && (
         <AiTicketConsultPanel
@@ -449,6 +474,17 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
             slaState={ticket?.slaState}
             currentUserId={user?.red_id}
           />
+        )}
+
+        {linkedArticles.length > 0 && (
+          <div className="te-activity-section">
+            <h3 className="te-activity-title">{t('kb_linked_articles_title', { defaultValue: 'Linked Articles' })}</h3>
+            <div className="te-kb-linked-list">
+              {linkedArticles.map(a => (
+                <span key={a.id} className="te-kb-linked-chip">{a.title}</span>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Activity log section */}

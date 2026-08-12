@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, ClipboardList, Plus, LogOut, CheckSquare, Settings } from 'lucide-react';
+import { MessageSquare, ClipboardList, Plus, LogOut, CheckSquare, Settings, BookOpen } from 'lucide-react';
 import api from '../../api';
 import { AiChatPage } from './AiChatPage';
 import { MyTicketsPage } from './MyTicketsPage';
@@ -8,13 +8,14 @@ import { MyWorkflowItemsPage } from '../Workflow/MyWorkflowItemsPage';
 import { ActionItemPage } from '../Workflow/ActionItemPage';
 import { CreateTicketPage } from '../Tickets/CreateTicketPage';
 import { TicketEditPage } from '../Tickets/TicketEditPage';
+import { KnowledgeBasePage } from './KnowledgeBasePage';
 import { formatRelativeTime } from '../Tickets/ticketTypes';
 import { PersonalSettingsModal } from '../../components/PersonalSettings/PersonalSettingsModal';
 import { UserNotificationBell } from '../../components/UserNotificationBell/UserNotificationBell';
 import { AnnouncementBanner } from '../../components/AnnouncementBanner/AnnouncementBanner';
 import './EndUserPortal.css';
 
-type PortalView = 'home' | 'ai-chat' | 'my-tickets' | 'create-ticket' | 'view-ticket' | 'my-tasks' | 'action-item';
+type PortalView = 'home' | 'ai-chat' | 'my-tickets' | 'create-ticket' | 'view-ticket' | 'my-tasks' | 'action-item' | 'knowledge-base';
 
 interface RecentTicket { id: number; title: string; status: string; updatedAt: string; }
 
@@ -93,6 +94,10 @@ export const EndUserPortal = ({ user, onUserUpdate }: Props) => {
           onViewItem={openActionItem}
         />
       );
+    }
+
+    if (view === 'knowledge-base') {
+      return <KnowledgeBasePage onBack={() => setView('home')} />;
     }
 
     if (view === 'action-item' && actionItemId !== null) {
@@ -195,6 +200,9 @@ export const EndUserPortal = ({ user, onUserUpdate }: Props) => {
           </button>
           <button className="eu-nav-btn" onClick={() => setView('my-tasks')}>
             <CheckSquare size={16} /> My Tasks
+          </button>
+          <button className="eu-nav-btn" onClick={() => setView('knowledge-base')}>
+            <BookOpen size={16} /> {t('kb_portal_nav_item', { defaultValue: 'Knowledge Base' })}
           </button>
         </nav>
         <div className="eu-topbar-right">

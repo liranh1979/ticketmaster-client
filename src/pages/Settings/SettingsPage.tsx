@@ -280,6 +280,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
               <span className="settings-text">{t('announcements_card_label', { defaultValue: 'Announcements' })}</span>
             </div>
           )}
+
         </div>
       );
     }

@@ -310,9 +310,7 @@
   flex: 1;
   overflow-y: auto;
   padding: 20px 24px;
-  max-width: 1400px;
   width: 100%;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -329,6 +327,17 @@
   font-weight: 600;
   color: #94a3b8;
   margin: 0 0 12px;
+}
+
+.te-kb-linked-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.te-kb-linked-chip {
+  background: rgba(59,130,246,.12);
+  border: 1px solid rgba(59,130,246,.3);
+  color: #93c5fd;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
 }
 
 .te-activity-empty {

@@ -15,6 +15,9 @@ import { hasPermission, isSuperAdmin, PERMISSIONS } from '../utils/permissions';
 import { TicketsDashboard } from './Dashboards/TicketsDashboard/TicketsDashboard';
 import { AboutModal } from '../components/AboutModal/AboutModal';
 import { AnnouncementBanner } from '../components/AnnouncementBanner/AnnouncementBanner';
+import { KbArticlesPage } from './Settings/KnowledgeBase/KbArticlesPage';
+import { KbCategoriesManager } from './Settings/KnowledgeBase/KbCategoriesManager';
+import { KnowledgeBasePage } from './EndUser/KnowledgeBasePage';
 import api from '../api';
 
 interface HomeProps {
@@ -28,7 +31,7 @@ interface HomeProps {
   onUserUpdate?: (partial: Record<string, any>) => void;
 }
 
-type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks' | 'action-item';
+type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks' | 'action-item' | 'knowledge-base' | 'kb-categories';
 
 export const Home = ({ user, onUserUpdate }: HomeProps) => {
   const { t } = useTranslation();
@@ -39,8 +42,10 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
   const [ticketCount, setTicketCount] = useState<number | undefined>(undefined);
   const [hasMoreTickets, setHasMoreTickets] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [kbPrefillTicketId, setKbPrefillTicketId] = useState<number | null>(null);
 
   const canManageTickets = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
+  const canEditKb = isSuperAdmin(user) || hasPermission(user, PERMISSIONS.TICKET_MANAGER) || hasPermission(user, PERMISSIONS.MANAGE_KNOWLEDGE_BASE);
   const isEndUserOnly = !isSuperAdmin(user) && !(user?.effective_permissions?.length);
 
   const goToDashboard    = () => setCurrentView('welcome');
@@ -50,6 +55,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
   const goToCreateTicket = () => setCurrentView('create-ticket');
   const goToEditTicket   = (id: number) => { setEditTicketId(id); setCurrentView('edit-ticket'); };
   const goToActionItem   = (id: number) => { setActionItemId(id); setCurrentView('action-item'); };
+  const goToCreateKbFromTicket = (id: number) => { setKbPrefillTicketId(id); setCurrentView('knowledge-base'); };
 
   // Deep-link: ?ticket=NNN
   useEffect(() => {
@@ -101,6 +107,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
         onDashboard={goToDashboard}
         onServiceDesk={goToTicketList}
         onMyTasks={goToMyTasks}
+        onKnowledgeBase={() => setCurrentView('knowledge-base')}
         onSettings={() => setCurrentView('settings')}
         onAbout={() => setShowAbout(true)}
         ticketCount={ticketCount}
@@ -157,6 +164,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
             onBack={canManageTickets ? goToTicketList : goToMyTickets}
             onCloned={goToEditTicket}
             onNavigateTicket={goToEditTicket}
+            onCreateKbFromTicket={goToCreateKbFromTicket}
           />
         )}
 
@@ -181,6 +189,16 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
             itemId={actionItemId}
             onBack={goToMyTasks}
           />
+        )}
+
+        {currentView === 'knowledge-base' && (
+          canEditKb
+            ? <KbArticlesPage onManageCategories={() => setCurrentView('kb-categories')} prefillTicketId={kbPrefillTicketId} />
+            : <KnowledgeBasePage onBack={() => setCurrentView('welcome')} />
+        )}
+
+        {currentView === 'kb-categories' && (
+          <KbCategoriesManager onBack={() => setCurrentView('knowledge-base')} />
         )}
       </div>
 
