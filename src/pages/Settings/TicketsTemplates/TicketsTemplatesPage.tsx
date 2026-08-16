@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Pencil, Trash2, Layers, Star, Sparkles, ClipboardList } from 'lucide-react';
+import { Plus, Pencil, Trash2, Layers, Star, Sparkles, ClipboardList, BarChart3 } from 'lucide-react';
 import api from '../../../api';
 import { TemplateBuilderPage } from './TemplateBuilderPage';
 import { AiWorkflowBuilderPage } from './AiWorkflowBuilderPage';
 import { ActionItemLibraryPage } from './ActionItemLibraryPage';
+import { ReportsPage } from '../Reports/ReportsPage';
+import { hasPermission, PERMISSIONS } from '../../../utils/permissions';
 import './TicketsTemplatesPage.css';
 
 interface TemplateSummary {
@@ -15,14 +17,19 @@ interface TemplateSummary {
   isDefault: boolean;
 }
 
-export const TicketsTemplatesPage = () => {
+interface TicketsTemplatesPageProps {
+  user?: any;
+}
+
+export const TicketsTemplatesPage = ({ user }: TicketsTemplatesPageProps = {}) => {
   const { t } = useTranslation();
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [settingDefaultId, setSettingDefaultId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'templates' | 'action-items' | 'ai-builder'>('templates');
+  const [activeTab, setActiveTab] = useState<'templates' | 'action-items' | 'ai-builder' | 'reports'>('templates');
+  const canReports = hasPermission(user, PERMISSIONS.MANAGE_REPORTS);
 
   const load = async () => {
     setLoading(true);
@@ -105,9 +112,19 @@ export const TicketsTemplatesPage = () => {
         >
           <Sparkles size={13} /> {t('ai_workflow_builder_tab', { defaultValue: 'AI Workflow Builder' })}
         </button>
+        {canReports && (
+          <button
+            className={`tt-tab-btn${activeTab === 'reports' ? ' active' : ''}`}
+            onClick={() => setActiveTab('reports')}
+          >
+            <BarChart3 size={13} /> {t('reports_tab', { defaultValue: 'Reports' })}
+          </button>
+        )}
       </div>
 
-      {activeTab === 'ai-builder' ? (
+      {activeTab === 'reports' ? (
+        <ReportsPage />
+      ) : activeTab === 'ai-builder' ? (
         <AiWorkflowBuilderPage />
       ) : activeTab === 'action-items' ? (
         <ActionItemLibraryPage />

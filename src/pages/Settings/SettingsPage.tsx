@@ -292,7 +292,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'companies') return <CompaniesPage />;
     if (currentView === 'system-settings') return <SystemSettingsPage />;
     if (currentView === 'ssl-manager') return <SslCertPage />;
-    if (currentView === 'tickets-templates') return <TicketsTemplatesPage />;
+    if (currentView === 'tickets-templates') return <TicketsTemplatesPage user={user} />;
     if (currentView === 'ai-manager') return <AIManager />;
     if (currentView === 'email-manager') return <EmailManager />;
     if (currentView === 'notification-manager') return <NotificationManager />;
