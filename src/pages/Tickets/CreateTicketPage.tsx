@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Sparkles, CheckCircle } from 'lucide-react';
 import api from '../../api';
 import { TicketFormRenderer } from '../../components/TicketFormRenderer/TicketFormRenderer';
+import { KnownErrorBanner, type KnownErrorSuggestion } from '../../components/KnownErrorBanner/KnownErrorBanner';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import type { TemplateSummary, TemplateWithLayout, TemplateTab, AiAnalyzeResponse } from './ticketTypes';
 import { flattenLayout } from './ticketTypes';
@@ -33,6 +34,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
   const [templateLoading, setTemplateLoading] = useState(false);
   const [suggestedArticles, setSuggestedArticles] = useState<{ id: number; title: string }[]>([]);
   const [dismissedForTitle, setDismissedForTitle] = useState<string | null>(null);
+  const [knownErrorSuggestions, setKnownErrorSuggestions] = useState<KnownErrorSuggestion[]>([]);
 
   useEffect(() => {
     const title = (values.title ?? '').trim();
@@ -44,6 +46,20 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
     }, 500);
     return () => clearTimeout(timer);
   }, [values.title, dismissedForTitle]);
+
+  // Problem Management: same debounced-suggest shape as the KB panel above, surfacing a
+  // matching Known Error's workaround while the title is being typed. See
+  // V2/Problem Management/02-relationships-known-error.html.
+  useEffect(() => {
+    const title = (values.title ?? '').trim();
+    if (!title) { setKnownErrorSuggestions([]); return; }
+    const timer = setTimeout(() => {
+      api.get('/tickets/known-errors/suggest', { params: { q: title } })
+        .then(r => setKnownErrorSuggestions(r.data))
+        .catch(() => setKnownErrorSuggestions([]));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [values.title]);
 
   useEffect(() => {
     api.get('/templates').then(r => {
@@ -344,6 +360,8 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
                 </div>
               </div>
             )}
+
+            <KnownErrorBanner suggestions={knownErrorSuggestions} isAdmin={isAdmin} />
 
             {suggestedArticles.length > 0 && (
               <div className="cp-kb-suggest-panel">

@@ -318,6 +318,35 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onN
       return <ActivityLogControl ticketId={entityId} readonly={readOnly} />;
 
     default:
+      // Problem Management: generalized from the 'solution' case above so any custom field —
+      // not just hardcoded system ones — can opt into a rich-text editor with real inline
+      // uploads (root_cause, workaround). See V2/Problem Management/01-data-model.html.
+      if (field.fieldType === 'richtext') {
+        return (
+          <RichTextEditor
+            content={value ?? ''}
+            onChange={(html) => onChange(field.fieldKey, html)}
+            editable={!readOnly}
+            uploadContext={entityId != null ? { entityType: 'ticket', entityId } : undefined}
+          />
+        );
+      }
+
+      // Custom boolean fields (e.g. known_error) previously fell through to a plain text
+      // input — field_type='boolean' had no checkbox case here at all (only ever used by the
+      // unrelated user-settings 'notifications' field, which never reaches this renderer).
+      if (field.fieldType === 'boolean') {
+        return (
+          <input
+            type="checkbox"
+            className="tfr-checkbox"
+            checked={value === true || value === 'true'}
+            onChange={(e) => onChange(field.fieldKey, e.target.checked)}
+            disabled={readOnly}
+          />
+        );
+      }
+
       if (field.fieldType === 'combobox') {
         const options = field.fieldOptions?.length
           ? field.fieldOptions

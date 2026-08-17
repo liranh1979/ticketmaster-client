@@ -201,6 +201,18 @@
   cursor: default;
 }
 
+.tfr-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.tfr-checkbox:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
 .tfr-select {
   width: 100%;
   background: #0b1228;

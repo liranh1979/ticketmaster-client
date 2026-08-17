@@ -146,7 +146,8 @@ export const ServiceDeskPage = ({
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
-  const [templateId]                    = useState('');
+  const [templateId, setTemplateId]     = useState('');
+  const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false);
   const [selected, setSelected]         = useState<Set<number>>(new Set());
   const [bulkAction, setBulkAction]     = useState<BulkAction>(null);
   const [pendingNew, setPendingNew]     = useState(0);
@@ -518,11 +519,27 @@ export const ServiceDeskPage = ({
             </ToolbarDropdown>
             <div className="sd-toolbar__spacer" />
             {templates.length > 0 && (
-              <div className="sd-toolbar-group">
-                <button className="sd-chip">
-                  Template <ChevronDown size={11} />
+              <ToolbarDropdown
+                open={templateDropdownOpen}
+                onClose={() => setTemplateDropdownOpen(false)}
+                trigger={
+                  <button
+                    className={`sd-chip${templateId ? ' sd-chip--active' : ''}`}
+                    onClick={() => setTemplateDropdownOpen(o => !o)}
+                  >
+                    {templateId ? `Template: ${templates.find(t => String(t.id) === templateId)?.name ?? ''}` : 'Template'} <ChevronDown size={11} />
+                  </button>
+                }
+              >
+                <button key="any" onClick={() => { setTemplateId(''); setTemplateDropdownOpen(false); }}>
+                  Any template
                 </button>
-              </div>
+                {templates.map(tpl => (
+                  <button key={tpl.id} onClick={() => { setTemplateId(String(tpl.id)); setTemplateDropdownOpen(false); }}>
+                    {tpl.name}
+                  </button>
+                ))}
+              </ToolbarDropdown>
             )}
           </div>
         )}
