@@ -26,6 +26,31 @@
   gap: 1px;
 }
 
+.rte-uploading-note {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-left: auto;
+  padding-right: 4px;
+}
+
+.rte-content .rte-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #1e293b;
+  color: #93c5fd;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.rte-content video {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
 .rte-separator {
   width: 1px;
   height: 20px;

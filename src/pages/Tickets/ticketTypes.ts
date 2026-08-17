@@ -60,6 +60,7 @@ export interface TicketDetail {
   id: number;
   title: string;
   description: string;
+  solution: string | null;
   status: string;
   priority: string;
   templateId: number;

@@ -278,6 +278,38 @@
   background: rgba(239, 68, 68, 0.3);
 }
 
+/* ── Solution field ───────────────────────────────────────── */
+.tfr-solution-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tfr-copy-ai-solution-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 6px 12px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 6px;
+  color: #a5b4fc;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tfr-copy-ai-solution-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.22);
+}
+
+.tfr-copy-ai-solution-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .tfr-node-add-row {
   display: flex;
   gap: 6px;

@@ -1,5 +1,6 @@
 import { useEditor, EditorContent } from '@tiptap/react';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Youtube from '@tiptap/extension-youtube';
@@ -8,8 +9,10 @@ import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import {
   Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Quote, Code2,
-  Link as LinkIcon, Link2Off, ImageIcon, Video, Heading1, Heading2,
+  Link as LinkIcon, Link2Off, ImageIcon, Video, Heading1, Heading2, Paperclip,
 } from 'lucide-react';
+import api from '../../api';
+import { Video as VideoNode } from './VideoExtension';
 import './RichTextEditor.css';
 
 interface RichTextEditorProps {
@@ -19,6 +22,11 @@ interface RichTextEditorProps {
   compact?: boolean;
   placeholder?: string;
   insertTrigger?: { text: string; count: number };
+  /** When set, shows an "Insert File" upload button — uploads a real file via the existing
+   * attachments endpoint (entityType/entityId), then inserts it inline based on its MIME type
+   * (image → <img>, video → the custom Video node, anything else → a download-link chip). The
+   * uploaded file also becomes a real ticket Attachment, not just embedded HTML. */
+  uploadContext?: { entityType: string; entityId: number };
 }
 
 export const RichTextEditor = ({
@@ -28,11 +36,17 @@ export const RichTextEditor = ({
   compact = false,
   placeholder = 'Enter text...',
   insertTrigger,
+  uploadContext,
 }: RichTextEditorProps) => {
+  const { t } = useTranslation();
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       Image.configure({ allowBase64: true }),
+      VideoNode,
       Youtube.configure({ controls: true }),
       Placeholder.configure({ placeholder }),
       Link.configure({ openOnClick: false }),
@@ -62,6 +76,45 @@ export const RichTextEditor = ({
   const insertYoutube = () => {
     const url = window.prompt('YouTube URL:');
     if (url) editor.chain().focus().setYoutubeVideo({ src: url }).run();
+  };
+
+  const triggerFileUpload = () => fileInputRef.current?.click();
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // reset so selecting the same file again still fires onChange
+    if (!file || !uploadContext) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('files', file);
+      const res = await api.post('/attachments', formData, {
+        params: { entityType: uploadContext.entityType, entityId: uploadContext.entityId },
+      });
+      const uploaded = res.data?.[0];
+      if (!uploaded) return;
+
+      const mimeType: string = uploaded.mimeType || '';
+      const inlineUrl = `/api/v1/attachments/${uploaded.id}/inline`;
+      if (mimeType.startsWith('image/')) {
+        editor.chain().focus().setImage({ src: inlineUrl }).run();
+      } else if (mimeType.startsWith('video/')) {
+        editor.chain().focus().setVideo({ src: inlineUrl }).run();
+      } else {
+        // AttachmentController only exposes a plain, no-token GET by id at /{id}/inline (the
+        // separate /download endpoint needs a one-time token minted via /{id}/token — not
+        // needed here since this link is same-origin, cookie-authenticated, and the whole
+        // point is "open the attached file", inline or not).
+        editor.chain().focus().insertContent(
+          `<a href="${inlineUrl}" target="_blank" rel="noreferrer" class="rte-file-chip">📎 ${uploaded.originalFilename}</a>`
+        ).run();
+      }
+    } catch {
+      window.alert(t('ticket_solution_upload_failed', { defaultValue: 'Upload failed. Please try again.' }));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const setLink = () => {
@@ -157,7 +210,26 @@ export const RichTextEditor = ({
                 <Video size={14} />
               </button>
             )}
+            {uploadContext && (
+              <>
+                <button type="button" onClick={triggerFileUpload} disabled={uploading}
+                  title={t('ticket_solution_insert_file_btn', { defaultValue: 'Insert File' })}>
+                  <Paperclip size={14} />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  style={{ display: 'none' }}
+                  onChange={handleFileSelected}
+                />
+              </>
+            )}
           </div>
+          {uploading && (
+            <span className="rte-uploading-note">
+              {t('ticket_solution_uploading', { defaultValue: 'Uploading…' })}
+            </span>
+          )}
         </div>
       )}
       <EditorContent editor={editor} className="rte-content" />

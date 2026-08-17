@@ -86,6 +86,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
         const vals: Record<string, any> = { ...td.ticketData };
         vals.title       = td.title;
         vals.description = td.description;
+        vals.solution    = td.solution;
         vals.status      = td.status;
         vals.priority    = td.priority;
         vals.labels      = td.labels.map((l: any) => l.id);
@@ -152,6 +153,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
               const vals: Record<string, any> = { ...td.ticketData };
               vals.title       = td.title;
               vals.description = td.description;
+              vals.solution    = td.solution;
               vals.status      = td.status;
               vals.priority    = td.priority;
               vals.labels      = td.labels.map((l: any) => l.id);
@@ -233,6 +235,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
       const { data }: { data: TicketDetail } = await api.patch(`/tickets/${ticketId}`, {
         title:               values.title,
         description:         values.description,
+        solution:            values.solution,
         status:              values.status,
         priority:            values.priority,
         requestUserId:       values.request_user ? Number(values.request_user) : undefined,
@@ -264,6 +267,7 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
     const merged: Record<string, any> = { ...conflict.ticketData };
     merged.title       = conflict.title;
     merged.description = conflict.description;
+    merged.solution    = conflict.solution;
     merged.status      = conflict.status;
     merged.priority    = conflict.priority;
     merged.labels      = conflict.labels.map((l: any) => l.id);

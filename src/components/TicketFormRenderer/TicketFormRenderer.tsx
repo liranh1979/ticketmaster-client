@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Lock, GitBranch } from 'lucide-react';
+import { Sparkles, Lock, GitBranch, ClipboardCopy } from 'lucide-react';
+import api from '../../api';
 import { WorkflowTreePanel } from '../WorkflowTreePanel/WorkflowTreePanel';
 import '../WorkflowTreePanel/WorkflowTreePanel.css';
 import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
@@ -163,6 +164,34 @@ const NodeListControl = ({ value, onChange, readOnly }: { value: any; onChange: 
 // Proper React component — hooks are allowed here
 const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onNavigateTicket, slaState, currentUserId }: FieldControlProps) => {
   const { t } = useTranslation();
+  const [copyingAiSolution, setCopyingAiSolution] = useState(false);
+
+  const copyAiSolution = async () => {
+    if (!entityId) return;
+    setCopyingAiSolution(true);
+    try {
+      const res = await api.get(`/tickets/${entityId}/latest-ai-solution`);
+      const text: string | null = res.data?.text;
+      if (!text) {
+        window.alert(t('ticket_solution_no_ai_solution', { defaultValue: 'No AI Solution has been saved for this ticket yet.' }));
+        return;
+      }
+      if (value && String(value).trim()) {
+        const proceed = window.confirm(t('ticket_solution_overwrite_confirm', {
+          defaultValue: 'This will replace the current Solution content with the AI Solution text. Continue?',
+        }));
+        if (!proceed) return;
+      }
+      // Path A's saved text is plain text with \n separators, not HTML — wrap it into
+      // paragraphs so a multi-line AI solution displays correctly once in the rich-text field.
+      const html = /<[a-z][\s\S]*>/i.test(text)
+        ? text
+        : text.split(/\n{2,}/).map((block) => `<p>${block.replace(/\n/g, '<br>')}</p>`).join('');
+      onChange(field.fieldKey, html);
+    } finally {
+      setCopyingAiSolution(false);
+    }
+  };
 
   if (field.fieldType === 'workflow') {
     return <WorkflowFieldButton entityId={entityId} isAdmin={isAdmin} currentUserId={currentUserId} />;
@@ -220,6 +249,29 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onN
           onChange={(html) => onChange(field.fieldKey, html)}
           editable={!readOnly}
         />
+      );
+
+    case 'solution':
+      return (
+        <div className="tfr-solution-field">
+          {isAdmin && !readOnly && entityId != null && (
+            <button
+              type="button"
+              className="tfr-copy-ai-solution-btn"
+              onClick={copyAiSolution}
+              disabled={copyingAiSolution}
+            >
+              <ClipboardCopy size={13} />
+              {t('ticket_solution_copy_ai_btn', { defaultValue: 'Copy from AI Solution' })}
+            </button>
+          )}
+          <RichTextEditor
+            content={value ?? ''}
+            onChange={(html) => onChange(field.fieldKey, html)}
+            editable={!readOnly}
+            uploadContext={entityId != null ? { entityType: 'ticket', entityId } : undefined}
+          />
+        </div>
       );
 
     case 'request_user':
