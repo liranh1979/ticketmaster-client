@@ -483,6 +483,17 @@
   overflow-wrap: anywhere;
 }
 
+/* An "AI Summary" capture's HTML needs real width/height to read, not a same-line right-aligned
+   value squeezed next to its label — breaks the row onto its own full-width block instead. */
+.wtp-captured-field-row--richtext { flex-direction: column; align-items: stretch; }
+.wtp-captured-field-richtext {
+  background: rgba(15,23,42,0.35);
+  border: 1px solid rgba(148,163,184,0.15);
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
 .wtp-approval-actions {
   display: flex;
   gap: 8px;

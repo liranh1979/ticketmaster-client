@@ -270,6 +270,7 @@ export const ActionItemLibraryPage = () => {
                   <McpToolCallsEditor
                     calls={editingMcpCalls} onChange={setEditingMcpCalls}
                     ticketFieldKeys={ticketFieldKeys} workflowFieldKeys={workflowFieldKeys}
+                    serverUrl={editingMcpServerUrl} auth={editingMcpAuth}
                   />
                   <McpResponseMappingsEditor
                     mappings={editingMcpMappings}

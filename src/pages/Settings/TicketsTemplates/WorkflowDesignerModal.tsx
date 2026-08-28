@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Plus, GitBranch, Trash2, Database, ArrowRight, Lock, ShieldCheck, Globe2, Plug, Play, LibraryBig, ClipboardList, Sparkles } from 'lucide-react';
+import { X, Plus, GitBranch, Trash2, Database, ArrowRight, Lock, ShieldCheck, Globe2, Plug, Play, LibraryBig, ClipboardList, Sparkles, Maximize2, Minimize2 } from 'lucide-react';
 import api from '../../../api';
 import { UserPickerControl } from '../../../components/UserPickerControl/UserPickerControl';
 import { ApprovalLevelsEditor, makeDefaultLevel, type ApprovalLevel } from './ApprovalLevelsEditor';
@@ -14,7 +14,8 @@ import {
   makeDefaultCall as makeDefaultMcpCall,
   type McpCall, type McpAuth, type McpResponseMapping,
 } from './McpToolCallsEditor';
-import { TestActionModal } from './TestActionModal';
+import { TestActionModal, type AutoMapProposal } from './TestActionModal';
+import { mergeCapturesById } from './AiWorkflowBuilderPage';
 import './WorkflowDesignerModal.css';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -224,11 +225,32 @@ export const WorkflowDesignerModal = ({
   const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [libraryPickerOpen, setLibraryPickerOpen] = useState(false);
   const [workflowFieldKeys, setWorkflowFieldKeys] = useState<string[]>([]);
+  // Typed catalogs (key+type) for "Map Response Fields" (see runAutoMap in TestActionModal) — a
+  // real gap found live: this Designer usage of TestActionModal never opted into that feature at
+  // all, so an mcp_tool/external_api node's response captures/mappings were stuck with whatever
+  // was guessed at design time (against prose docs, or a schema with no real example) — a real API
+  // ("mpc flight", SerpApi Google Flights-shaped) came back with array-nested departure/arrival
+  // entries and no top-level "result" wrapper, nothing like the guess, so nothing ever captured.
+  const [ticketFieldCatalog, setTicketFieldCatalog] = useState<{ key: string; type: string }[]>([]);
+  const [workflowFieldCatalog, setWorkflowFieldCatalog] = useState<{ key: string; type: string }[]>([]);
 
   // Drag-to-move
   const [dragMove, setDragMove] = useState<{
     nodeId: string; startMX: number; startMY: number; origX: number; origY: number;
   } | null>(null);
+
+  // Node Inspector width — a real usability gap found live: the panel's fixed 336px is nowhere
+  // near enough once an MCP tool call's arguments/response-captures/response-mappings sections are
+  // all populated — field values (ticket field refs, JSONPath captures) were unreadably truncated.
+  // Persisted so an admin's preferred width survives closing/reopening the designer.
+  const INSP_MIN_W = 336;
+  const INSP_DEFAULT_WIDE_W = 640;
+  const [inspectorWidth, setInspectorWidth] = useState<number>(() => {
+    const saved = Number(localStorage.getItem('wfd-insp-width'));
+    return saved >= INSP_MIN_W ? saved : INSP_MIN_W;
+  });
+  const [resizeInsp, setResizeInsp] = useState<{ startMX: number; startWidth: number } | null>(null);
+  const inspMaxWidth = () => Math.min(1100, Math.round(window.innerWidth * 0.7));
 
   // Drag-to-connect (port → parent)
   const [conn, setConn] = useState<{
@@ -259,7 +281,14 @@ export const WorkflowDesignerModal = ({
     api.get('/action-item-library', { params: { status: 'complete' } }).then(r => setLibraryEntries(r.data)).catch(() => {});
     // Only custom (non-system) workflow fields — see AiWorkflowBuilderPage's identical fetch for why.
     api.get('/field-definitions', { params: { entityType: 'workflow' } })
-      .then(r => setWorkflowFieldKeys(r.data.filter((f: any) => !f.isSystem).map((f: any) => f.fieldKey)))
+      .then(r => {
+        const custom = r.data.filter((f: any) => !f.isSystem);
+        setWorkflowFieldKeys(custom.map((f: any) => f.fieldKey));
+        setWorkflowFieldCatalog(custom.map((f: any) => ({ key: f.fieldKey, type: f.fieldType })));
+      })
+      .catch(() => {});
+    api.get('/field-definitions', { params: { entityType: 'ticket' } })
+      .then(r => setTicketFieldCatalog(r.data.map((f: any) => ({ key: f.fieldKey, type: f.fieldType }))))
       .catch(() => {});
   }, []);
 
@@ -291,10 +320,20 @@ export const WorkflowDesignerModal = ({
       const p = toCanvas(e);
       setConn(prev => prev ? { ...prev, curX: p.x, curY: p.y } : null);
     }
-  }, [dragMove, conn, toCanvas]);
+    if (resizeInsp) {
+      // Dragging left (negative dx) widens the panel, since the handle sits on its left edge.
+      const dx = e.clientX - resizeInsp.startMX;
+      const next = Math.min(inspMaxWidth(), Math.max(INSP_MIN_W, resizeInsp.startWidth - dx));
+      setInspectorWidth(next);
+    }
+  }, [dragMove, conn, resizeInsp, toCanvas]);
 
   const onUp = useCallback(() => {
     if (dragMove) setDragMove(null);
+    if (resizeInsp) {
+      setResizeInsp(null);
+      setInspectorWidth(w => { localStorage.setItem('wfd-insp-width', String(w)); return w; });
+    }
     if (conn) {
       if (hoverTgt && hoverTgt !== conn.fromId) {
         const desc = descendants(hoverTgt, nodes);
@@ -308,7 +347,7 @@ export const WorkflowDesignerModal = ({
       setConn(null);
       setHoverTgt(null);
     }
-  }, [dragMove, conn, hoverTgt, nodes]);
+  }, [dragMove, resizeInsp, conn, hoverTgt, nodes]);
 
   useEffect(() => {
     window.addEventListener('mousemove', onMove);
@@ -330,6 +369,17 @@ export const WorkflowDesignerModal = ({
     const n = nm[fromId]; if (!n) return;
     const fx = n.x + NODE_W / 2, fy = n.y + NODE_H;
     setConn({ fromId, fromX: fx, fromY: fy, curX: fx, curY: fy });
+  };
+
+  const startResizeInsp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setResizeInsp({ startMX: e.clientX, startWidth: inspectorWidth });
+  };
+
+  const toggleInspWide = () => {
+    const next = inspectorWidth > INSP_MIN_W ? INSP_MIN_W : Math.min(inspMaxWidth(), INSP_DEFAULT_WIDE_W);
+    setInspectorWidth(next);
+    localStorage.setItem('wfd-insp-width', String(next));
   };
 
   // ── CRUD ─────────────────────────────────────────────────────────────────
@@ -430,6 +480,27 @@ export const WorkflowDesignerModal = ({
     const n = nm[id]; if (!n) return;
     upd(id, { typeConfig: { ...n.typeConfig, fieldMappings: { response } } });
   };
+  // "Map Response Fields" proposal (see TestActionModal's runAutoMap/onApplyMapping) applied to
+  // whichever node is selected when the admin clicks Apply — mirrors AiWorkflowBuilderPage's
+  // handleApplyAutoMap exactly (same mergeCapturesById, same "replace the response mapping
+  // wholesale" semantics), just writing into a saved node's typeConfig instead of wizard-draft
+  // state. missingWorkflowFields suggestions aren't surfaced here (no WorkflowFieldSuggestions
+  // panel in this Inspector) — a proposal referencing a not-yet-created "this.<key>" target still
+  // shows up correctly via FieldRefSelect's existing pending-field handling, it just isn't
+  // surfaced as an explicit "create this field" prompt the way the guided wizard shows it.
+  const handleApplyAutoMap = (id: string, proposal: AutoMapProposal) => {
+    const n = nm[id]; if (!n) return;
+    if (n.type === 'mcp_tool') {
+      const mergedCalls = mergeCapturesById(mcpCallsOf(n), proposal.calls);
+      setMcpCalls(id, mergedCalls);
+      setMcpResponseMappings(id, proposal.fieldMappingsResponse);
+    } else if (n.type === 'external_api') {
+      const mergedCalls = mergeCapturesById(externalApiCallsOf(n), proposal.calls);
+      setExternalApiCalls(id, mergedCalls);
+      setExternalApiMappings(id, { ...externalApiMappingsOf(n), response: proposal.fieldMappingsResponse });
+    }
+  };
+
   const addMcpCallFromTool = (id: string, tool: any) => {
     const n = nm[id]; if (!n) return;
     const properties = tool?.inputSchema?.properties ?? {};
@@ -607,10 +678,24 @@ export const WorkflowDesignerModal = ({
           </div>
 
           {/* ── Inspector ── */}
-          <aside className="wfd-insp">
+          <aside className="wfd-insp" style={{ width: inspectorWidth }}>
+            <div
+              className="wfd-insp-resize-handle"
+              onMouseDown={startResizeInsp}
+              title={t('workflow_inspector_resize_hint', { defaultValue: 'Drag to resize' }) as string}
+            />
             <div className="wfd-insp-top">
               <span className="wfd-sec-lbl">NODE INSPECTOR</span>
               <div className="wfd-insp-top-btns">
+                <button
+                  className="wfd-add-btn wfd-insp-widen-btn"
+                  onClick={toggleInspWide}
+                  title={inspectorWidth > INSP_MIN_W
+                    ? (t('workflow_inspector_narrow_btn', { defaultValue: 'Narrow panel' }) as string)
+                    : (t('workflow_inspector_widen_btn', { defaultValue: 'Widen panel' }) as string)}
+                >
+                  {inspectorWidth > INSP_MIN_W ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
+                </button>
                 <div className="wfd-library-picker-wrap">
                   <button className="wfd-add-btn" onClick={() => setLibraryPickerOpen(v => !v)}>
                     <LibraryBig size={11} /> {t('workflow_add_from_library_btn', { defaultValue: 'Add from Library' })}
@@ -747,6 +832,7 @@ export const WorkflowDesignerModal = ({
                       ticketFieldKeys={ticketFieldKeys}
                       workflowFieldKeys={workflowFieldKeys}
                       captureNames={externalApiCallsOf(selNode).flatMap(c => c.responseCaptures.map(r => r.name).filter(Boolean))}
+                      onTestClick={externalApiCallsOf(selNode).length > 0 ? () => setTestModalOpen(true) : undefined}
                     />
                   </>
                 ) : selNode.type === 'mcp_tool' ? (
@@ -776,6 +862,8 @@ export const WorkflowDesignerModal = ({
                         onChange={calls => setMcpCalls(selNode.id, calls)}
                         ticketFieldKeys={ticketFieldKeys}
                         workflowFieldKeys={workflowFieldKeys}
+                        serverUrl={mcpServerUrlOf(selNode)}
+                        auth={mcpAuthOf(selNode)}
                       />
                     </div>
                     <McpResponseMappingsEditor
@@ -784,6 +872,7 @@ export const WorkflowDesignerModal = ({
                       captureNames={mcpCallsOf(selNode).flatMap(c => c.responseCaptures.map(r => r.name).filter(Boolean))}
                       ticketFieldKeys={ticketFieldKeys}
                       workflowFieldKeys={workflowFieldKeys}
+                      onTestClick={mcpCallsOf(selNode).length > 0 ? () => setTestModalOpen(true) : undefined}
                     />
                   </>
                 ) : (
@@ -1023,6 +1112,9 @@ export const WorkflowDesignerModal = ({
               ? externalApiMappingsOf(selNode).request.map(r => r.ticketField).filter(Boolean)
               : mcpCallsOf(selNode).flatMap(c => c.argumentMappings).map(m => m.ticketField).filter((f): f is string => !!f)
           }
+          ticketFields={ticketFieldCatalog}
+          workflowFieldCatalog={workflowFieldCatalog}
+          onApplyMapping={proposal => handleApplyAutoMap(selNode.id, proposal)}
           onClose={() => setTestModalOpen(false)}
         />
       )}

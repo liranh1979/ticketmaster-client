@@ -146,6 +146,15 @@ export const TestActionModal = ({
   const [autoMapping, setAutoMapping] = useState(false);
   const [autoMapError, setAutoMapError] = useState('');
   const [autoMapProposal, setAutoMapProposal] = useState<AutoMapProposal | null>(null);
+  // A real gap found live: the admin's only way to steer "Map Response Fields" was the broad
+  // "intent" set back in Step 1 (or nothing at all, from the Designer/Library, which never passes
+  // one) — no way to say "actually, keep these five fields separate, don't combine them" without
+  // recreating the whole action item. specificAsk (already a supported, optional backend DTO
+  // field — see AiRefineResponseMappingRequestDto) was never actually collected or sent by any
+  // frontend caller. Persists across re-runs (not cleared after Apply) so the admin can iterate:
+  // tweak the ask, re-map against the SAME buffered response (no live tool call needed again),
+  // read the new proposal, tweak again.
+  const [specificAsk, setSpecificAsk] = useState('');
 
   // "Fix with AI" (external_api only) — offered when a real test fails; which call it targets
   // (only matters when there's more than one).
@@ -192,6 +201,7 @@ export const TestActionModal = ({
         ticketFields: ticketFields ?? [],
         workflowFields: workflowFieldCatalog ?? [],
         calls: rawCalls,
+        specificAsk: specificAsk.trim() || undefined,
       });
       setAutoMapProposal({
         calls: res.data.calls ?? [],
@@ -333,6 +343,24 @@ export const TestActionModal = ({
               often exactly what's needed to see why nothing captured). */}
           {onApplyMapping && result.callTrace && result.callTrace.length > 0 && (
             <div className="tam-sec">
+              <label className="tam-sec-lbl" htmlFor="tam-specific-ask">
+                {t('test_action_specific_ask_label', { defaultValue: 'Refine the mapping (optional)' })}
+              </label>
+              <textarea
+                id="tam-specific-ask"
+                className="wfd-inp tam-specific-ask"
+                rows={2}
+                value={specificAsk}
+                onChange={e => setSpecificAsk(e.target.value)}
+                placeholder={t('test_action_specific_ask_placeholder', {
+                  defaultValue: "e.g. keep each field separate — don't combine name/city/country into one",
+                }) as string}
+              />
+              <p className="wfd-hint-xs">
+                {t('test_action_specific_ask_hint', {
+                  defaultValue: 'Re-runs against the same captured response above — no need to call the tool again.',
+                })}
+              </p>
               <button className="wfd-btn-ghost tam-automap-btn" onClick={runAutoMap} disabled={autoMapping}>
                 {autoMapping
                   ? <><Loader2 size={13} className="mte-spin" /> {t('test_action_auto_map_running', { defaultValue: 'Analyzing response…' })}</>

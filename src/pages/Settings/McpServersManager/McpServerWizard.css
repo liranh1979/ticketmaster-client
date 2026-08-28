@@ -1,0 +1,203 @@
+/* Full-page wizard (not a dismissible overlay) — mirrors AiWorkflowBuilderPage's
+   .awb-wrap/.awb-card/.awb-back-to-list-btn pattern, per the same app convention. */
+.mcp-wizard-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sd-space-4);
+  max-width: 720px;
+  padding: var(--sd-space-6);
+  font-family: var(--sd-font);
+  color: var(--sd-fg);
+}
+
+.mcp-back-to-list-btn {
+  align-self: flex-start;
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: none; padding: 0; margin: 0;
+  font: 600 var(--sd-text-xs)/1 var(--sd-font); color: var(--sd-fg-subtle);
+  cursor: pointer;
+}
+.mcp-back-to-list-btn:hover { color: var(--sd-fg); }
+
+.mcp-wizard-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.mcp-wizard-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sd-space-4);
+  border-bottom: 1px solid var(--sd-border);
+  font-weight: 600;
+  font-size: var(--sd-text-md);
+}
+
+.mcp-wizard-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--sd-space-3) var(--sd-space-4);
+  border-bottom: 1px solid var(--sd-border);
+  overflow-x: auto;
+}
+.mcp-wt-step {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--sd-text-xs);
+  color: var(--sd-fg-subtle);
+  white-space: nowrap;
+}
+.mcp-wt-step.active { color: var(--sd-fg); font-weight: 600; }
+.mcp-wt-num {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--sd-surface-2);
+  border: 1px solid var(--sd-border);
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.mcp-wt-step.done .mcp-wt-num { background: var(--status-resolved-dot); color: #04260f; border-color: var(--status-resolved-dot); }
+.mcp-wt-step.active .mcp-wt-num { background: var(--sd-brand); color: #fff; border-color: var(--sd-brand); }
+.mcp-wt-step:not(:last-child)::after { content: ""; width: 12px; height: 1px; background: var(--sd-border); margin-left: 6px; }
+
+.mcp-wizard-body {
+  padding: var(--sd-space-4);
+}
+
+.mcp-wizard-error {
+  display: flex; align-items: flex-start; gap: 6px;
+  background: var(--status-rejected-bg);
+  color: var(--status-rejected-fg);
+  border-radius: var(--sd-radius-sm);
+  padding: 8px 12px;
+  font-size: var(--sd-text-xs);
+  margin-bottom: var(--sd-space-3);
+}
+.mcp-wizard-error svg { flex-shrink: 0; margin-top: 1px; }
+.mcp-mismatch-list { list-style: disc; margin: 6px 0 10px 18px; padding: 0; }
+.mcp-mismatch-list li { margin-bottom: 2px; }
+
+.mcp-field-label {
+  font-size: var(--sd-text-xs);
+  color: var(--sd-fg-subtle);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: var(--sd-space-3) 0 6px;
+  display: block;
+}
+.mcp-field-label:first-child { margin-top: 0; }
+
+.mcp-field-input, .mcp-field-textarea {
+  width: 100%;
+  background: var(--sd-surface-2);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  padding: 8px 10px;
+  font-size: var(--sd-text);
+  color: var(--sd-fg);
+  font-family: var(--sd-font);
+}
+.mcp-field-textarea { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; resize: vertical; }
+
+.mcp-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sd-space-3); }
+.mcp-inline-row { display: flex; align-items: center; gap: 8px; }
+
+.mcp-btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--sd-space-4); }
+.mcp-btn-ghost { background: var(--sd-surface-2); color: var(--sd-fg-subtle); border-color: var(--sd-border); }
+
+.mcp-spin { animation: mcp-spin 0.9s linear infinite; }
+@keyframes mcp-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .mcp-spin { animation: none; } }
+
+.mcp-tool-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--sd-border);
+}
+.mcp-tool-row:last-child { border-bottom: none; }
+.mcp-tool-row input[type=checkbox] { margin-top: 3px; accent-color: var(--sd-brand); width: 15px; height: 15px; }
+.mcp-tool-name { font-weight: 600; font-size: var(--sd-text); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.mcp-tool-method { display: inline-block; font-size: 9.5px; font-weight: 700; border-radius: 4px; padding: 1px 6px; margin-right: 6px; background: var(--sd-surface-3, var(--sd-surface-2)); color: var(--sd-fg-subtle); }
+.mcp-tool-desc { color: var(--sd-fg-subtle); font-size: var(--sd-text-xs); margin-top: 2px; }
+.mcp-tool-path { color: var(--sd-fg-subtle); font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; margin-top: 2px; opacity: 0.8; }
+.mcp-tool-io { color: var(--sd-fg-subtle); font-size: 10.5px; margin-top: 3px; }
+.mcp-tool-io-label { font-weight: 700; color: var(--sd-fg-muted, var(--sd-fg-subtle)); }
+
+.mcp-code-editor {
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  overflow: hidden;
+}
+
+.mcp-loading-inline { display: flex; align-items: center; gap: 8px; color: var(--sd-fg-subtle); padding: var(--sd-space-4) 0; }
+
+.mcp-result-banner {
+  display: flex; align-items: center; gap: 8px;
+  border-radius: var(--sd-radius-sm);
+  padding: 10px 12px;
+  font-size: var(--sd-text);
+  font-weight: 600;
+  margin-bottom: var(--sd-space-3);
+}
+.mcp-result-running  { background: var(--status-resolved-bg);    color: var(--status-resolved-fg); }
+.mcp-result-error     { background: var(--status-rejected-bg);   color: var(--status-rejected-fg); }
+.mcp-result-stopped   { background: var(--status-closed-bg);     color: var(--status-closed-fg); }
+.mcp-result-starting  { background: var(--status-in-progress-bg); color: var(--status-in-progress-fg); }
+
+.mcp-trace-box {
+  background: color-mix(in oklch, black 40%, var(--sd-surface-2));
+  border: 1px solid var(--status-rejected-dot);
+  border-radius: var(--sd-radius-sm);
+  padding: 10px 12px;
+  font-size: var(--sd-text-sm);
+  color: var(--status-rejected-fg);
+  margin-top: var(--sd-space-2);
+}
+.mcp-trace-box:not(.mcp-trace-error) { border-color: var(--status-resolved-dot); color: var(--sd-fg); }
+
+.mcp-result-text { margin: 0; white-space: pre-wrap; }
+.mcp-result-row-group { padding: 6px 0; border-bottom: 1px solid var(--sd-border); }
+.mcp-result-row-group:last-child { border-bottom: none; }
+.mcp-kv-rows { display: flex; flex-direction: column; gap: 4px; }
+.mcp-kv-row { display: flex; justify-content: space-between; gap: var(--sd-space-3); font-size: var(--sd-text-sm); }
+.mcp-kv-key { color: var(--sd-fg-subtle); }
+.mcp-kv-val { font-weight: 600; text-align: right; word-break: break-word; }
+.mcp-raw-fallback {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+
+/* ── Generated test-call form (Step 5) — one plain field per parameter, never raw JSON ── */
+.mcp-test-form { display: flex; flex-direction: column; gap: var(--sd-space-3); margin-top: var(--sd-space-2); }
+.mcp-test-field .mcp-field-label { margin-top: 0; }
+.mcp-required-mark { color: var(--status-rejected-dot); }
+.mcp-field-hint { font-size: 10.5px; color: var(--sd-fg-subtle); margin: 4px 0 0; }
+.mcp-checkbox-row { display: flex; align-items: center; gap: 8px; font-size: var(--sd-text); color: var(--sd-fg); }
+.mcp-checkbox-row input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--sd-brand); }
+
+.mcp-fix-panel {
+  margin-top: var(--sd-space-4);
+  background: color-mix(in oklch, var(--sd-brand) 6%, transparent);
+  border: 1px solid color-mix(in oklch, var(--sd-brand) 35%, transparent);
+  border-radius: var(--sd-radius);
+  padding: var(--sd-space-3) var(--sd-space-4);
+}
+.mcp-fix-head { display: flex; align-items: center; gap: 6px; font-size: var(--sd-text-sm); font-weight: 700; color: var(--sd-brand); margin-bottom: 8px; }
+
+.mcp-log-preview {
+  background: var(--sd-surface-2);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  padding: 8px 10px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--sd-fg-subtle);
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  margin-bottom: 8px;
+}

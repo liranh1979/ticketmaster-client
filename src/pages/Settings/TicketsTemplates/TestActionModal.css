@@ -84,6 +84,7 @@
   color: var(--sd-fg); overflow-wrap: break-word;
 }
 
+.tam-specific-ask { min-height: 44px; resize: vertical; margin: 4px 0; display: block; width: 100%; box-sizing: border-box; }
 .tam-automap-btn { width: 100%; justify-content: center; display: flex; align-items: center; gap: 6px; }
 
 .tam-fix-instructions { min-height: 52px; resize: vertical; margin-bottom: 8px; }

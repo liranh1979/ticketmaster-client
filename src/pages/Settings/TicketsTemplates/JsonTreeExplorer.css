@@ -1,0 +1,35 @@
+.json-tree {
+  background: var(--sd-bg, #070c16);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  padding: 10px 12px;
+  font: 13px/1.9 var(--sd-font-mono, monospace);
+  max-height: 560px;
+  overflow: auto;
+}
+.jt-children { margin-left: 1.1em; }
+.jt-row { white-space: pre-wrap; word-break: break-word; }
+.jt-key { color: #82aaff; }
+.jt-idx { color: var(--sd-fg-subtle); }
+.jt-punc { color: var(--sd-border-strong); }
+.jt-toggle { color: var(--sd-border-strong); cursor: pointer; user-select: none; }
+.jt-toggle:hover { color: var(--sd-fg-muted); }
+.jt-leaf {
+  color: #c3e88d;
+  border-radius: 4px;
+  padding: 0 3px;
+  cursor: pointer;
+}
+.jt-leaf:hover { background: oklch(0.75 0.15 200 / 0.16); outline: 1px dashed var(--sd-brand); }
+.jt-leaf-active { background: oklch(0.75 0.15 200 / 0.24); outline: 1.5px solid var(--sd-brand); color: var(--sd-fg); }
+
+/* "Map this whole branch as an AI Summary" — a small opt-in button next to an object/array's
+   opening bracket, deliberately separate from the expand/collapse toggle so the two never conflict. */
+.jt-branch-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; margin-left: 4px; padding: 0;
+  background: var(--sd-surface-2); border: 1px solid var(--sd-border); border-radius: 4px;
+  font-size: 10px; line-height: 1; cursor: pointer; vertical-align: middle;
+}
+.jt-branch-btn:hover { border-color: var(--sd-brand); background: oklch(0.75 0.15 200 / 0.14); }
+.jt-branch-btn-active { border-color: var(--sd-brand); background: oklch(0.75 0.15 200 / 0.24); }

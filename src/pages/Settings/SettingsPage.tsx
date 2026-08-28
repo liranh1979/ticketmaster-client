@@ -27,6 +27,7 @@ import { DashboardManagerPage } from './DashboardManager/DashboardManagerPage';
 import { RecurringTicketsPage } from './RecurringTickets/RecurringTicketsPage';
 import { AlertTypesManager } from './AlertTypes/AlertTypesManager';
 import { AnnouncementsPage } from './Announcements/AnnouncementsPage';
+import { McpServersPage } from './McpServersManager/McpServersPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -62,7 +63,8 @@ type ViewState =
   | 'dashboard-manager'
   | 'recurring-tickets'
   | 'alert-types-management'
-  | 'announcements';
+  | 'announcements'
+  | 'mcp-servers';
 
 export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: SettingsPageProps) => {
   const { t } = useTranslation();
@@ -135,6 +137,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'companies') return 'companies';
     if (currentView === 'system-settings') return 'system-settings';
     if (currentView === 'ssl-manager') return 'ssl-manager';
+    if (currentView === 'mcp-servers') return 'mcp-servers';
     if (['selection','system-fields','custom-fields','group-custom-fields',
          'ticket-custom-fields','labels-management','workflow-fields',
          'alert-types-management'].includes(currentView)) return 'fields';
@@ -206,6 +209,13 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
             <div className="settings-card" onClick={() => setCurrentView('dashboard-manager')}>
               <div className="settings-icon-box"><div className="ai-icon-placeholder">📋</div></div>
               <span className="settings-text">{t('dashboard_manager_title', { defaultValue: 'Dashboard Manager' })}</span>
+            </div>
+          )}
+
+          {isSuperAdminUser && (
+            <div className="settings-card" onClick={() => setCurrentView('mcp-servers')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🔌</div></div>
+              <span className="settings-text">{t('mcp_servers_settings_card', { defaultValue: 'MCP Servers' })}</span>
             </div>
           )}
 
@@ -292,6 +302,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'companies') return <CompaniesPage />;
     if (currentView === 'system-settings') return <SystemSettingsPage />;
     if (currentView === 'ssl-manager') return <SslCertPage />;
+    if (currentView === 'mcp-servers') return <McpServersPage />;
     if (currentView === 'tickets-templates') return <TicketsTemplatesPage user={user} />;
     if (currentView === 'ai-manager') return <AIManager />;
     if (currentView === 'email-manager') return <EmailManager />;
@@ -403,6 +414,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
         {isSuperAdminUser && navBtn('system-settings', t('system_settings_card_label'), () => setCurrentView('system-settings'))}
         {isSuperAdminUser && navBtn('ssl-manager', t('ssl_title'), () => setCurrentView('ssl-manager'))}
         {isSuperAdminUser && navBtn('dashboard-manager', t('dashboard_manager_title', { defaultValue: 'Dashboard Manager' }), () => setCurrentView('dashboard-manager'))}
+        {isSuperAdminUser && navBtn('mcp-servers', t('mcp_servers_settings_card', { defaultValue: 'MCP Servers' }), () => setCurrentView('mcp-servers'))}
       </aside>
 
       <div className="stg-content">

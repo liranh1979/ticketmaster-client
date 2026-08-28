@@ -1,4 +1,9 @@
 .awb-wrap { display: flex; flex-direction: column; gap: var(--sd-space-5); max-width: 720px; }
+/* Test / Map & Verify Output (and external_api's structurally-identical siblings) — real gap
+   found live: 720px (tuned for a single textarea) crammed the JSON tree + wide tables into a
+   sliver of the real screen. */
+.awb-wrap--wide { max-width: 1360px; }
+@media (max-width: 1440px) { .awb-wrap--wide { max-width: calc(100vw - 340px); } }
 
 /* ── Step indicator ── */
 .awb-steps { display: flex; align-items: center; gap: 6px; }
@@ -41,6 +46,42 @@
 
 .awb-field { display: flex; flex-direction: column; gap: 6px; }
 .awb-label { font: 700 var(--sd-text-xs)/1 var(--sd-font); color: var(--sd-fg-subtle); }
+
+/* Map & Verify Output (mcp_tool) — Visual JSON Explorer + AI Instructions side by side, both
+   feeding the same RESPONSE DATA table below. */
+.awb-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sd-space-4); align-items: start; }
+@media (max-width: 900px) { .awb-two-col { grid-template-columns: 1fr; } }
+.cap-path-readout {
+  background: var(--sd-surface-2); border: 1px solid var(--sd-border); border-radius: var(--sd-radius-sm);
+  padding: 6px 9px; font: 11.5px/1.4 var(--sd-font-mono, monospace); color: #93c5fd; margin-top: 4px;
+}
+
+/* "Map Response with AI" proposal review — deliberately its OWN sizing, not TestActionModal's
+   compact-480px-modal classes (8px labels, a fixed 100px truncated name column): this can list 10+
+   captures for a rich response and spans the full step width, not a half column. */
+.awb-proposal-review {
+  display: flex; flex-direction: column; gap: 10px; margin-top: 4px;
+  background: oklch(0.22 0.06 260 / 0.12); border: 1px solid oklch(0.40 0.12 260 / 0.3);
+  border-radius: var(--sd-radius); padding: 14px 16px;
+}
+.awb-proposal-heading {
+  font: 800 var(--sd-text-xs)/1 var(--sd-font-mono); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--sd-fg-muted);
+}
+.awb-proposal-table { display: flex; flex-direction: column; }
+.awb-proposal-row {
+  display: grid; grid-template-columns: minmax(160px, 1fr) minmax(260px, 2fr) auto minmax(160px, 1fr);
+  align-items: baseline; column-gap: 14px; row-gap: 4px;
+  padding: 10px 0; border-bottom: 1px solid var(--sd-border);
+}
+.awb-proposal-row:last-child { border-bottom: none; }
+@media (max-width: 760px) { .awb-proposal-row { grid-template-columns: 1fr; } }
+.awb-proposal-name { font: 700 var(--sd-text-md)/1.4 var(--sd-font-mono, monospace); color: var(--sd-fg); word-break: break-word; }
+.awb-proposal-path { font: var(--sd-text)/1.4 var(--sd-font-mono, monospace); color: var(--sd-fg-muted); word-break: break-word; }
+.awb-proposal-arrow { color: var(--sd-fg-subtle); font-size: var(--sd-text-md); }
+.awb-proposal-target { font: 700 var(--sd-text-md)/1.4 var(--sd-font-mono, monospace); color: #93c5fd; word-break: break-word; }
+.awb-proposal-summary { grid-column: 1 / -1; color: var(--sd-fg-subtle); font-size: var(--sd-text-sm); line-height: 1.55; }
+.awb-proposal-apply-btn { align-self: flex-start; min-width: 200px; }
 
 .awb-textarea-sm { min-height: 52px; resize: vertical; }
 .awb-textarea-lg { min-height: 160px; resize: vertical; font-family: var(--sd-font-mono, monospace); font-size: 11px; }

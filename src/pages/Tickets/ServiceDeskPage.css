@@ -173,7 +173,14 @@
 
 /* ---------- Main / Workspace ----------------------------------------- */
 .sd-main {
-  grid-area: main;
+  /* NOT a direct grid child of .sd-shell (which does define a "main" grid-template-area) — its
+     real parent is .sd-app-content (App.css), a plain single-track `1fr / 1fr` grid with no named
+     areas at all. A stale `grid-area: main` here (left over from before .sd-app-content existed as
+     a wrapper) has no matching area name in that parent, which Chrome silently no-ops but Firefox
+     resolves very differently: it splits the single 1fr column into three implicit tracks and
+     shoves this element into a ~64px sliver at the far right edge — found live (real Firefox,
+     verified via Playwright), the entire Service Desk page appeared blank with only fragments of
+     text visible at the right edge. */
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--sd-header-h));

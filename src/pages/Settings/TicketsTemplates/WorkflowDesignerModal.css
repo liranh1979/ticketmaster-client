@@ -152,11 +152,20 @@
 
 /* ── Inspector ── */
 .wfd-insp {
+  position: relative;
   width: 336px; flex-shrink: 0;
   border-left: 1px solid var(--sd-border);
   display: flex; flex-direction: column;
   background: var(--sd-surface); overflow: hidden;
 }
+.wfd-insp-resize-handle {
+  position: absolute; top: 0; bottom: 0; left: -4px;
+  width: 8px; cursor: col-resize; z-index: 5;
+}
+.wfd-insp-resize-handle:hover, .wfd-insp-resize-handle:active {
+  background: color-mix(in oklch, var(--sd-brand) 40%, transparent);
+}
+.wfd-insp-widen-btn { padding: 4px 7px; }
 .wfd-insp-top {
   display: flex; align-items: center; justify-content: space-between;
   padding: 9px 13px; border-bottom: 1px solid var(--sd-border); flex-shrink: 0;
@@ -218,6 +227,7 @@
 .wfd-sec-last { border-bottom: none; }
 .wfd-sec-row { display: flex; align-items: center; justify-content: space-between; }
 .wfd-sec-row .wfd-sec-lbl { margin-bottom: 0; }
+.wfd-sec-row-btns { display: flex; align-items: center; gap: 6px; }
 
 .wfd-inp {
   width: 100%; padding: 7px 10px;
@@ -407,6 +417,7 @@
 .eae-kv-row { display: flex; align-items: center; gap: 5px; }
 .eae-kv-row .wfd-inp, .eae-kv-row .wfd-sel { flex: 1; min-width: 0; }
 .eae-arrow { color: var(--sd-border-strong); flex-shrink: 0; font-size: 11px; }
+.eae-kv-row-warn .wfd-sel { border-color: oklch(0.75 0.18 25); }
 
 .eae-textarea {
   min-height: 64px; resize: vertical; font-family: var(--sd-font-mono, monospace); font-size: 11px;
@@ -446,6 +457,18 @@
   transition: border-color 0.1s, color 0.1s;
 }
 .mte-tool-chip:hover { border-color: var(--sd-brand); color: oklch(0.72 0.12 260); }
+
+/* ── Built-in / Public MCP server mode toggle ── */
+.mte-mode-toggle {
+  display: flex; width: fit-content; gap: 2px;
+  background: var(--sd-surface-2); border: 1px solid var(--sd-border);
+  border-radius: 7px; padding: 2px; margin-bottom: 6px;
+}
+.mte-mode-opt {
+  padding: 4px 10px; border: none; background: transparent; cursor: pointer;
+  border-radius: 5px; font: 600 var(--sd-text-xs)/1 var(--sd-font); color: var(--sd-fg-muted);
+}
+.mte-mode-opt.sel { background: var(--sd-brand); color: #fff; }
 
 /* ── Button used in TemplateBuilderPage field cards ── */
 .tb-design-workflow-btn {

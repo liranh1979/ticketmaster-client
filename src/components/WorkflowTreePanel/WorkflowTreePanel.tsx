@@ -5,6 +5,7 @@ import api from '../../api';
 import { UserPickerControl } from '../UserPickerControl/UserPickerControl';
 import { SimpleItemFieldsForm } from '../SimpleItemFieldsForm/SimpleItemFieldsForm';
 import type { SimpleItemField } from '../../pages/Settings/TicketsTemplates/SimpleItemFieldsEditor';
+import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
 import './WorkflowTreePanel.css';
 
 /* ── Types ── */
@@ -132,6 +133,10 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
   // Workflow field labels (entity_type='workflow' field_definitions) — used to show a human label
   // for external_api/mcp_tool "this.<key>" captured values instead of the raw key.
   const [workflowFieldLabels, setWorkflowFieldLabels] = useState<Record<string, string>>({});
+  // Real gap found live: Captured Data always rendered String(value) regardless of field type —
+  // an "AI Summary" capture's HTML landed in a "rich-text" field and showed up as raw, escaped
+  // markup instead of formatted text. Needs each field's real type, not just its label.
+  const [workflowFieldTypes, setWorkflowFieldTypes] = useState<Record<string, string>>({});
   const [deciding, setDeciding]           = useState(false);
   const [decideError, setDecideError]     = useState('');
   const [rejectReason, setRejectReason]   = useState('');
@@ -167,6 +172,13 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
     }).catch(() => {});
     api.get('/field-definitions/translations/en', { params: { translationType: 'workflow_fields' } })
       .then(r => setWorkflowFieldLabels(r.data))
+      .catch(() => {});
+    api.get('/field-definitions', { params: { entityType: 'workflow' } })
+      .then(r => {
+        const map: Record<string, string> = {};
+        (r.data as { fieldKey: string; fieldType: string }[]).forEach(f => { map[f.fieldKey] = f.fieldType; });
+        setWorkflowFieldTypes(map);
+      })
       .catch(() => {});
   }, []);
 
@@ -421,10 +433,18 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
                       <div className="wtp-captured-fields">
                         {allKeys.map(key => {
                           const value = selected.fieldValues?.[key];
+                          const isEmpty = value === null || value === undefined || value === '';
+                          const isRichText = workflowFieldTypes[key] === 'rich-text';
                           return (
-                            <div key={key} className="wtp-captured-field-row">
+                            <div key={key} className={`wtp-captured-field-row${isRichText && !isEmpty ? ' wtp-captured-field-row--richtext' : ''}`}>
                               <span className="wtp-captured-field-label">{workflowFieldLabels[key] ?? key}</span>
-                              <span className="wtp-captured-field-value">{value === null || value === undefined || value === '' ? '—' : String(value)}</span>
+                              {isRichText && !isEmpty ? (
+                                <div className="wtp-captured-field-richtext">
+                                  <RichTextEditor content={String(value)} editable={false} />
+                                </div>
+                              ) : (
+                                <span className="wtp-captured-field-value">{isEmpty ? '—' : String(value)}</span>
+                              )}
                             </div>
                           );
                         })}

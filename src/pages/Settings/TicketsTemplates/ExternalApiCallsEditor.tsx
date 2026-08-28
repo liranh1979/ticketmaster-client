@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, X, GripVertical, Lock, Unlock, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { Plus, X, GripVertical, Lock, Unlock, ArrowDownToLine, ArrowUpFromLine, AlertTriangle, Play } from 'lucide-react';
 import {
   DndContext, closestCenter,
   PointerSensor, useSensors, useSensor,
@@ -10,6 +10,7 @@ import {
   SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import api from '../../../api';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -372,12 +373,18 @@ export const TICKET_FIELD_BASE = ['title', 'description', 'status', 'priority'];
 // Fields Manager's field_definitions catalog — see SimpleItemFieldsEditor for the same catalog used
 // by Simple items' mini-fields). Renders as a plain <select> with two optgroups.
 export const FieldRefSelect = ({
-  value, onChange, ticketFieldOpts, workflowFieldKeys,
+  value, onChange, ticketFieldOpts, workflowFieldKeys, allowEmpty,
 }: {
   value: string;
   onChange: (v: string) => void;
   ticketFieldOpts: string[];
   workflowFieldKeys: string[];
+  // Real bug found live: an argument row with no real mapping yet used to get silently defaulted
+  // to "ticket.title" just so the <select> never looked "empty" — which made a genuinely unmapped
+  // MCP tool argument LOOK like a deliberate (if wrong) choice instead of an obvious gap needing
+  // attention. Opt-in (existing callers keep always passing a real non-empty value, so this never
+  // renders for them) — an actual, selectable "— not mapped —" option instead of a fake default.
+  allowEmpty?: boolean;
 }) => {
   const { t } = useTranslation();
   // A draft can reference "this.<key>" for a key the AI just suggested creating (see
@@ -387,6 +394,7 @@ export const FieldRefSelect = ({
     ? value.slice(5) : null;
   return (
     <select className="wfd-sel" value={value} onChange={e => onChange(e.target.value)}>
+      {allowEmpty && <option value="">{t('field_ref_not_mapped_option', { defaultValue: '— not mapped —' })}</option>}
       <optgroup label={t('eae_ticket_fields_optgroup', { defaultValue: 'Ticket Fields' }) as string}>
         {ticketFieldOpts.map(k => <option key={k} value={`ticket.${k}`}>ticket.{k}</option>)}
       </optgroup>
@@ -403,8 +411,51 @@ export const FieldRefSelect = ({
   );
 };
 
+// Real bug found live (FEAT-06/FEAT-19): nothing stopped an admin (or the AI auto-mapper) from
+// mapping several response captures to the identical target field — applyTarget/applyNodelistTarget
+// in ExternalApiActionExecutor/McpActionExecutor overwrite on every non-nodelist target, so only the
+// last-applied mapping's value survives; the others are silently discarded with no error anywhere.
+// A "nodelist" target is the one case this is actually fine (append, not overwrite) — this hook
+// tells the response-mapping editors which targets are nodelist-typed so they only warn on real
+// collisions. Shared (not duplicated) since ExternalApiFieldMappingsEditor and
+// McpResponseMappingsEditor hit the exact same target grammar and the exact same bug.
+export function useNodelistTargets(): Set<string> {
+  const [nodelist, setNodelist] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    Promise.all([
+      api.get('/field-definitions', { params: { entityType: 'ticket' } }),
+      api.get('/field-definitions', { params: { entityType: 'workflow' } }),
+    ]).then(([ticketRes, workflowRes]) => {
+      const s = new Set<string>();
+      (ticketRes.data as { fieldKey: string; fieldType: string }[]).forEach(f => {
+        if (f.fieldType === 'nodelist') s.add(`ticket.${f.fieldKey}`);
+      });
+      (workflowRes.data as { fieldKey: string; fieldType: string }[]).forEach(f => {
+        if (f.fieldType === 'nodelist') s.add(`this.${f.fieldKey}`);
+      });
+      setNodelist(s);
+    }).catch(() => {});
+  }, []);
+  return nodelist;
+}
+
+/** Targets mapped by 2+ response mappings that AREN'T nodelist — each one after the first silently overwrites the last (see useNodelistTargets javadoc). */
+export function findCollidingTargets(mappings: { target: string }[], nodelistTargets: Set<string>): Set<string> {
+  const counts = new Map<string, number>();
+  for (const m of mappings) {
+    if (!m.target) continue;
+    counts.set(m.target, (counts.get(m.target) ?? 0) + 1);
+  }
+  const colliding = new Set<string>();
+  for (const [target, count] of counts) {
+    if (count > 1 && !nodelistTargets.has(target)) colliding.add(target);
+  }
+  return colliding;
+}
+
 export const ExternalApiFieldMappingsEditor = ({
   mappings, onChange, ticketFieldKeys, workflowFieldKeys, captureNames, showRequest = true, showResponse = true,
+  onTestClick,
 }: {
   mappings: ExternalApiFieldMappings;
   onChange: (m: ExternalApiFieldMappings) => void;
@@ -417,9 +468,17 @@ export const ExternalApiFieldMappingsEditor = ({
   // Save shows both (the defaults) for a final full look.
   showRequest?: boolean;
   showResponse?: boolean;
+  // Real gap found live: the Workflow Designer's only entry point into "Test this call now" (and
+  // from there, "Map Response Fields") was a small button up in the API CALLS section header —
+  // nothing near THIS section connected the two, so an admin looking at RESPONSE DATA for a way to
+  // test/map it found nothing. Optional (the guided AI Workflow Builder wizard has its own
+  // dedicated Test step already and doesn't need this) — only the Designer passes it.
+  onTestClick?: () => void;
 }) => {
   const { t } = useTranslation();
   const ticketFieldOpts = [...TICKET_FIELD_BASE, ...ticketFieldKeys.filter(k => !TICKET_FIELD_BASE.includes(k))];
+  const nodelistTargets = useNodelistTargets();
+  const collidingTargets = findCollidingTargets(mappings.response, nodelistTargets);
 
   const addReq = () => onChange({ ...mappings, request: [...mappings.request, { placeholder: '', ticketField: `ticket.${ticketFieldOpts[0] ?? 'title'}` }] });
   const updReq = (i: number, patch: Partial<FieldMappingRequest>) =>
@@ -460,11 +519,27 @@ export const ExternalApiFieldMappingsEditor = ({
         <div className="wfd-sec">
           <div className="wfd-sec-row">
             <div className="wfd-sec-lbl"><ArrowUpFromLine size={9} /> {t('response_data_mapping_label', { defaultValue: 'RESPONSE DATA (captures → fields)' })}</div>
-            <button className="wfd-add-flow-btn" onClick={addResp}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
+            <div className="wfd-sec-row-btns">
+              {onTestClick && (
+                <button className="wfd-add-flow-btn" onClick={onTestClick}>
+                  <Play size={10} /> {t('response_mapping_test_map_btn', { defaultValue: 'Test & Map with AI' })}
+                </button>
+              )}
+              <button className="wfd-add-flow-btn" onClick={addResp}><Plus size={10} /> {t('add_btn', { defaultValue: 'Add' })}</button>
+            </div>
           </div>
           {mappings.response.length === 0 && <p className="wfd-empty-txt">{t('response_mapping_empty', { defaultValue: 'No captured values are saved anywhere yet' })}</p>}
+          {collidingTargets.size > 0 && (
+            <p className="mte-error">
+              <AlertTriangle size={11} />{' '}
+              {t('response_mapping_collision_hint', {
+                defaultValue: 'Multiple captures are mapped to the same field — only the last one applied will actually be saved: {{targets}}',
+                targets: [...collidingTargets].join(', '),
+              })}
+            </p>
+          )}
           {mappings.response.map((r, i) => (
-            <div key={i} className="eae-kv-row">
+            <div key={i} className={`eae-kv-row${r.target && collidingTargets.has(r.target) ? ' eae-kv-row-warn' : ''}`}>
               <input className="wfd-inp" value={r.captureName} onChange={e => updResp(i, { captureName: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} list="eae-capture-names" />
               <span className="eae-arrow">→</span>
               <FieldRefSelect
