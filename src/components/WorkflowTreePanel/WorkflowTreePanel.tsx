@@ -141,6 +141,8 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
   const [decideError, setDecideError]     = useState('');
   const [rejectReason, setRejectReason]   = useState('');
   const [showRejectBox, setShowRejectBox] = useState(false);
+  const [retrying, setRetrying]           = useState(false);
+  const [retryError, setRetryError]       = useState('');
 
   const flatTree = useMemo(() => flattenTree(items), [items]);
   const selected = items.find(i => i.id === selectedId) ?? null;
@@ -281,6 +283,30 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
     }
   };
 
+  // Re-runs a done/blocked external_api or mcp_tool item — e.g. after fixing a bad JSONPath or
+  // ticket value found via lastError, an admin previously had no way back to "running" short of
+  // re-seeding the whole ticket, since cascadeTicketStatus only ever activates 'pending' items.
+  // The retry runs on the backend's own background thread, so this just refetches shortly after
+  // to pick up the real outcome, mirroring handleSave's identical "wasDone" refresh pattern.
+  const handleRetry = async () => {
+    if (!selected) return;
+    setRetrying(true);
+    setRetryError('');
+    try {
+      const res = await api.post(`/workflow/items/${selected.id}/retry`);
+      const updated: WorkflowItem = res.data;
+      setItems(prev => prev.map(i => i.id === updated.id ? updated : i));
+      setTimeout(async () => {
+        const freshRes = await api.get(`/tickets/${ticketId}/workflow`);
+        setItems(freshRes.data);
+      }, 2500);
+    } catch (err: any) {
+      setRetryError(err?.response?.data?.message || t('workflow_retry_failed', { defaultValue: 'Failed to retry this action' }));
+    } finally {
+      setRetrying(false);
+    }
+  };
+
   const approverLabel = (d: ApprovalDecision) => {
     if (d.approverGroupId != null) {
       return groupNames[d.approverGroupId] ?? t('workflow_approver_group_fallback', { defaultValue: 'Group #{{id}}', id: d.approverGroupId });
@@ -408,6 +434,14 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
                     {(selected.status === 'blocked' || selected.status === 'done') && selected.lastError && (
                       <div className="wtp-approval-reason">{selected.lastError}</div>
                     )}
+                    {isAdmin && (selected.status === 'blocked' || selected.status === 'done') && (
+                      <button type="button" className="wtp-retry-btn" onClick={handleRetry} disabled={retrying}>
+                        {retrying
+                          ? t('workflow_retrying', { defaultValue: 'Retrying…' })
+                          : t('workflow_retry_action', { defaultValue: 'Retry' })}
+                      </button>
+                    )}
+                    {retryError && <div className="wtp-approval-reason">{retryError}</div>}
                   </div>
                 )}
 
@@ -466,6 +500,14 @@ export const WorkflowTreePanel = ({ ticketId, isAdmin, currentUserId, onClose }:
                     {(selected.status === 'blocked' || selected.status === 'done') && selected.lastError && (
                       <div className="wtp-approval-reason">{selected.lastError}</div>
                     )}
+                    {isAdmin && (selected.status === 'blocked' || selected.status === 'done') && (
+                      <button type="button" className="wtp-retry-btn" onClick={handleRetry} disabled={retrying}>
+                        {retrying
+                          ? t('workflow_retrying', { defaultValue: 'Retrying…' })
+                          : t('workflow_retry_action', { defaultValue: 'Retry' })}
+                      </button>
+                    )}
+                    {retryError && <div className="wtp-approval-reason">{retryError}</div>}
                   </div>
                 )}
 
