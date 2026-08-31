@@ -109,6 +109,32 @@
   color: var(--sd-fg-subtle);
 }
 
+.mcp-url-chip {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: var(--sd-text-xs);
+  color: var(--sd-fg-subtle);
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.mcp-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--sd-text-xs);
+  font-weight: 600;
+  border-radius: var(--sd-radius-pill);
+  padding: 3px 9px;
+}
+.mcp-kind-generated { background: color-mix(in oklch, var(--sd-brand) 15%, transparent); color: var(--sd-brand); }
+.mcp-kind-external   { background: color-mix(in oklch, #22c55e 18%, transparent); color: #22c55e; }
+
+.mcp-toggle-disabled { cursor: default; opacity: 0.6; }
+
 .mcp-status {
   display: inline-flex;
   align-items: center;
@@ -198,6 +224,30 @@
   font-weight: 600;
 }
 .mcp-modal-close { background: none; border: none; color: var(--sd-fg-subtle); font-size: 20px; cursor: pointer; line-height: 1; }
+.mcp-oauth-row { display: flex; align-items: center; gap: var(--sd-space-3); }
+.mcp-oauth-status { display: inline-flex; align-items: center; gap: 5px; font-size: var(--sd-text-xs); color: var(--sd-fg-subtle); }
+.mcp-oauth-status-ok { color: #22c55e; }
+.mcp-test-ok { color: #22c55e; font-size: var(--sd-text-sm); }
+.mcp-form-actions { display: flex; justify-content: flex-end; gap: var(--sd-space-3); margin-top: var(--sd-space-4); }
+
+.mcp-choice-modal { width: min(520px, 90vw); }
+.mcp-choice-options { display: flex; flex-direction: column; gap: var(--sd-space-3); padding: var(--sd-space-4); }
+.mcp-choice-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sd-space-3);
+  text-align: left;
+  background: var(--sd-surface-2);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius);
+  padding: var(--sd-space-3) var(--sd-space-4);
+  cursor: pointer;
+  color: var(--sd-brand);
+}
+.mcp-choice-opt:hover { border-color: var(--sd-brand); background: color-mix(in oklch, var(--sd-brand) 8%, var(--sd-surface-2)); }
+.mcp-choice-opt-title { font-weight: 600; color: var(--sd-fg); font-size: var(--sd-text-sm); margin-bottom: 2px; }
+.mcp-choice-opt-desc { font-size: var(--sd-text-xs); color: var(--sd-fg-subtle); line-height: 1.4; }
+
 .mcp-logs-pre {
   margin: 0;
   padding: var(--sd-space-4);

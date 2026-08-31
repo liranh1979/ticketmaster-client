@@ -368,6 +368,24 @@ export interface ExternalApiFieldMappings {
 
 export const TICKET_FIELD_BASE = ['title', 'description', 'status', 'priority'];
 
+// Shared across every FieldRefSelect instance (there can be many — one per argument-mapping row)
+// so N rows on screen cost one network round-trip pair, not N. A real gap found live: this picker
+// showed raw field_definitions keys ("this.rooms", "this.radius") as its option text instead of
+// the admin-configured display label — readable enough for a snake_case English key, but wrong in
+// general and inconsistent with every other field picker in this app (e.g.
+// SimpleItemFieldsEditor's own catalog picker already shows labels, not keys).
+let fieldLabelsPromise: Promise<{ ticket: Record<string, string>; workflow: Record<string, string> }> | null = null;
+function fetchFieldLabelsOnce() {
+  if (!fieldLabelsPromise) {
+    fieldLabelsPromise = Promise.all([
+      api.get('/field-definitions/translations/en', { params: { translationType: 'ticket_fields' } }),
+      api.get('/field-definitions/translations/en', { params: { translationType: 'workflow_fields' } }),
+    ]).then(([t, w]) => ({ ticket: t.data as Record<string, string>, workflow: w.data as Record<string, string> }))
+      .catch(() => ({ ticket: {}, workflow: {} }));
+  }
+  return fieldLabelsPromise;
+}
+
 // Shared by both the request source picker and the response target picker — "ticket.<field>" (this
 // template's ticket fields) or "this.<field>" (this action item's own data, sourced from Workflow
 // Fields Manager's field_definitions catalog — see SimpleItemFieldsEditor for the same catalog used
@@ -387,6 +405,8 @@ export const FieldRefSelect = ({
   allowEmpty?: boolean;
 }) => {
   const { t } = useTranslation();
+  const [labels, setLabels] = useState<{ ticket: Record<string, string>; workflow: Record<string, string> }>({ ticket: {}, workflow: {} });
+  useEffect(() => { fetchFieldLabelsOnce().then(setLabels); }, []);
   // A draft can reference "this.<key>" for a key the AI just suggested creating (see
   // WorkflowFieldSuggestions.tsx) before the admin has actually created it — without this, the
   // <select> would have no matching <option> for its own value and silently look unselected.
@@ -396,7 +416,7 @@ export const FieldRefSelect = ({
     <select className="wfd-sel" value={value} onChange={e => onChange(e.target.value)}>
       {allowEmpty && <option value="">{t('field_ref_not_mapped_option', { defaultValue: '— not mapped —' })}</option>}
       <optgroup label={t('eae_ticket_fields_optgroup', { defaultValue: 'Ticket Fields' }) as string}>
-        {ticketFieldOpts.map(k => <option key={k} value={`ticket.${k}`}>ticket.{k}</option>)}
+        {ticketFieldOpts.map(k => <option key={k} value={`ticket.${k}`}>{labels.ticket[k] ?? k}</option>)}
       </optgroup>
       <optgroup label={t('eae_workflow_fields_optgroup', { defaultValue: 'Workflow Fields' }) as string}>
         {workflowFieldKeys.length === 0 && !pendingKey && <option value="" disabled>{t('eae_workflow_fields_none', { defaultValue: '(none defined yet)' })}</option>}
@@ -405,7 +425,7 @@ export const FieldRefSelect = ({
             {t('eae_pending_field_option', { defaultValue: 'this.{{key}} (pending — create it below)', key: pendingKey })}
           </option>
         )}
-        {workflowFieldKeys.map(k => <option key={k} value={`this.${k}`}>this.{k}</option>)}
+        {workflowFieldKeys.map(k => <option key={k} value={`this.${k}`}>{labels.workflow[k] ?? k}</option>)}
       </optgroup>
     </select>
   );

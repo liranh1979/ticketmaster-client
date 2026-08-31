@@ -19,6 +19,11 @@ export interface McpArgumentMapping {
   toolArgument: string;
   ticketField?: string;
   captureName?: string;
+  /** A fixed, admin-typed constant — for a tool parameter that's always the same value for every
+   * ticket (e.g. a hotel-search tool's "rooms" argument), where mapping from a ticket field or
+   * capture would mean inventing a fake constant field just to hold it. Coerced to a real
+   * number/boolean server-side when it looks like one — see McpActionExecutor.coerceLiteral. */
+  literalValue?: string;
 }
 export interface McpResponseCapture {
   name: string;
@@ -40,10 +45,17 @@ export interface McpCall {
 }
 
 export interface McpAuth {
-  type: 'none' | 'bearer' | 'api_key';
+  // "saved_external" is a sentinel: "resolve serverUrl+auth live from a saved external MCP server
+  // (Settings → MCP Servers) by id at execution time" instead of an embedded static snapshot —
+  // required for OAuth2 connection auth, which genuinely expires and must be refreshed fresh on
+  // every real call, not baked in once when this action item was configured. See
+  // McpActionExecutor.runSequence's javadoc for the backend side of this.
+  type: 'none' | 'bearer' | 'api_key' | 'saved_external';
   headerName?: string;
   hasToken?: boolean;
   token?: string;
+  /** saved_external only. */
+  mcpServerId?: number;
 }
 
 export interface McpResponseMapping { captureName: string; target: string; }
@@ -62,9 +74,11 @@ export function makeDefaultCall(order: number, toolName = ''): McpCall {
 
 interface BuiltinMcpServer {
   id: number;
+  server_kind: 'generated' | 'external';
   name: string;
-  port: number;
-  status: 'STOPPED' | 'STARTING' | 'RUNNING' | 'ERROR';
+  port?: number;
+  status: 'STOPPED' | 'STARTING' | 'RUNNING' | 'ERROR' | 'EXTERNAL';
+  server_url?: string;
 }
 
 export const McpServerConnectionEditor = ({
@@ -100,6 +114,15 @@ export const McpServerConnectionEditor = ({
   const handlePickBuiltin = (id: string) => {
     const server = builtinServers.find(s => String(s.id) === id);
     if (!server) return;
+    if (server.server_kind === 'external') {
+      // Display-only snapshot of the current URL — the source of truth for real execution is the
+      // live entity, resolved fresh (including OAuth2 refresh) via the saved_external auth
+      // sentinel, never this embedded copy.
+      onServerUrlChange(server.server_url ?? '');
+      onAuthChange({ type: 'saved_external', mcpServerId: server.id });
+      setDesignMismatches([]);
+      return;
+    }
     onServerUrlChange(`http://localhost:${server.port}`);
     onAuthChange({ type: 'none' });
     setDesignMismatches([]);
@@ -110,13 +133,21 @@ export const McpServerConnectionEditor = ({
     setDiscoverError('');
     setDiscovering(true);
     try {
-      const res = await api.post('/mcp/discover-tools', {
-        serverUrl,
-        type: auth.type,
-        headerName: auth.type === 'api_key' ? auth.headerName : undefined,
-        token: (auth.type === 'bearer' || auth.type === 'api_key') ? auth.token : undefined,
-      });
-      onToolsDiscovered(res.data);
+      if (auth.type === 'saved_external' && auth.mcpServerId) {
+        // Auth (including OAuth2 resolution/refresh) is resolved server-side from the saved
+        // entity — the frontend never sees the real token, so it can't call the generic
+        // /mcp/discover-tools endpoint the way it does for a raw Public URL.
+        const res = await api.post(`/mcp-servers/external/${auth.mcpServerId}/test`);
+        onToolsDiscovered(res.data.tools ?? []);
+      } else {
+        const res = await api.post('/mcp/discover-tools', {
+          serverUrl,
+          type: auth.type,
+          headerName: auth.type === 'api_key' ? auth.headerName : undefined,
+          token: (auth.type === 'bearer' || auth.type === 'api_key') ? auth.token : undefined,
+        });
+        onToolsDiscovered(res.data);
+      }
     } catch (err: any) {
       setDiscoverError(err?.response?.data?.message || t('mcp_discover_failed', { defaultValue: 'Could not reach the MCP server.' }));
     } finally {
@@ -130,7 +161,7 @@ export const McpServerConnectionEditor = ({
 
       <div className="mte-mode-toggle">
         <button type="button" className={`mte-mode-opt${mode === 'builtin' ? ' sel' : ''}`} onClick={() => setMode('builtin')}>
-          {t('mcp_mode_builtin', { defaultValue: 'Built-in Server' })}
+          {t('mcp_mode_saved', { defaultValue: 'Saved Server' })}
         </button>
         <button type="button" className={`mte-mode-opt${mode === 'public' ? ' sel' : ''}`} onClick={() => setMode('public')}>
           {t('mcp_mode_public', { defaultValue: 'Public URL' })}
@@ -139,14 +170,20 @@ export const McpServerConnectionEditor = ({
 
       {mode === 'builtin' ? (
         <>
-          <select className="wfd-sel" value={builtinServers.find(s => `http://localhost:${s.port}` === serverUrl)?.id ?? ''} onChange={e => handlePickBuiltin(e.target.value)}>
-            <option value="">{t('mcp_select_builtin_placeholder', { defaultValue: 'Select a built-in server…' })}</option>
+          <select
+            className="wfd-sel"
+            value={auth.type === 'saved_external' ? String(auth.mcpServerId ?? '') : (builtinServers.find(s => s.server_kind === 'generated' && `http://localhost:${s.port}` === serverUrl)?.id ?? '')}
+            onChange={e => handlePickBuiltin(e.target.value)}
+          >
+            <option value="">{t('mcp_select_builtin_placeholder', { defaultValue: 'Select a saved server…' })}</option>
             {builtinServers.map(s => (
-              <option key={s.id} value={s.id}>{s.name} — :{s.port} ({s.status})</option>
+              <option key={s.id} value={s.id}>
+                {s.server_kind === 'external' ? `${s.name} — ${t('mcp_server_kind_external', { defaultValue: 'External' })}` : `${s.name} — :${s.port} (${s.status})`}
+              </option>
             ))}
           </select>
           {builtinServers.length === 0 && (
-            <p className="wfd-hint-xs">{t('mcp_no_builtin_servers_hint', { defaultValue: 'No built-in MCP servers yet — a super-admin can create one under Settings → MCP Servers.' })}</p>
+            <p className="wfd-hint-xs">{t('mcp_no_builtin_servers_hint', { defaultValue: 'No saved MCP servers yet — create one under Settings → MCP Servers.' })}</p>
           )}
           {designMismatches.length > 0 && (
             <p className="mte-error">
@@ -232,7 +269,7 @@ function ArgMappingRow({
   workflowFieldKeys: string[];
 }) {
   const { t } = useTranslation();
-  const sourceKind = mapping.captureName !== undefined ? 'capture' : 'ticket';
+  const sourceKind = mapping.captureName !== undefined ? 'capture' : mapping.literalValue !== undefined ? 'literal' : 'ticket';
   const ticketFieldOpts = [...TICKET_FIELD_BASE, ...ticketFieldKeys.filter(k => !TICKET_FIELD_BASE.includes(k))];
   return (
     <div className="eae-kv-row">
@@ -240,15 +277,19 @@ function ArgMappingRow({
       <select
         className="wfd-sel"
         value={sourceKind}
-        onChange={e => onChange(e.target.value === 'capture'
-          ? { toolArgument: mapping.toolArgument, captureName: '' }
+        onChange={e => onChange(
+          e.target.value === 'capture' ? { toolArgument: mapping.toolArgument, captureName: '' }
+          : e.target.value === 'literal' ? { toolArgument: mapping.toolArgument, literalValue: '' }
           : { toolArgument: mapping.toolArgument, ticketField: `ticket.${ticketFieldOpts[0] ?? 'title'}` })}
       >
         <option value="ticket">{t('mcp_arg_from_ticket_field_option', { defaultValue: 'from ticket field' })}</option>
         <option value="capture">{t('mcp_arg_from_capture_option', { defaultValue: 'from earlier capture' })}</option>
+        <option value="literal">{t('mcp_arg_fixed_value_option', { defaultValue: 'fixed value' })}</option>
       </select>
       {sourceKind === 'capture' ? (
         <input className="wfd-inp" value={mapping.captureName ?? ''} onChange={e => onChange({ toolArgument: mapping.toolArgument, captureName: e.target.value })} placeholder={t('capture_name_placeholder', { defaultValue: 'captureName' }) as string} />
+      ) : sourceKind === 'literal' ? (
+        <input className="wfd-inp" value={mapping.literalValue ?? ''} onChange={e => onChange({ toolArgument: mapping.toolArgument, literalValue: e.target.value })} placeholder={t('mcp_arg_fixed_value_placeholder', { defaultValue: 'e.g. 1, true, or some text' }) as string} />
       ) : (
         <FieldRefSelect
           value={mapping.ticketField && mapping.ticketField.includes('.') ? mapping.ticketField : ''}

@@ -386,12 +386,24 @@ export const WorkflowDesignerModal = ({
 
   const addNode = (overrides?: Partial<FullNode>) => {
     const id = crypto.randomUUID();
+    const parentId = selId ?? null;
     const par = selId ? nm[selId] : null;
+    // A real bug found live: this only ever positioned the new node relative to the PARENT, with
+    // no awareness of siblings already added under that same parent. Re-selecting the same parent
+    // and adding a second item from the Library computed the exact same (x, y) as the first child
+    // — the new node landed silently on top of it, not underneath, confusing which item was which
+    // until an admin noticed and manually dragged one aside. Placing it after the rightmost
+    // existing sibling instead — matching autoLayout's own convention that same-parent children
+    // sit side by side, not stacked on each other — keeps every add visible immediately.
+    const siblings = nodes.filter(n => n.parentId === parentId);
+    const lastSibling = siblings.length ? siblings.reduce((a, b) => (a.x > b.x ? a : b)) : null;
+    const baseX = par ? Math.min(par.x + NODE_W + 52, CANVAS_W - NODE_W - 20) : CANVAS_W / 2 - NODE_W / 2;
+    const baseY = par ? par.y + LEVEL_H : TRIGGER_Y + TRIGGER_H + 72;
     const newN: FullNode = {
-      id, title: 'New Item', type: 'task', parentId: selId ?? null, displayOrder: nodes.length,
+      id, title: 'New Item', type: 'task', parentId, displayOrder: nodes.length,
       defaultAssigneeUserId: null, customFieldKeys: [], dataFlows: [],
-      x: par ? Math.min(par.x + NODE_W + 52, CANVAS_W - NODE_W - 20) : CANVAS_W / 2 - NODE_W / 2,
-      y: par ? par.y + LEVEL_H : TRIGGER_Y + TRIGGER_H + 72,
+      x: lastSibling ? Math.min(lastSibling.x + NODE_W + GAP_X, CANVAS_W - NODE_W - 20) : baseX,
+      y: lastSibling ? lastSibling.y : baseY,
       ...overrides,
     };
     setNodes(prev => [...prev, newN]);

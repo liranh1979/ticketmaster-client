@@ -129,6 +129,11 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   const canSla            = hasPermission(user, PERMISSIONS.MANAGE_FIELDS);
   const canRecurring      = hasPermission(user, PERMISSIONS.MANAGE_RECURRING_TICKETS);
   const canAnnouncements  = hasPermission(user, PERMISSIONS.MANAGE_ANNOUNCEMENTS);
+  // Built-in (AI-generated) servers still need super-admin + MANAGE_MCP_SERVERS (checked again,
+  // finer-grained, inside McpServersPage) — external servers only need MANAGE_FIELDS, the same
+  // permission that already gates building the templates/workflows that will call them. The nav
+  // entry itself needs to be visible to whichever population qualifies for either half.
+  const canMcpServers     = hasPermission(user, PERMISSIONS.MANAGE_MCP_SERVERS) || hasPermission(user, PERMISSIONS.MANAGE_FIELDS);
 
   // ── Active sidebar group ─────────────────────────────────────────────────
   const activeGroup = (() => {
@@ -212,7 +217,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
             </div>
           )}
 
-          {isSuperAdminUser && (
+          {canMcpServers && (
             <div className="settings-card" onClick={() => setCurrentView('mcp-servers')}>
               <div className="settings-icon-box"><div className="ai-icon-placeholder">🔌</div></div>
               <span className="settings-text">{t('mcp_servers_settings_card', { defaultValue: 'MCP Servers' })}</span>
@@ -302,7 +307,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'companies') return <CompaniesPage />;
     if (currentView === 'system-settings') return <SystemSettingsPage />;
     if (currentView === 'ssl-manager') return <SslCertPage />;
-    if (currentView === 'mcp-servers') return <McpServersPage />;
+    if (currentView === 'mcp-servers') return <McpServersPage user={user} />;
     if (currentView === 'tickets-templates') return <TicketsTemplatesPage user={user} />;
     if (currentView === 'ai-manager') return <AIManager />;
     if (currentView === 'email-manager') return <EmailManager />;
@@ -414,7 +419,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
         {isSuperAdminUser && navBtn('system-settings', t('system_settings_card_label'), () => setCurrentView('system-settings'))}
         {isSuperAdminUser && navBtn('ssl-manager', t('ssl_title'), () => setCurrentView('ssl-manager'))}
         {isSuperAdminUser && navBtn('dashboard-manager', t('dashboard_manager_title', { defaultValue: 'Dashboard Manager' }), () => setCurrentView('dashboard-manager'))}
-        {isSuperAdminUser && navBtn('mcp-servers', t('mcp_servers_settings_card', { defaultValue: 'MCP Servers' }), () => setCurrentView('mcp-servers'))}
+        {canMcpServers && navBtn('mcp-servers', t('mcp_servers_settings_card', { defaultValue: 'MCP Servers' }), () => setCurrentView('mcp-servers'))}
       </aside>
 
       <div className="stg-content">
