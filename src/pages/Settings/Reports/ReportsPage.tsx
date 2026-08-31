@@ -466,14 +466,19 @@ const ReportEditForm = ({ reportId, onDone, onCancel }: ReportEditFormProps) => 
               </div>
               {recipientType === 'group' ? (
                 <select className="rp-input" value={recipientGroupId ?? ''} onChange={e => setRecipientGroupId(e.target.value ? Number(e.target.value) : null)}>
-                  <option value="">—</option>
+                  <option value="">{t('reports_recipient_group_placeholder', { defaultValue: '—' })}</option>
                   {groups.map(g => <option key={g.id} value={g.id}>{g.displayName}</option>)}
                 </select>
               ) : (
-                <select multiple className="rp-input rp-multiselect" value={recipientUserIds.map(String)}
-                  onChange={e => setRecipientUserIds(Array.from(e.target.selectedOptions).map(o => Number(o.value)))}>
-                  {users.map(u => <option key={u.id} value={u.id}>{u.displayName} ({u.email})</option>)}
-                </select>
+                <>
+                  <select multiple className="rp-input rp-multiselect" value={recipientUserIds.map(String)}
+                    onChange={e => setRecipientUserIds(Array.from(e.target.selectedOptions).map(o => Number(o.value)))}>
+                    {users.map(u => <option key={u.id} value={u.id}>{u.displayName} ({u.email})</option>)}
+                  </select>
+                  {users.length === 0 && (
+                    <div className="rp-test-sub">{t('reports_recipients_users_empty_hint', { defaultValue: 'No admin users available.' })}</div>
+                  )}
+                </>
               )}
             </>
           )}

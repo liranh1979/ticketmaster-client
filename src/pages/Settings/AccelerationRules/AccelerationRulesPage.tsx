@@ -669,7 +669,7 @@ export const AccelerationRulesPage = () => {
                             value={String(action.value ?? assignableUsers[0]?.id ?? '')}
                             onChange={e => updateAction(i, { value: +e.target.value })}>
                       {assignableUsers.length === 0
-                        ? <option value="">— no users —</option>
+                        ? <option value="">{t('acceleration_no_users_option', { defaultValue: '— no users —' })}</option>
                         : assignableUsers.map(u => (
                             <option key={u.id} value={u.id}>{u.displayName}</option>
                           ))}
@@ -681,7 +681,7 @@ export const AccelerationRulesPage = () => {
                             value={String(action.value ?? assignableGroups[0]?.id ?? '')}
                             onChange={e => updateAction(i, { value: +e.target.value })}>
                       {assignableGroups.length === 0
-                        ? <option value="">— no groups —</option>
+                        ? <option value="">{t('acceleration_no_groups_option', { defaultValue: '— no groups —' })}</option>
                         : assignableGroups.map(g => (
                             <option key={g.id} value={g.id}>{g.displayName}</option>
                           ))}
