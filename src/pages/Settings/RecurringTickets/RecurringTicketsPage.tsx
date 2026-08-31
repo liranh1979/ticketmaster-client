@@ -45,6 +45,7 @@ export const RecurringTicketsPage = () => {
   const [schedules, setSchedules] = useState<RecurringSchedule[]>([]);
   const [templates, setTemplates] = useState<TemplateOption[]>([]);
   const [groups, setGroups] = useState<GroupOption[]>([]);
+  const [groupsLoaded, setGroupsLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [view, setView] = useState<'list' | 'form'>('list');
@@ -81,7 +82,7 @@ export const RecurringTicketsPage = () => {
       ]);
       setTemplates(templatesRes.data);
       setGroups(groupsRes.data);
-    } catch { /* silent */ }
+    } catch { /* silent */ } finally { setGroupsLoaded(true); }
   };
 
   useEffect(() => { fetchSchedules(); fetchOptions(); }, []);
@@ -108,7 +109,10 @@ export const RecurringTicketsPage = () => {
     setFormHour(6);
     setFormMinute(0);
     setFormCustomCron('0 0 6 1 * ?');
-    setFormAssignGroupId(groups[0]?.id ?? null);
+    // Deliberately null, not groups[0] — "assignable" groups load async (fetchOptions on
+    // mount) and may not have arrived yet when this runs, so silently pre-picking one is a
+    // race; an explicit "— Unassigned —" placeholder (below) makes the choice deliberate.
+    setFormAssignGroupId(null);
     setFormPriority('medium');
     setFormTitleTemplate('');
     setFormActive(true);
@@ -261,8 +265,12 @@ export const RecurringTicketsPage = () => {
             <div className="rt-field-group">
               <label className="rt-label">{t('recurring_form_assign_group_label', { defaultValue: 'Assign to Group' })}</label>
               <select className="rt-select" value={formAssignGroupId ?? ''} onChange={e => setFormAssignGroupId(e.target.value ? +e.target.value : null)}>
+                <option value="">{t('recurring_form_assign_group_none', { defaultValue: '— Unassigned —' })}</option>
                 {groups.map(g => <option key={g.id} value={g.id}>{g.displayName}</option>)}
               </select>
+              {groupsLoaded && groups.length === 0 && (
+                <span className="rt-hint">{t('recurring_form_assign_group_empty_hint', { defaultValue: 'No groups have the Ticket Manager permission yet — grant it in Users & Groups to make them selectable here.' })}</span>
+              )}
             </div>
             <div className="rt-field-group">
               <label className="rt-label">{t('recurring_form_priority_label', { defaultValue: 'Priority' })}</label>
