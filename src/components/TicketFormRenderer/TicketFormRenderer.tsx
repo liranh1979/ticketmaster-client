@@ -380,6 +380,21 @@ const FieldControl = ({ field, value, onChange, readOnly, entityId, isAdmin, onN
         );
       }
 
+      // Change Management: date-only 'date' above has no time-of-day — scheduled_start/
+      // scheduled_end need a real scheduled moment. Generic, not Change-specific, so any future
+      // template that needs this gets it for free. See V2/Change Management/01-data-model.html.
+      if (field.fieldType === 'datetime') {
+        return (
+          <input
+            type="datetime-local"
+            className="tfr-input"
+            value={value ?? ''}
+            onChange={(e) => onChange(field.fieldKey, e.target.value)}
+            readOnly={readOnly}
+          />
+        );
+      }
+
       if (field.fieldType === 'number') {
         return (
           <input

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Sparkles, AlertCircle, RefreshCw, MessageSquare, Link2, Copy, Search } from 'lucide-react';
+import { ArrowLeft, Sparkles, AlertCircle, ShieldAlert, RefreshCw, MessageSquare, Link2, Copy, Search } from 'lucide-react';
 import api from '../../api';
 import { TicketFormRenderer } from '../../components/TicketFormRenderer/TicketFormRenderer';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
@@ -45,6 +45,8 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
   const [saving, setSaving]         = useState(false);
   const [isDirty, setIsDirty]       = useState(false);
   const [conflict, setConflict]     = useState<TicketDetail | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [freezeConflict, setFreezeConflict] = useState<string | null>(null);
   const [presenceUsers, setPresenceUsers] = useState<PresenceUser[]>([]);
   const [aiProcessing, setAiProcessing]   = useState(false);
   const [syncedToast, setSyncedToast]     = useState(false);
@@ -250,11 +252,20 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
       serverVersion.current = data.version;
       setIsDirty(false);
       setConflict(null);
+      setAccessDenied(false);
+      setFreezeConflict(null);
       setTouchedFields(new Set());
       setSaveCount(c => c + 1);
     } catch (err: any) {
       if (err?.response?.status === 409) {
         setConflict(err.response.data as TicketDetail);
+      } else if (err?.response?.status === 403) {
+        setAccessDenied(true);
+      } else if (err?.response?.status === 400) {
+        // Change Management: freeze-window conflict — the server's message names the specific
+        // window, so it's shown verbatim rather than through a generic translated string. See
+        // V2/Change Management/05-ui-mocks.html (Mock 1b).
+        setFreezeConflict(err.response?.data?.message || null);
       }
     } finally {
       setSaving(false);
@@ -458,6 +469,25 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
               {t('keep_my_draft')}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Access-denied banner — a mid-edit 403 on save(), distinct from the 409 conflict banner
+          above; see V2/Ticket Access Control/02-frontend-ux.html */}
+      {accessDenied && (
+        <div className="te-access-denied-banner" role="alert" aria-live="assertive">
+          <ShieldAlert size={16} />
+          <span>{t('ticket_save_no_access')}</span>
+        </div>
+      )}
+
+      {/* Freeze-conflict banner — Change Management, see V2/Change Management/05-ui-mocks.html
+          (Mock 1b). Distinct from the access-denied banner above: this is a validation error
+          naming a specific freeze window, not a permission failure. */}
+      {freezeConflict && (
+        <div className="te-freeze-conflict-banner" role="alert" aria-live="assertive">
+          <AlertCircle size={16} />
+          <span>{freezeConflict}</span>
         </div>
       )}
 

@@ -476,6 +476,17 @@
   color: #c4b5fd;
 }
 
+/* Create-ticket error banner (Change Management: freeze-window conflicts and any other
+   create failure — this page previously failed silently on error). */
+.cp-error-banner {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.83rem;
+  color: #fca5a5;
+}
+
 .cp-ai-banner-actions { display: flex; gap: 8px; }
 
 .cp-ai-banner-btn {

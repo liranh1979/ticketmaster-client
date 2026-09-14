@@ -28,6 +28,8 @@ import { RecurringTicketsPage } from './RecurringTickets/RecurringTicketsPage';
 import { AlertTypesManager } from './AlertTypes/AlertTypesManager';
 import { AnnouncementsPage } from './Announcements/AnnouncementsPage';
 import { McpServersPage } from './McpServersManager/McpServersPage';
+import { FreezeWindowsPage } from './FreezeWindows/FreezeWindowsPage';
+import { ChangeCalendarPage } from './ChangeCalendar/ChangeCalendarPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -64,7 +66,9 @@ type ViewState =
   | 'recurring-tickets'
   | 'alert-types-management'
   | 'announcements'
-  | 'mcp-servers';
+  | 'mcp-servers'
+  | 'freeze-windows'
+  | 'change-calendar';
 
 export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: SettingsPageProps) => {
   const { t } = useTranslation();
@@ -134,6 +138,14 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   // permission that already gates building the templates/workflows that will call them. The nav
   // entry itself needs to be visible to whichever population qualifies for either half.
   const canMcpServers     = hasPermission(user, PERMISSIONS.MANAGE_MCP_SERVERS) || hasPermission(user, PERMISSIONS.MANAGE_FIELDS);
+  // Change Management: Freeze Windows CRUD needs its own dedicated permission (deliberately not
+  // TICKET_MANAGER — see V2/Change Management/04-relationships-permissions.html). The Change
+  // Calendar's backend endpoint has no specific-permission gate at all (any authenticated user),
+  // but its nav entry here is still shown to the TICKET_MANAGER/freeze-window-admin population
+  // only, consistent with every other entry point being organized under Settings for agents/
+  // admins rather than introducing a new plain-end-user Settings surface.
+  const canChangeFreezeWindows = hasPermission(user, PERMISSIONS.MANAGE_CHANGE_FREEZE_WINDOWS);
+  const canChangeCalendar      = canChangeFreezeWindows || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
 
   // ── Active sidebar group ─────────────────────────────────────────────────
   const activeGroup = (() => {
@@ -156,6 +168,8 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'dashboard-manager') return 'dashboard-manager';
     if (currentView === 'recurring-tickets') return 'recurring-tickets';
     if (currentView === 'announcements') return 'announcements';
+    if (currentView === 'change-calendar') return 'change-calendar';
+    if (currentView === 'freeze-windows') return 'freeze-windows';
     return '';
   })();
 
@@ -173,7 +187,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   const renderContent = () => {
     // Settings overview (card grid)
     if (currentView === 'menu') {
-      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications || canAcceleration || canSla || canRecurring || canAnnouncements;
+      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications || canAcceleration || canSla || canRecurring || canAnnouncements || canChangeFreezeWindows || canChangeCalendar;
       return (
         <div className="settings-grid">
           {!hasAnyAccess && (
@@ -296,6 +310,20 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
             </div>
           )}
 
+          {canChangeCalendar && (
+            <div className="settings-card" onClick={() => setCurrentView('change-calendar')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🗓️</div></div>
+              <span className="settings-text">{t('change_calendar_card_label', { defaultValue: 'Change Calendar' })}</span>
+            </div>
+          )}
+
+          {canChangeFreezeWindows && (
+            <div className="settings-card" onClick={() => setCurrentView('freeze-windows')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🔒</div></div>
+              <span className="settings-text">{t('freeze_windows_card_label', { defaultValue: 'Freeze Windows' })}</span>
+            </div>
+          )}
+
         </div>
       );
     }
@@ -317,6 +345,8 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'dashboard-manager') return <DashboardManagerPage />;
     if (currentView === 'recurring-tickets') return <RecurringTicketsPage />;
     if (currentView === 'announcements') return <AnnouncementsPage />;
+    if (currentView === 'change-calendar') return <ChangeCalendarPage />;
+    if (currentView === 'freeze-windows') return <FreezeWindowsPage />;
     if (currentView === 'selection') return <FieldEntityList onSelectEntity={handleEntitySelection} />;
     if (currentView === 'users-groups-hub') return <UsersGroupsHub user={user} onSelect={(entity) => setCurrentView(entity)} />;
 
@@ -412,6 +442,8 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
         {canSla           && navBtn('sla-policies', t('sla_settings_nav_item', { defaultValue: 'SLA' }), () => setCurrentView('sla-policies'))}
         {canRecurring     && navBtn('recurring-tickets', t('recurring_tickets_nav_item', { defaultValue: 'Recurring Tickets' }), () => setCurrentView('recurring-tickets'))}
         {canAnnouncements && navBtn('announcements', t('announcements_nav_item', { defaultValue: 'Announcements' }), () => setCurrentView('announcements'))}
+        {canChangeCalendar && navBtn('change-calendar', t('change_calendar_nav_item', { defaultValue: 'Change Calendar' }), () => setCurrentView('change-calendar'))}
+        {canChangeFreezeWindows && navBtn('freeze-windows', t('freeze_windows_nav_item', { defaultValue: 'Freeze Windows' }), () => setCurrentView('freeze-windows'))}
 
         {isSuperAdminUser && <div className="stg-nav__divider" />}
         {isSuperAdminUser && navBtn('setup-guide', t('setup_guide_card_label'),  () => setCurrentView('setup-guide'))}

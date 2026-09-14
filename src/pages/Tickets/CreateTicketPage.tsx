@@ -31,6 +31,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
   const [aiResult, setAiResult]           = useState<AiAnalyzeResponse | null>(null);
   const [aiLoading, setAiLoading]         = useState(false);
   const [submitting, setSubmitting]       = useState(false);
+  const [createError, setCreateError]     = useState<string | null>(null);
   const [templateLoading, setTemplateLoading] = useState(false);
   const [suggestedArticles, setSuggestedArticles] = useState<{ id: number; title: string }[]>([]);
   const [dismissedForTitle, setDismissedForTitle] = useState<string | null>(null);
@@ -139,6 +140,7 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
   const handleSubmit = async () => {
     if (!selectedTemplate || !values.title?.trim()) return;
     setSubmitting(true);
+    setCreateError(null);
     try {
       const labelIds = Array.isArray(values.labels)
         ? values.labels.map((l: any) => (typeof l === 'number' ? l : l.id))
@@ -158,8 +160,16 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
         labelIds,
       });
       onCreated();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      // Change Management: a 400 here is a freeze-window conflict (the server's message names
+      // the specific window) — surface it instead of failing silently. See
+      // V2/Change Management/05-ui-mocks.html (Mock 1b).
+      if (e?.response?.status === 400) {
+        setCreateError(e.response?.data?.message || t('ticket_create_failed', { defaultValue: 'Could not create this ticket.' }));
+      } else {
+        setCreateError(t('ticket_create_failed', { defaultValue: 'Could not create this ticket.' }));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -345,6 +355,16 @@ export const CreateTicketPage = ({ user, onBack, onCreated }: Props) => {
                 </button>
               </div>
             </div>
+
+            {/* Create-error banner (Change Management: freeze-window conflicts land here as a
+                400 with a server-named window; any other create failure gets a generic message
+                instead of failing silently, which this page previously did). See
+                V2/Change Management/05-ui-mocks.html (Mock 1b). */}
+            {createError && (
+              <div className="cp-error-banner" role="alert" aria-live="assertive">
+                <span>{createError}</span>
+              </div>
+            )}
 
             {/* AI prefill banner */}
             {aiFilledFields.length > 0 && (
