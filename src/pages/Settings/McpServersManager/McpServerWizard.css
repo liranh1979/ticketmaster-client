@@ -8,6 +8,13 @@
   padding: var(--sd-space-6);
   font-family: var(--sd-font);
   color: var(--sd-fg);
+  /* SettingsPage's .stg-content/.view-container deliberately clip (overflow: hidden) and expect
+     each sub-page's own root to provide its own scroll — same pattern as .an-page in
+     AnnouncementsPage.css. Without this, a long tool-test result (e.g. a real JSON response) just
+     gets cut off at the viewport edge with no way to reach the rest of it. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .mcp-back-to-list-btn {
