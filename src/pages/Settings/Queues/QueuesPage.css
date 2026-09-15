@@ -1,0 +1,16 @@
+.qp-page { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sd-space-4, 1rem); display: flex; flex-direction: column; gap: 1.5rem; max-width: 640px; }
+.qp-def-section { background: var(--sd-surface); border: 1px solid var(--sd-border); border-radius: var(--sd-radius-lg, 10px); padding: 1rem 1.1rem; }
+.qp-def-section-title { font-size: 10.5px; font-weight: 700; color: var(--sd-fg-muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: .6rem; }
+.qp-def-row { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid var(--sd-border); font-size: 13px; }
+.qp-def-row:last-of-type { border-bottom: none; }
+.qp-def-name { font-weight: 600; color: var(--sd-fg); flex-shrink: 0; min-width: 140px; }
+.qp-def-filter { flex: 1; color: var(--sd-fg-muted); font-size: 12px; }
+.qp-def-delete-btn { background: none; border: none; color: var(--sd-fg-muted); cursor: pointer; padding: .3rem; border-radius: 5px; display: flex; }
+.qp-def-delete-btn:hover:not(:disabled) { color: #ef4444; background: rgba(239,68,68,.08); }
+.qp-def-delete-btn:disabled { opacity: .5; cursor: default; }
+.qp-def-empty { color: var(--sd-fg-muted); font-size: 12.5px; padding: .4rem 0; }
+.qp-new-link { font-size: 12.5px; color: var(--sd-brand); cursor: pointer; }
+.qp-new-form { display: flex; flex-direction: column; gap: .5rem; margin-top: .75rem; }
+.qp-input { padding: .4rem .6rem; border: 1px solid var(--sd-border); border-radius: 5px; font-size: 12.5px; background: var(--sd-surface-2); color: var(--sd-fg); }
+.qp-save-btn { padding: .4rem .8rem; background: var(--sd-brand); color: #fff; border: none; border-radius: 5px; font-size: 12.5px; cursor: pointer; align-self: flex-start; }
+.qp-save-btn:disabled { opacity: .5; }

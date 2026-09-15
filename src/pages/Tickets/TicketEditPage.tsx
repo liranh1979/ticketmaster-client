@@ -9,6 +9,8 @@ import { AiTicketConsultPanel } from '../../components/AiTicketConsultPanel/AiTi
 import { KbSearchPanel } from '../../components/KbSearchPanel/KbSearchPanel';
 import { ParentIncidentBanner } from '../../components/TicketRelationsPanel/ParentIncidentBanner';
 import { TicketApprovalStatusPanel } from '../../components/TicketApprovalStatusPanel/TicketApprovalStatusPanel';
+import { RoutingSuggestionCard } from '../../components/RoutingSuggestionCard/RoutingSuggestionCard';
+import type { RoutingSuggestion } from '../../components/RoutingSuggestionCard/RoutingSuggestionCard';
 import { useTicketRelationships } from '../../hooks/useTicketRelationships';
 import type {
   TicketDetail,
@@ -46,6 +48,8 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
   const [isDirty, setIsDirty]       = useState(false);
   const [conflict, setConflict]     = useState<TicketDetail | null>(null);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [routingSuggestion, setRoutingSuggestion] = useState<RoutingSuggestion | null>(null);
+  const [routingBusy, setRoutingBusy] = useState(false);
   const [freezeConflict, setFreezeConflict] = useState<string | null>(null);
   const [presenceUsers, setPresenceUsers] = useState<PresenceUser[]>([]);
   const [aiProcessing, setAiProcessing]   = useState(false);
@@ -59,11 +63,43 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
   useEffect(() => {
     api.get(`/tickets/${ticketId}/kb-links`).then(r => setLinkedArticles(r.data)).catch(() => {});
   }, [ticketId, kbLinkCount]);
+
   const [linkCopied, setLinkCopied]       = useState(false);
   const [solutionSavedCount, setSolutionSavedCount] = useState(0);
   const [saveCount, setSaveCount] = useState(0);
   const [cloning, setCloning]       = useState(false);
   const [cloneError, setCloneError] = useState(false);
+
+  // Agent Queue Management (Tier 1): shown only while unassigned and a pending suggestion exists.
+  // Re-fetched whenever a TICKET_UPDATED SSE event bumps saveCount — including the AI Smart-Router's
+  // own AI_ROUTING_SUGGESTION_READY event, so this appears without polling. See
+  // V2/Agent Queue Management/05-ai-agent-copilot.html.
+  useEffect(() => {
+    api.get(`/routing-suggestions/for-ticket/${ticketId}`).then(r => {
+      setRoutingSuggestion(r.data && r.data.length > 0 ? r.data[0] : null);
+    }).catch(() => {});
+  }, [ticketId, saveCount]);
+
+  const acceptRoutingSuggestion = async () => {
+    if (!routingSuggestion) return;
+    setRoutingBusy(true);
+    try {
+      await api.post(`/routing-suggestions/${routingSuggestion.id}/accept`);
+      setRoutingSuggestion(null);
+      const { data: td }: { data: TicketDetail } = await api.get(`/tickets/${ticketId}`);
+      setTicket(td);
+      serverVersion.current = td.version;
+      if (!isDirty) setValues(v => ({ ...v, responsible: td.responsibleUserId ? { id: td.responsibleUserId, name: td.responsibleUserDisplayName } : null }));
+    } finally { setRoutingBusy(false); }
+  };
+  const dismissRoutingSuggestion = async () => {
+    if (!routingSuggestion) return;
+    setRoutingBusy(true);
+    try {
+      await api.post(`/routing-suggestions/${routingSuggestion.id}/dismiss`);
+      setRoutingSuggestion(null);
+    } finally { setRoutingBusy(false); }
+  };
 
   const autoSaveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presencePinger = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -495,6 +531,14 @@ export const TicketEditPage = ({ ticketId, user, onBack, onCloned, onNavigateTic
       <div className="te-body">
         <ParentIncidentBanner relationships={relationships} onNavigateTicket={onNavigateTicket} />
         <TicketApprovalStatusPanel ticketId={ticketId} />
+        {routingSuggestion && ticket?.responsibleUserId == null && (
+          <RoutingSuggestionCard
+            suggestion={routingSuggestion}
+            onAccept={acceptRoutingSuggestion}
+            onDismiss={dismissRoutingSuggestion}
+            busy={routingBusy}
+          />
+        )}
 
         {layoutTabs.length > 0 && (
           <TicketFormRenderer

@@ -18,6 +18,7 @@ import { AnnouncementBanner } from '../components/AnnouncementBanner/Announcemen
 import { KbArticlesPage } from './Settings/KnowledgeBase/KbArticlesPage';
 import { KbCategoriesManager } from './Settings/KnowledgeBase/KbCategoriesManager';
 import { KnowledgeBasePage } from './EndUser/KnowledgeBasePage';
+import { MyQueuesPage } from './Queues/MyQueuesPage';
 import api from '../api';
 
 interface HomeProps {
@@ -31,7 +32,7 @@ interface HomeProps {
   onUserUpdate?: (partial: Record<string, any>) => void;
 }
 
-type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks' | 'action-item' | 'knowledge-base' | 'kb-categories';
+type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks' | 'queues' | 'action-item' | 'knowledge-base' | 'kb-categories';
 
 export const Home = ({ user, onUserUpdate }: HomeProps) => {
   const { t } = useTranslation();
@@ -52,6 +53,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
   const goToTicketList   = () => setCurrentView('ticket-list');
   const goToMyTickets    = () => setCurrentView('my-tickets');
   const goToMyTasks      = () => setCurrentView('my-tasks');
+  const goToQueues       = () => setCurrentView('queues');
   const goToCreateTicket = () => setCurrentView('create-ticket');
   const goToEditTicket   = (id: number) => { setEditTicketId(id); setCurrentView('edit-ticket'); };
   const goToActionItem   = (id: number) => { setActionItemId(id); setCurrentView('action-item'); };
@@ -107,6 +109,7 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
         onDashboard={goToDashboard}
         onServiceDesk={goToTicketList}
         onMyTasks={goToMyTasks}
+        onQueues={goToQueues}
         onKnowledgeBase={() => setCurrentView('knowledge-base')}
         onSettings={() => setCurrentView('settings')}
         onAbout={() => setShowAbout(true)}
@@ -173,6 +176,14 @@ export const Home = ({ user, onUserUpdate }: HomeProps) => {
             user={user}
             onBack={() => setCurrentView('welcome')}
             onNewTicket={goToCreateTicket}
+            onViewTicket={goToEditTicket}
+          />
+        )}
+
+        {currentView === 'queues' && (
+          <MyQueuesPage
+            user={user}
+            onManageQueues={() => { setSettingsInitialView('queues'); setCurrentView('settings'); }}
             onViewTicket={goToEditTicket}
           />
         )}

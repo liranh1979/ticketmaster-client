@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, Inbox, Plus, CheckSquare, Settings, Info, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Inbox, Plus, CheckSquare, Settings, Info, BookOpen, ListFilter } from 'lucide-react';
 import { isSuperAdmin, hasPermission, PERMISSIONS } from '../../utils/permissions';
 import './AppSidebar.css';
 
-type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks' | 'action-item' | 'knowledge-base' | 'kb-categories';
+type HomeView = 'welcome' | 'settings' | 'ticket-list' | 'create-ticket' | 'edit-ticket' | 'my-tickets' | 'my-tasks' | 'queues' | 'action-item' | 'knowledge-base' | 'kb-categories';
 
 interface Props {
   user: any;
@@ -12,6 +12,7 @@ interface Props {
   onDashboard: () => void;
   onServiceDesk: () => void;
   onMyTasks?: () => void;
+  onQueues?: () => void;
   onKnowledgeBase?: () => void;
   onSettings: () => void;
   onAbout?: () => void;
@@ -26,6 +27,7 @@ export const AppSidebar = ({
   onDashboard,
   onServiceDesk,
   onMyTasks,
+  onQueues,
   onKnowledgeBase,
   onSettings,
   onAbout,
@@ -72,6 +74,16 @@ export const AppSidebar = ({
           >
             <CheckSquare size={15} strokeWidth={1.75} />
             My Tasks
+          </button>
+        )}
+
+        {onQueues && (
+          <button
+            className={`sd-nav__item${currentView === 'queues' ? ' sd-nav__item--active' : ''}`}
+            onClick={onQueues}
+          >
+            <ListFilter size={15} strokeWidth={1.75} />
+            {t('aq_queues_nav_item', { defaultValue: 'Queues' })}
           </button>
         )}
 

@@ -1,0 +1,13 @@
+.rsc-card { background: var(--sd-surface-2); border: 1px solid rgba(20,184,166,.35); border-radius: 11px; padding: 1rem; max-width: 420px; }
+.rsc-head { display: flex; align-items: center; gap: .5rem; font-size: 12px; font-weight: 700; color: #14b8a6; margin-bottom: .75rem; }
+.rsc-body { display: flex; gap: .75rem; align-items: flex-start; margin-bottom: .75rem; }
+.rsc-av { width: 32px; height: 32px; border-radius: 50%; background: #059669; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.rsc-name { font-size: 13px; font-weight: 700; color: var(--sd-fg); }
+.rsc-conf { font-size: 11px; color: #14b8a6; font-weight: 600; margin-inline-start: .4rem; }
+.rsc-ticket { font-size: 11.5px; color: var(--sd-fg-muted); margin-top: .2rem; }
+.rsc-reason { font-size: 12.5px; color: var(--sd-fg-muted); margin-top: .3rem; line-height: 1.55; }
+.rsc-actions { display: flex; gap: .6rem; }
+.rsc-btn { border-radius: 7px; padding: .4rem .9rem; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--sd-border); }
+.rsc-btn:disabled { opacity: .5; cursor: default; }
+.rsc-btn-accept { background: rgba(34,197,94,.15); color: #22c55e; border-color: rgba(34,197,94,.3); }
+.rsc-btn-dismiss { background: transparent; color: var(--sd-fg-muted); }

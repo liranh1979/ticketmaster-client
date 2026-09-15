@@ -30,6 +30,9 @@ import { AnnouncementsPage } from './Announcements/AnnouncementsPage';
 import { McpServersPage } from './McpServersManager/McpServersPage';
 import { FreezeWindowsPage } from './FreezeWindows/FreezeWindowsPage';
 import { ChangeCalendarPage } from './ChangeCalendar/ChangeCalendarPage';
+import { QueuesPage } from './Queues/QueuesPage';
+import { RoutingRulesPage } from './RoutingRules/RoutingRulesPage';
+import { WorkloadPage } from './Workload/WorkloadPage';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -68,7 +71,10 @@ type ViewState =
   | 'announcements'
   | 'mcp-servers'
   | 'freeze-windows'
-  | 'change-calendar';
+  | 'change-calendar'
+  | 'queues'
+  | 'routing-rules'
+  | 'workload';
 
 export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: SettingsPageProps) => {
   const { t } = useTranslation();
@@ -146,6 +152,14 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   // admins rather than introducing a new plain-end-user Settings surface.
   const canChangeFreezeWindows = hasPermission(user, PERMISSIONS.MANAGE_CHANGE_FREEZE_WINDOWS);
   const canChangeCalendar      = canChangeFreezeWindows || hasPermission(user, PERMISSIONS.TICKET_MANAGER);
+  // Agent Queue Management: personal-queue viewing/creation needs no permission at all (same
+  // ownership-scoped model as "show me only my tickets") — Queues is visible to any authenticated
+  // user. Routing Rules is its own dedicated MANAGE_ROUTING_RULES gate, deliberately not
+  // TICKET_MANAGER — standing automation is a bigger blast radius than TICKET_MANAGER's bounded
+  // actions. Workload reuses TICKET_MANAGER. See V2/Agent Queue Management/01-data-model.html.
+  const canQueues         = true;
+  const canRoutingRules   = hasPermission(user, PERMISSIONS.MANAGE_ROUTING_RULES);
+  const canWorkload       = hasPermission(user, PERMISSIONS.TICKET_MANAGER);
 
   // ── Active sidebar group ─────────────────────────────────────────────────
   const activeGroup = (() => {
@@ -170,6 +184,9 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'announcements') return 'announcements';
     if (currentView === 'change-calendar') return 'change-calendar';
     if (currentView === 'freeze-windows') return 'freeze-windows';
+    if (currentView === 'queues') return 'queues';
+    if (currentView === 'routing-rules') return 'routing-rules';
+    if (currentView === 'workload') return 'workload';
     return '';
   })();
 
@@ -187,7 +204,7 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
   const renderContent = () => {
     // Settings overview (card grid)
     if (currentView === 'menu') {
-      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications || canAcceleration || canSla || canRecurring || canAnnouncements || canChangeFreezeWindows || canChangeCalendar;
+      const hasAnyAccess = canFields || canUsersGroups || canAi || canEmail || canNotifications || canAcceleration || canSla || canRecurring || canAnnouncements || canChangeFreezeWindows || canChangeCalendar || canQueues || canRoutingRules || canWorkload;
       return (
         <div className="settings-grid">
           {!hasAnyAccess && (
@@ -324,6 +341,27 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
             </div>
           )}
 
+          {canQueues && (
+            <div className="settings-card" onClick={() => setCurrentView('queues')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">📥</div></div>
+              <span className="settings-text">{t('aq_manage_queues_nav_item', { defaultValue: 'Manage Queues' })}</span>
+            </div>
+          )}
+
+          {canRoutingRules && (
+            <div className="settings-card" onClick={() => setCurrentView('routing-rules')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">🧭</div></div>
+              <span className="settings-text">{t('aq_routing_rules_nav_item', { defaultValue: 'Routing Rules' })}</span>
+            </div>
+          )}
+
+          {canWorkload && (
+            <div className="settings-card" onClick={() => setCurrentView('workload')}>
+              <div className="settings-icon-box"><div className="ai-icon-placeholder">👥</div></div>
+              <span className="settings-text">{t('aq_workload_nav_item', { defaultValue: 'Agent Workload' })}</span>
+            </div>
+          )}
+
         </div>
       );
     }
@@ -347,6 +385,9 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
     if (currentView === 'announcements') return <AnnouncementsPage />;
     if (currentView === 'change-calendar') return <ChangeCalendarPage />;
     if (currentView === 'freeze-windows') return <FreezeWindowsPage />;
+    if (currentView === 'queues') return <QueuesPage user={user} />;
+    if (currentView === 'routing-rules') return <RoutingRulesPage />;
+    if (currentView === 'workload') return <WorkloadPage />;
     if (currentView === 'selection') return <FieldEntityList onSelectEntity={handleEntitySelection} />;
     if (currentView === 'users-groups-hub') return <UsersGroupsHub user={user} onSelect={(entity) => setCurrentView(entity)} />;
 
@@ -444,6 +485,9 @@ export const SettingsPage = ({ onNavigate: _onNavigate, user, initialView }: Set
         {canAnnouncements && navBtn('announcements', t('announcements_nav_item', { defaultValue: 'Announcements' }), () => setCurrentView('announcements'))}
         {canChangeCalendar && navBtn('change-calendar', t('change_calendar_nav_item', { defaultValue: 'Change Calendar' }), () => setCurrentView('change-calendar'))}
         {canChangeFreezeWindows && navBtn('freeze-windows', t('freeze_windows_nav_item', { defaultValue: 'Freeze Windows' }), () => setCurrentView('freeze-windows'))}
+        {canQueues && navBtn('queues', t('aq_manage_queues_nav_item', { defaultValue: 'Manage Queues' }), () => setCurrentView('queues'))}
+        {canRoutingRules && navBtn('routing-rules', t('aq_routing_rules_nav_item', { defaultValue: 'Routing Rules' }), () => setCurrentView('routing-rules'))}
+        {canWorkload && navBtn('workload', t('aq_workload_nav_item', { defaultValue: 'Agent Workload' }), () => setCurrentView('workload'))}
 
         {isSuperAdminUser && <div className="stg-nav__divider" />}
         {isSuperAdminUser && navBtn('setup-guide', t('setup_guide_card_label'),  () => setCurrentView('setup-guide'))}
